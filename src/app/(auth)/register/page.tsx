@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getT } from "@/lib/i18n";
 import type { Lang } from "@/lib/i18n";
@@ -16,7 +15,6 @@ export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [lang, setLang] = useState<Lang>("de");
-  const router = useRouter();
 
   useEffect(() => {
     const stored = localStorage.getItem(LANG_KEY);
