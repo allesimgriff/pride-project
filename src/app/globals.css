@@ -1,0 +1,50 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-surface: 248 249 250;
+  --color-surface-elevated: 255 255 255;
+  --color-primary: 45 122 150;
+  --color-primary-hover: 36 99 122;
+  --color-text: 33 37 41;
+  --color-text-muted: 73 80 87;
+  --color-border: 222 226 230;
+  --color-accent-warm: 125 111 92;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-surface: 33 37 41;
+    --color-surface-elevated: 45 49 54;
+    --color-text: 248 249 250;
+    --color-text-muted: 173 181 189;
+    --color-border: 73 80 87;
+  }
+}
+
+body {
+  @apply bg-surface-100 text-gray-900 antialiased;
+  font-feature-settings: "rlig" 1, "calt" 1;
+}
+
+@layer components {
+  .card {
+    @apply rounded-lg border border-gray-200 bg-white shadow-sm;
+  }
+  .card-hover {
+    @apply card transition-shadow hover:shadow-md;
+  }
+  .input-base {
+    @apply w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder-gray-400 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
+  }
+  .badge {
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+}
