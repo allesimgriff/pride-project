@@ -4,13 +4,15 @@ import { createClient } from "@/lib/supabase/server";
 
 export async function updateProfileAction(formData: FormData) {
   const supabase = await createClient();
-  const { data: user } = (await supabase.auth.getUser()).data;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) return { error: "Nicht angemeldet" };
 
   const full_name = (formData.get("full_name") as string)?.trim() ?? null;
   const avatarFile = formData.get("avatar") as File | null;
 
-  const updates: { full_name?: string; avatar_url?: string | null } = {};
+  const updates: { full_name?: string | null; avatar_url?: string | null } = {};
   if (full_name !== null) updates.full_name = full_name || null;
 
   if (avatarFile?.size && avatarFile.size > 0) {

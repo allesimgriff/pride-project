@@ -70,7 +70,9 @@ export async function updateProjectAction(
   }
 ) {
   const supabase = await createClient();
-  const { data: user } = (await supabase.auth.getUser()).data;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) return { error: "Nicht angemeldet" };
 
   const { error } = await supabase.from("projects").update(data).eq("id", id);
@@ -88,7 +90,9 @@ export async function updateProjectAction(
 
 export async function addCommentAction(projectId: string, content: string) {
   const supabase = await createClient();
-  const { data: user } = (await supabase.auth.getUser()).data;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) return { error: "Nicht angemeldet" };
   if (!content.trim()) return { error: "Kommentar darf nicht leer sein" };
 
@@ -112,7 +116,9 @@ export async function addTaskAction(
   }
 ) {
   const supabase = await createClient();
-  const { data: user } = (await supabase.auth.getUser()).data;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) return { error: "Nicht angemeldet" };
   if (!data.title.trim()) return { error: "Titel erforderlich" };
 
@@ -144,7 +150,9 @@ export async function toggleTaskAction(taskId: string, completed: boolean) {
 
 export async function deleteProjectAction(projectId: string) {
   const supabase = await createClient();
-  const { data: user } = (await supabase.auth.getUser()).data;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) return { error: "Nicht angemeldet" };
 
   const { data: profile } = await supabase
