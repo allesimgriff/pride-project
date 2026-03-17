@@ -6,6 +6,7 @@ import { ProjectStammdaten } from "@/components/projects/ProjectStammdaten";
 import { ProjectFiles } from "@/components/projects/ProjectFiles";
 import { ProjectComments } from "@/components/projects/ProjectComments";
 import { ProjectTasks } from "@/components/projects/ProjectTasks";
+import { ProjectChecklist } from "@/components/projects/ProjectChecklist";
 import { ProjectTimeline } from "@/components/projects/ProjectTimeline";
 import { ProjectHistory } from "@/components/projects/ProjectHistory";
 
@@ -74,6 +75,14 @@ export default async function ProjectDetailPage({
             projectId={id}
             comments={comments || []}
             currentUserId={(await supabase.auth.getUser()).data.user?.id}
+          />
+          <ProjectChecklist
+            projectId={id}
+            tasks={(tasks || []).map((t) => ({
+              id: t.id,
+              title: t.title,
+              completed: t.completed,
+            }))}
           />
           <ProjectTasks
             projectId={id}
