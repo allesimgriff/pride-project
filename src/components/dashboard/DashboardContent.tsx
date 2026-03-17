@@ -88,7 +88,10 @@ export function DashboardContent({
       <PageTitle titleKey="dashboard.title" subtitleKey="dashboard.subtitle" />
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <div className="card p-5">
+        <Link
+          href="/projects"
+          className="card p-5 block hover:bg-primary-50/40 transition-colors"
+        >
           <div className="flex items-center gap-3">
             <div className="rounded-lg bg-primary-100 p-2">
               <FolderKanban className="h-6 w-6 text-primary-600" />
@@ -100,7 +103,7 @@ export function DashboardContent({
               <p className="text-2xl font-semibold text-gray-900">{activeCount}</p>
             </div>
           </div>
-        </div>
+        </Link>
         <div className="card p-5">
           <div className="flex items-center gap-3">
             <div className="rounded-lg bg-amber-100 p-2">
