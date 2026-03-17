@@ -20,7 +20,6 @@ interface ProjectChecklistProps {
 export function ProjectChecklist({ projectId, tasks }: ProjectChecklistProps) {
   const router = useRouter();
   const { lang } = useApp();
-  const t = getT(lang);
   const [adding, setAdding] = useState(false);
   const [saving, setSaving] = useState(false);
   const [newTitle, setNewTitle] = useState("");
