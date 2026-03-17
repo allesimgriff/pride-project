@@ -56,8 +56,12 @@ export async function listStaffAction(): Promise<{ data: StaffEntry[]; error: st
   }
 
   const staff: StaffEntry[] = [
-    ...(profiles ?? []).map((p) => ({ type: "profile", profile: p })),
-    ...(invites ?? []).map((i) => ({ type: "invite", invite: i })),
+    ...(profiles ?? []).map(
+      (p): StaffEntry => ({ type: "profile", profile: p }),
+    ),
+    ...(invites ?? []).map(
+      (i): StaffEntry => ({ type: "invite", invite: i }),
+    ),
   ];
 
   return { data: staff, error: null };
