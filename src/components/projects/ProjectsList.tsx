@@ -59,27 +59,29 @@ function ProjectCard({
   const { lang } = useApp();
   const t = getT(lang);
   const dateLocale = lang === "de" ? de : enUS;
-  const [thumbIds, setThumbIds] = useState<string[]>([]);
+  const [thumbId, setThumbId] = useState<string | null>(project.project_image_id);
 
+  // Nur wenn kein bevorzugtes Projektbild gesetzt ist, das erste Bild als Fallback laden
   useEffect(() => {
+    if (project.project_image_id) return;
     let cancelled = false;
-    async function loadThumbs() {
+    async function loadThumb() {
       const supabase = createClient();
       const { data } = await supabase
         .from("project_files")
         .select("id")
         .eq("project_id", project.id)
         .order("created_at", { ascending: true })
-        .limit(5);
-      if (!cancelled && data) {
-        setThumbIds(data.map((f) => f.id));
+        .limit(1);
+      if (!cancelled && data && data.length > 0) {
+        setThumbId(data[0].id);
       }
     }
-    loadThumbs();
+    loadThumb();
     return () => {
       cancelled = true;
     };
-  }, [project.id]);
+  }, [project.id, project.project_image_id]);
 
   const updatedText = formatDistanceToNow(new Date(project.updated_at), {
     addSuffix: true,
@@ -90,40 +92,40 @@ function ProjectCard({
     <Link
       key={project.id}
       href={`/projects/${project.id}`}
-      className="card flex items-center gap-5 p-4 transition-colors hover:bg-gray-50/80"
+      className="card flex items-center gap-4 p-4 transition-colors hover:bg-gray-50/80"
     >
-      {/* bis zu 5 Bilder nebeneinander (1 gesetztes Projektbild + bis zu 4 weitere) */}
-      <div className="flex h-24 w-56 shrink-0 items-center gap-1 overflow-hidden">
-        {thumbIds.length === 0 ? (
-          <div className="flex h-24 w-32 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-gray-400">
-            <ImageIcon className="h-8 w-8" />
-          </div>
+      {/* Handy: großes Einzelbild; Desktop: etwas kleiner */}
+      <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-gray-200 bg-gray-50 md:h-28 md:w-28">
+        {thumbId ? (
+          <Image
+            src={`/api/files/${thumbId}/preview`}
+            alt=""
+            width={112}
+            height={112}
+            className="h-full w-full object-cover"
+            unoptimized
+          />
         ) : (
-          thumbIds.slice(0, 5).map((id) => (
-            <div
-              key={id}
-              className="relative h-24 w-24 overflow-hidden rounded-lg border border-gray-200 bg-gray-50"
-            >
-              <Image
-                src={`/api/files/${id}/preview`}
-                alt=""
-                width={96}
-                height={96}
-                className="h-24 w-24 object-cover"
-                unoptimized
-              />
-            </div>
-          ))
+          <ImageIcon className="h-8 w-8 text-gray-400" />
         )}
       </div>
 
       <div className="min-w-0 flex-1">
-        <p className="font-semibold text-gray-900">{project.product_name}</p>
-        <p className="text-sm font-mono text-gray-500">{project.dev_number}</p>
-        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-gray-600">
-          <span>{getCategoryDisplay(project.category, categoryNames)}</span>
-          <span className="text-gray-400">·</span>
-          <StatusBadge status={project.status} label={t(`status.${project.status}`)} />
+        <p className="text-sm font-semibold text-gray-900 md:text-base">
+          {project.product_name}
+        </p>
+        <p className="text-xs font-mono text-gray-500 md:text-sm">
+          {project.dev_number}
+        </p>
+        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-600 md:text-sm">
+          {/* Kategorie nur ab Tablet anzeigen */}
+          <span className="hidden md:inline">
+            {getCategoryDisplay(project.category, categoryNames)}
+          </span>
+          <StatusBadge
+            status={project.status}
+            label={t(`status.${project.status}`)}
+          />
           <span className="text-gray-400">·</span>
           <span className="text-gray-500">{updatedText}</span>
         </div>
