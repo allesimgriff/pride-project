@@ -2,10 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CheckSquare, Plus, Square, Trash2 } from "lucide-react";
+import { CheckSquare, Plus, Square } from "lucide-react";
 import { addTaskAction, toggleTaskAction, deleteTaskAction } from "@/app/actions/projects";
 import { useApp } from "@/components/providers/AppProvider";
-import { getT } from "@/lib/i18n";
 
 interface ChecklistTask {
   id: string;
