@@ -33,6 +33,10 @@ export function NewProjectForm({ categories }: NewProjectFormProps) {
   const [loadingNumber, setLoadingNumber] = useState(false);
   const [uploadingFiles, setUploadingFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [initialTasks, setInitialTasks] = useState<
+    { id: number; text: string; completed: boolean }[]
+  >([]);
+  const [nextTaskId, setNextTaskId] = useState(1);
 
   async function onCategoryChange(prefix: string) {
     setForm((f) => ({ ...f, category: prefix }));
@@ -79,7 +83,7 @@ export function NewProjectForm({ categories }: NewProjectFormProps) {
       return;
     }
 
-    // Wenn beim Anlegen schon Dateien ausgewählt wurden, jetzt hochladen
+    // Beim Anlegen ausgewählte Dateien hochladen
     const files = uploadingFiles;
     if (files.length > 0) {
       try {
@@ -117,8 +121,51 @@ export function NewProjectForm({ categories }: NewProjectFormProps) {
       }
     }
 
+    // Anfangsaufgaben mit Kästchen als einfache Tasks speichern
+    if (initialTasks.length > 0) {
+      try {
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (user) {
+          const tasksToInsert = initialTasks
+            .filter((task) => task.text.trim().length > 0)
+            .map((task) => ({
+              project_id: result.id,
+              title: task.text.trim(),
+              description: null,
+              responsible_id: user.id,
+              priority: "mittel" as const,
+              due_date: null,
+              created_by: user.id,
+              completed: task.completed,
+              completed_at: task.completed ? new Date().toISOString() : null,
+            }));
+
+          if (tasksToInsert.length > 0) {
+            const { error: tasksError } = await supabase
+              .from("project_tasks")
+              .insert(tasksToInsert);
+            if (tasksError) {
+              console.error(tasksError);
+              alert(
+                lang === "de"
+                  ? "Die Aufgaben beim Anlegen konnten nicht vollständig gespeichert werden."
+                  : "Some initial tasks could not be saved."
+              );
+            }
+          }
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
     setLoading(false);
     setUploadingFiles([]);
+    setInitialTasks([]);
     if (fileInputRef.current) fileInputRef.current.value = "";
 
     router.push(`/projects/${result.id}`);
@@ -309,6 +356,83 @@ export function NewProjectForm({ categories }: NewProjectFormProps) {
             rows={2}
             className="input-base mt-1"
           />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            {lang === "de" ? "Aufgaben beim Anlegen" : "Initial tasks for this project"}
+          </label>
+          <p className="mt-1 text-xs text-gray-500">
+            {lang === "de"
+              ? "Füge einfache Aufgaben mit Kästchen hinzu. Nur du kannst sie später abhaken; das Entfernen eines Hakens erfordert eine Bestätigung."
+              : "Add simple checklist tasks. Only you can toggle them later; removing a checkmark requires confirmation."}
+          </p>
+          <div className="mt-2 space-y-2">
+            {initialTasks.map((task) => (
+              <div
+                key={task.id}
+                className="flex items-center gap-2 rounded border border-gray-200 bg-gray-50 px-3 py-2"
+              >
+                <input
+                  type="checkbox"
+                  checked={task.completed}
+                  onChange={() => {
+                    if (task.completed) {
+                      const confirmText =
+                        lang === "de"
+                          ? "Möchten Sie dieses Kästchen wirklich wieder als offen markieren?"
+                          : "Do you really want to uncheck this item?";
+                      if (!confirm(confirmText)) return;
+                    }
+                    setInitialTasks((items) =>
+                      items.map((it) =>
+                        it.id === task.id ? { ...it, completed: !it.completed } : it
+                      )
+                    );
+                  }}
+                  className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                />
+                <input
+                  type="text"
+                  value={task.text}
+                  onChange={(e) =>
+                    setInitialTasks((items) =>
+                      items.map((it) =>
+                        it.id === task.id ? { ...it, text: e.target.value } : it
+                      )
+                    )
+                  }
+                  className="input-base flex-1 text-sm"
+                  placeholder={
+                    lang === "de"
+                      ? "Aufgabe oder Entwicklungsschritt"
+                      : "Task or development step"
+                  }
+                />
+                <button
+                  type="button"
+                  onClick={() =>
+                    setInitialTasks((items) => items.filter((it) => it.id !== task.id))
+                  }
+                  className="text-xs text-gray-400 hover:text-red-600"
+                >
+                  {lang === "de" ? "Entfernen" : "Remove"}
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => {
+                setInitialTasks((items) => [
+                  ...items,
+                  { id: nextTaskId, text: "", completed: false },
+                ]);
+                setNextTaskId((id) => id + 1);
+              }}
+              className="inline-flex items-center rounded-md border border-dashed border-gray-300 px-3 py-2 text-sm text-gray-600 hover:border-primary-300 hover:text-primary-700"
+            >
+              {lang === "de" ? "Zelle hinzufügen" : "Add cell"}
+            </button>
+          </div>
         </div>
         <div className="flex gap-3 pt-4">
           <Link href="/projects" className="btn-secondary flex items-center gap-2">

@@ -192,7 +192,14 @@ export function ProjectTasks({
           >
             <button
               type="button"
-              onClick={() => handleToggle(task.id, false)}
+              onClick={() => {
+                const confirmText =
+                  lang === "de"
+                    ? "Möchten Sie diese Aufgabe wirklich wieder als offen markieren?"
+                    : "Do you really want to mark this task as open again?";
+                if (!confirm(confirmText)) return;
+                void handleToggle(task.id, false);
+              }}
               className="mt-0.5 text-primary-600"
             >
               <CheckSquare className="h-5 w-5" />
