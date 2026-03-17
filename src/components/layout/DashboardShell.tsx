@@ -21,7 +21,7 @@ export function DashboardShell({ children, isAdmin, user, profile }: DashboardSh
         <div className="hidden md:block">
           <Sidebar isAdmin={isAdmin} />
         </div>
-        <MainBlock user={user} profile={profile}>
+        <MainBlock user={user} profile={profile} isAdmin={isAdmin}>
           {children}
         </MainBlock>
       </div>
@@ -33,10 +33,12 @@ function MainBlock({
   children,
   user,
   profile,
+  isAdmin,
 }: {
   children: React.ReactNode;
   user: User;
   profile: Profile | null;
+  isAdmin: boolean;
 }) {
   const { sidebarCollapsed } = useApp();
   return (
@@ -46,7 +48,7 @@ function MainBlock({
         sidebarCollapsed ? "md:pl-16" : "md:pl-64"
       }`}
     >
-      <Header user={user} profile={profile} />
+      <Header user={user} profile={profile} isAdmin={isAdmin} />
       <main className="flex-1 p-4 md:p-6">{children}</main>
     </div>
   );

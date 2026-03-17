@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useApp } from "@/components/providers/AppProvider";
 import { getT } from "@/lib/i18n";
 
-const nav = (isAdmin: boolean) => {
+export const nav = (isAdmin: boolean) => {
   const items: { href: string; labelKey: string; icon: React.ComponentType<{ className?: string }> }[] = [
     { href: "/dashboard", labelKey: "nav.dashboard", icon: LayoutDashboard },
     { href: "/projects", labelKey: "nav.projects", icon: FolderKanban },
