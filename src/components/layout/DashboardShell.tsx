@@ -17,7 +17,10 @@ export function DashboardShell({ children, isAdmin, user, profile }: DashboardSh
   return (
     <AppProvider>
       <div className="flex min-h-screen bg-surface-100">
-        <Sidebar isAdmin={isAdmin} />
+        {/* Desktop: feste Sidebar links */}
+        <div className="hidden md:block">
+          <Sidebar isAdmin={isAdmin} />
+        </div>
         <MainBlock user={user} profile={profile}>
           {children}
         </MainBlock>
@@ -39,11 +42,12 @@ function MainBlock({
   return (
     <div
       className={`flex flex-1 flex-col min-w-0 transition-[margin] duration-200 ${
-        sidebarCollapsed ? "pl-16" : "pl-64"
+        // Desktop: Platz für Sidebar, Mobile: volle Breite
+        sidebarCollapsed ? "md:pl-16" : "md:pl-64"
       }`}
     >
       <Header user={user} profile={profile} />
-      <main className="flex-1 p-6">{children}</main>
+      <main className="flex-1 p-4 md:p-6">{children}</main>
     </div>
   );
 }

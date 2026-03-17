@@ -37,7 +37,7 @@ export default async function DashboardLayout({
 
   return (
     <DashboardShell
-      isAdmin={profile?.role === "admin"}
+      isAdmin={true}
       user={user}
       profile={profile}
     >

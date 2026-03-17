@@ -67,6 +67,17 @@ export interface ProjectComment {
   profiles?: Profile | null;
 }
 
+export interface Invite {
+  id: string;
+  email: string;
+  full_name: string | null;
+  role: UserRole;
+  token: string;
+  accepted_at: string | null;
+  created_by: string | null;
+  created_at: string;
+}
+
 export interface ProjectFile {
   id: string;
   project_id: string;
