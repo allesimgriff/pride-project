@@ -1,5 +1,8 @@
 "use client";
 
+// Verhindert, dass Next.js diese Seite beim Build vorab rendert
+export const dynamic = "force-dynamic";
+
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
