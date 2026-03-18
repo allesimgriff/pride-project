@@ -89,11 +89,15 @@ export default function RegisterClient() {
     const supabase = createClient();
 
     const signupEmail = invite ? invite.email : email;
+    const emailRedirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(
+      "/dashboard",
+    )}`;
 
     const { error: err } = await supabase.auth.signUp({
       email: signupEmail,
       password,
       options: {
+        emailRedirectTo,
         data: {
           full_name: fullName || signupEmail,
           // Wenn Einladung vorhanden ist, Rolle aus Invite übernehmen,
