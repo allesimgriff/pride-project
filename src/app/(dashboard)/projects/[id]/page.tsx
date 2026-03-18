@@ -9,6 +9,7 @@ import { ProjectTasks } from "@/components/projects/ProjectTasks";
 import { ProjectChecklist } from "@/components/projects/ProjectChecklist";
 import { ProjectTimeline } from "@/components/projects/ProjectTimeline";
 import { ProjectHistory } from "@/components/projects/ProjectHistory";
+import { PhotoUploader } from "@/components/PhotoUploader";
 
 export default async function ProjectDetailPage({
   params,
@@ -69,6 +70,16 @@ export default async function ProjectDetailPage({
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
+          <div className="card p-6">
+            <h2 className="mb-3 text-lg font-semibold text-gray-900">
+              Fotos zum Projekt
+            </h2>
+            <p className="mb-3 text-sm text-gray-500">
+              Hier kannst du direkt vom Handy (Kamera/Galerie) oder vom Rechner Fotos hochladen.
+            </p>
+            <PhotoUploader />
+          </div>
+
           <ProjectFiles projectId={id} files={files || []} projectImageId={project.project_image_id ?? null} />
           <ProjectStammdaten project={project} categories={categories || []} />
           <ProjectComments
