@@ -1,8 +1,7 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
-import type { UploadPhotoResult } from "@/app/actions/photos";
-import { uploadPhoto } from "@/app/actions/photos";
+import { useRef, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 
 interface PhotoUploaderProps {
   onUploaded?: (imageUrl: string) => void;
@@ -10,48 +9,93 @@ interface PhotoUploaderProps {
 
 export function PhotoUploader({ onUploaded }: PhotoUploaderProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const [isPending, startTransition] = useTransition();
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
   function handleClickButton() {
-    if (isPending) return;
+    if (uploading) return;
     inputRef.current?.click();
   }
 
-  function handleChangeFile(event: React.ChangeEvent<HTMLInputElement>) {
+  async function handleChangeFile(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const formData = new FormData();
-    formData.append("file", file);
-
     setError(null);
     setSuccess(null);
+    setUploading(true);
 
-    startTransition(async () => {
-      let result: UploadPhotoResult;
-      try {
-        result = await uploadPhoto(formData);
-      } catch {
-        setError("Unbekannter Fehler beim Upload.");
-        event.target.value = "";
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        setError("Nicht angemeldet.");
         return;
       }
 
-      if (result.error) {
-        setError(result.error);
-        setSuccess(null);
-      } else if (result.imageUrl) {
-        setSuccess("Foto erfolgreich hochgeladen.");
-        setError(null);
-        if (onUploaded) {
-          onUploaded(result.imageUrl);
-        }
+      if (!file.type.startsWith("image/")) {
+        setError("Bitte nur Bilddateien hochladen.");
+        return;
       }
 
+      const MAX_SIZE = 10 * 1024 * 1024;
+      if (file.size > MAX_SIZE) {
+        setError("Die Datei ist zu groß (max. 10 MB).");
+        return;
+      }
+
+      const originalName = file.name || "photo";
+      const extMatch = originalName.match(/\.[a-zA-Z0-9]+$/);
+      const extension = extMatch ? extMatch[0].toLowerCase() : ".jpg";
+      const safeExtension =
+        [".jpg", ".jpeg", ".png", ".gif", ".webp", ".heic", ".heif"].includes(extension)
+          ? extension
+          : ".jpg";
+
+      const path = `${user.id}/${crypto.randomUUID()}${safeExtension}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("project-photos")
+        .upload(path, file, {
+          cacheControl: "3600",
+          upsert: false,
+          contentType: file.type,
+        });
+
+      if (uploadError) {
+        setError(`Fehler beim Hochladen: ${uploadError.message}`);
+        return;
+      }
+
+      const imageUrl = `project-photos/${path}`;
+
+      const { error: insertError } = await supabase.from("photos").insert({
+        user_id: user.id,
+        image_url: imageUrl,
+      });
+
+      if (insertError) {
+        setError(`Fehler beim Speichern des Fotos: ${insertError.message}`);
+        return;
+      }
+
+      setSuccess("Foto erfolgreich hochgeladen.");
+      if (onUploaded) {
+        onUploaded(imageUrl);
+      }
+    } catch (e) {
+      const message =
+        e instanceof Error ? e.message : typeof e === "string" ? e : "Unbekannter Fehler beim Upload.";
+      setError(message);
+    } finally {
+      setUploading(false);
       event.target.value = "";
-    });
+    }
   }
 
   return (
@@ -68,10 +112,10 @@ export function PhotoUploader({ onUploaded }: PhotoUploaderProps) {
       <button
         type="button"
         onClick={handleClickButton}
-        disabled={isPending}
+        disabled={uploading}
         className="inline-flex items-center justify-center rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {isPending ? "Lade Foto hoch…" : "Foto aufnehmen/hinzufügen"}
+        {uploading ? "Lade Foto hoch…" : "Foto aufnehmen/hinzufügen"}
       </button>
 
       {error && (
@@ -88,4 +132,3 @@ export function PhotoUploader({ onUploaded }: PhotoUploaderProps) {
     </div>
   );
 }
-
