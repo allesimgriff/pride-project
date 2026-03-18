@@ -17,11 +17,17 @@ function LoginPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") ?? "/dashboard";
+  const prefillEmail = searchParams.get("email") ?? "";
 
   useEffect(() => {
     const stored = localStorage.getItem(LANG_KEY);
     if (stored === "en" || stored === "de") setLang(stored);
   }, []);
+
+  useEffect(() => {
+    if (prefillEmail && !email) setEmail(prefillEmail);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefillEmail]);
 
   const t = getT(lang);
 

@@ -89,8 +89,9 @@ export default function RegisterClient() {
     const supabase = createClient();
 
     const signupEmail = invite ? invite.email : email;
+    const nextPath = `/login?email=${encodeURIComponent(signupEmail)}`;
     const emailRedirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(
-      "/dashboard",
+      nextPath,
     )}`;
 
     const { error: err } = await supabase.auth.signUp({
