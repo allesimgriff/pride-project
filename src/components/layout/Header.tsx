@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import type { Profile } from "@/types/database";
 import { useApp } from "@/components/providers/AppProvider";
 import { getT } from "@/lib/i18n";
 import { nav } from "@/components/layout/Sidebar";
+import { LogOut } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 interface HeaderProps {
   user: User;
@@ -28,6 +30,7 @@ function getInitials(profile: Profile | null, user: User) {
 
 export function Header({ user, profile, isAdmin }: HeaderProps) {
   const { lang, setLang } = useApp();
+  const router = useRouter();
   const t = getT(lang);
   const displayName = profile?.full_name || user.email?.split("@")[0] || t("header.user");
   const roleLabel = profile ? t(`roles.${profile.role}`) : "—";
@@ -91,6 +94,19 @@ export function Header({ user, profile, isAdmin }: HeaderProps) {
               <p className="text-xs text-gray-500">{roleLabel}</p>
             </div>
           </Link>
+          <button
+            type="button"
+            title={t("nav.signOut")}
+            onClick={async () => {
+              const supabase = createClient();
+              await supabase.auth.signOut();
+              router.refresh();
+              window.location.href = "/login";
+            }}
+            className="inline-flex items-center justify-center rounded-full p-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+          >
+            <LogOut className="h-5 w-5" />
+          </button>
         </div>
       </div>
 
