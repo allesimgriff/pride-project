@@ -29,6 +29,30 @@ type StaffRow =
       created_at: string;
     };
 
+function buildInviteLink(token: string) {
+  return `${window.location.origin}/register?token=${encodeURIComponent(token)}`;
+}
+
+function openInviteMailClient(params: { to: string; link: string; fullName: string | null }) {
+  const subject = "Einladung zu PRIDE";
+  const greeting = params.fullName?.trim() ? `Hallo ${params.fullName.trim()},` : "Hallo,";
+  const body = [
+    greeting,
+    "",
+    "ich lade dich zu PRIDE ein.",
+    "Bitte nutze diesen Link zur Registrierung:",
+    "",
+    params.link,
+    "",
+    "Viele Grüße",
+  ].join("\n");
+
+  const mailto = `mailto:${encodeURIComponent(params.to)}?subject=${encodeURIComponent(
+    subject,
+  )}&body=${encodeURIComponent(body)}`;
+  window.location.href = mailto;
+}
+
 function mapEntriesToRows(entries: StaffEntry[]): StaffRow[] {
   const rows: StaffRow[] = [];
 
@@ -73,6 +97,7 @@ export function StaffManager() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteName, setInviteName] = useState("");
   const [creating, setCreating] = useState(false);
+  const [lastInviteLink, setLastInviteLink] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -117,12 +142,17 @@ export function StaffManager() {
       return;
     }
 
-    const link = `${window.location.origin}/register?token=${encodeURIComponent(res.token)}`;
-    alert(
-      t("staff.inviteCreated") +
-        "\n\n" +
-        link
-    );
+    const link = buildInviteLink(res.token);
+    setLastInviteLink(link);
+
+    // Komfort: direkt E‑Mail‑Programm öffnen
+    openInviteMailClient({
+      to: inviteEmail.trim(),
+      link,
+      fullName: inviteName.trim() || null,
+    });
+
+    alert(t("staff.inviteCreated"));
     setInviteEmail("");
     setInviteName("");
     router.refresh();
@@ -175,6 +205,35 @@ export function StaffManager() {
           </button>
         </div>
       </div>
+
+      {lastInviteLink ? (
+        <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
+          <div className="font-medium text-gray-900">Einladungs-Link</div>
+          <div className="mt-1 break-all">{lastInviteLink}</div>
+          <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() => navigator.clipboard.writeText(lastInviteLink)}
+            >
+              Link kopieren
+            </button>
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() =>
+                openInviteMailClient({
+                  to: "",
+                  link: lastInviteLink,
+                  fullName: null,
+                })
+              }
+            >
+              E‑Mail‑Programm öffnen
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       {loading ? (
         <p className="text-sm text-gray-500">{t("staff.loading")}</p>

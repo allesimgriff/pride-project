@@ -11,6 +11,10 @@ if (!smtpHost || !smtpUser || !smtpPass || !smtpFrom) {
   console.warn("[mail] SMTP environment variables are not fully configured.");
 }
 
+const resendApiKey = process.env.RESEND_API_KEY;
+const emailProvider = (process.env.EMAIL_PROVIDER ?? "").toLowerCase(); // "resend" | "smtp" | ""
+const emailFrom = process.env.EMAIL_FROM ?? smtpFrom;
+
 const appUrl =
   process.env.NEXT_PUBLIC_APP_URL ||
   process.env.NEXT_PUBLIC_SITE_URL ||
@@ -21,22 +25,6 @@ export async function sendInviteEmail(params: {
   token: string;
   fullName: string | null;
 }) {
-  if (!smtpHost || !smtpUser || !smtpPass || !smtpFrom) {
-    // eslint-disable-next-line no-console
-    console.error("[mail] Missing SMTP configuration, cannot send invite email.");
-    return;
-  }
-
-  const transporter = nodemailer.createTransport({
-    host: smtpHost,
-    port: smtpPort,
-    secure: smtpPort === 465,
-    auth: {
-      user: smtpUser,
-      pass: smtpPass,
-    },
-  });
-
   const { to, token, fullName } = params;
   const registerUrl = `${appUrl.replace(/\/$/, "")}/register?token=${encodeURIComponent(
     token,
@@ -63,6 +51,60 @@ export async function sendInviteEmail(params: {
     </p>
     <p>Wenn Sie diese E-Mail nicht erwarten, können Sie sie ignorieren.</p>
   `;
+
+  // Prefer a provider that works reliably in serverless environments.
+  const useResend =
+    emailProvider === "resend" || (!!resendApiKey && emailProvider !== "smtp");
+
+  if (useResend) {
+    if (!resendApiKey) {
+      throw new Error("[mail] RESEND_API_KEY fehlt (EMAIL_PROVIDER=resend).");
+    }
+    if (!emailFrom) {
+      throw new Error("[mail] EMAIL_FROM fehlt für Resend.");
+    }
+
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${resendApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: emailFrom,
+        to: [to],
+        subject,
+        text,
+        html,
+      }),
+    });
+
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      throw new Error(
+        `[mail] Resend send failed (${res.status}): ${body || res.statusText}`,
+      );
+    }
+
+    return;
+  }
+
+  // Fallback to SMTP (may be blocked by hosting).
+  if (!smtpHost || !smtpUser || !smtpPass || !smtpFrom) {
+    throw new Error(
+      "[mail] SMTP-Konfiguration fehlt (SMTP_HOST/SMTP_USER/SMTP_PASS/SMTP_FROM).",
+    );
+  }
+
+  const transporter = nodemailer.createTransport({
+    host: smtpHost,
+    port: smtpPort,
+    secure: smtpPort === 465,
+    auth: {
+      user: smtpUser,
+      pass: smtpPass,
+    },
+  });
 
   await transporter.sendMail({
     from: smtpFrom,

@@ -101,7 +101,7 @@ export async function createInviteAction(
     return { error: error?.message ?? "Einladung konnte nicht angelegt werden.", token: undefined };
   }
 
-  // Einladungs-E-Mail verschicken (Fehler nur loggen, nicht an UI zurückgeben)
+  // Einladungs-E-Mail verschicken (bei Fehler -> UI bekommt Fehlermeldung)
   try {
     await sendInviteEmail({
       to: normalizedEmail,
@@ -109,8 +109,8 @@ export async function createInviteAction(
       fullName: cleanFullName,
     });
   } catch (e) {
-    // eslint-disable-next-line no-console
-    console.error("[invites] Fehler beim Senden der Einladungs-Mail:", e);
+    const msg = e instanceof Error ? e.message : "Unbekannter Fehler beim Mailversand.";
+    return { token: data.token, error: `Einladung angelegt, aber E-Mail konnte nicht gesendet werden: ${msg}` };
   }
 
   return { token: data.token, error: null };
