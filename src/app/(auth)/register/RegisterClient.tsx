@@ -7,6 +7,7 @@ import { getT } from "@/lib/i18n";
 import type { Lang } from "@/lib/i18n";
 
 const LANG_KEY = "pride-lang";
+const LAST_EMAIL_KEY = "pride-last-email";
 
 type InviteInfo = {
   email: string;
@@ -113,6 +114,10 @@ export default function RegisterClient() {
     if (err) {
       setError(err.message);
       return;
+    }
+
+    if (typeof localStorage !== "undefined") {
+      localStorage.setItem(LAST_EMAIL_KEY, signupEmail);
     }
 
     setSuccess(

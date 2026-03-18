@@ -7,6 +7,7 @@ import { getT } from "@/lib/i18n";
 import type { Lang } from "@/lib/i18n";
 
 const LANG_KEY = "pride-lang";
+const LAST_EMAIL_KEY = "pride-last-email";
 
 function LoginPageInner() {
   const [email, setEmail] = useState("");
@@ -25,7 +26,14 @@ function LoginPageInner() {
   }, []);
 
   useEffect(() => {
-    if (prefillEmail && !email) setEmail(prefillEmail);
+    if (prefillEmail && !email) {
+      setEmail(prefillEmail);
+      return;
+    }
+    if (!email && typeof localStorage !== "undefined") {
+      const last = localStorage.getItem(LAST_EMAIL_KEY) ?? "";
+      if (last) setEmail(last);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prefillEmail]);
 
