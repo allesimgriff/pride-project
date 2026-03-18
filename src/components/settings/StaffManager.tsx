@@ -137,7 +137,7 @@ export function StaffManager() {
     setCreating(true);
     const res = await createInviteAction(inviteEmail.trim(), inviteName.trim() || null);
     setCreating(false);
-    if (res.error || !res.token) {
+    if (!res.token) {
       alert(res.error ?? "Einladung konnte nicht erstellt werden.");
       return;
     }
@@ -152,7 +152,11 @@ export function StaffManager() {
       fullName: inviteName.trim() || null,
     });
 
-    alert(t("staff.inviteCreated"));
+    if (res.error) {
+      alert(res.error);
+    } else {
+      alert(t("staff.inviteCreated"));
+    }
     setInviteEmail("");
     setInviteName("");
     router.refresh();
