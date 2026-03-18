@@ -81,6 +81,10 @@ export async function createInviteAction(
   if (!normalizedEmail) {
     return { error: "E-Mail ist erforderlich.", token: undefined };
   }
+  const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail);
+  if (!isValidEmail) {
+    return { error: "Ungültige E-Mail-Adresse (bitte mit @).", token: undefined };
+  }
 
   const cleanFullName = fullName && fullName.trim() ? fullName.trim() : null;
 
