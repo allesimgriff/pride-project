@@ -7,9 +7,10 @@ interface PhotoUploaderProps {
   onUploaded?: (imageUrl: string) => void;
 }
 
-const MAX_DIMENSION = 1600; // reduziert deutlich die Upload-Größe
-const OUTPUT_QUALITY = 0.78; // JPEG Qualität
-const COMPRESS_MIN_SIZE = 1.5 * 1024 * 1024; // erst komprimieren ab ca. 1.5MB
+// Ziel: unter ~3s für typische Handyfotos -> aggressivereres Downscaling + weniger Qualität
+const MAX_DIMENSION = 900;
+const OUTPUT_QUALITY = 0.65;
+const COMPRESS_MIN_SIZE = 1.2 * 1024 * 1024; // erst komprimieren ab ca. 1.2MB
 
 function isCompressSupportedMime(mime: string) {
   return ["image/jpeg", "image/png", "image/webp", "image/gif"].includes(mime);
@@ -29,19 +30,33 @@ async function compressImageToJpeg(file: File): Promise<File> {
   const originalMime = file.type || "image/jpeg";
   if (!isCompressSupportedMime(originalMime)) return file;
 
-  const objectUrl = URL.createObjectURL(file);
+  let bitmap: ImageBitmap | null = null;
+  let imgEl: HTMLImageElement | null = null;
+
   try {
-    const img = new Image();
-    img.decoding = "async";
-    img.src = objectUrl;
+    let width: number;
+    let height: number;
 
-    await new Promise<void>((resolve, reject) => {
-      img.onload = () => resolve();
-      img.onerror = () => reject(new Error("Bild konnte nicht geladen werden."));
-    });
-
-    const width = img.naturalWidth || img.width;
-    const height = img.naturalHeight || img.height;
+    if (typeof createImageBitmap === "function") {
+      bitmap = await createImageBitmap(file);
+      width = bitmap.width;
+      height = bitmap.height;
+    } else {
+      const objectUrl = URL.createObjectURL(file);
+      try {
+        imgEl = new Image();
+        imgEl.decoding = "async";
+        imgEl.src = objectUrl;
+        await new Promise<void>((resolve, reject) => {
+          imgEl!.onload = () => resolve();
+          imgEl!.onerror = () => reject(new Error("Bild konnte nicht geladen werden."));
+        });
+        width = imgEl.naturalWidth || imgEl.width;
+        height = imgEl.naturalHeight || imgEl.height;
+      } finally {
+        URL.revokeObjectURL(objectUrl);
+      }
+    }
 
     if (!width || !height) return file;
 
@@ -57,14 +72,19 @@ async function compressImageToJpeg(file: File): Promise<File> {
     const ctx = canvas.getContext("2d");
     if (!ctx) return file;
 
-    ctx.drawImage(img, 0, 0, targetW, targetH);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+
+    if (bitmap) {
+      ctx.drawImage(bitmap, 0, 0, targetW, targetH);
+    } else if (imgEl) {
+      ctx.drawImage(imgEl, 0, 0, targetW, targetH);
+    } else {
+      return file;
+    }
 
     const blob = await new Promise<Blob | null>((resolve) => {
-      canvas.toBlob(
-        (b) => resolve(b),
-        "image/jpeg",
-        OUTPUT_QUALITY,
-      );
+      canvas.toBlob((b) => resolve(b), "image/jpeg", OUTPUT_QUALITY);
     });
 
     if (!blob) return file;
@@ -72,7 +92,7 @@ async function compressImageToJpeg(file: File): Promise<File> {
     const baseName = (file.name || "photo").replace(/\.[^/.]+$/, "");
     return new File([blob], `${baseName}.jpg`, { type: "image/jpeg" });
   } finally {
-    URL.revokeObjectURL(objectUrl);
+    if (bitmap) bitmap.close();
   }
 }
 
@@ -116,11 +136,14 @@ export function PhotoUploader({ onUploaded }: PhotoUploaderProps) {
       const MAX_SIZE = 10 * 1024 * 1024;
 
       let uploadFile: File = file;
+      const compressStart = performance.now();
       setCompressing(true);
       try {
         uploadFile = await compressImageToJpeg(file);
       } finally {
         setCompressing(false);
+        // eslint-disable-next-line no-console
+        console.log("photo upload compress ms:", Math.round(performance.now() - compressStart));
       }
 
       if (uploadFile.size > MAX_SIZE) {
