@@ -98,6 +98,8 @@ export function StaffManager() {
   const [inviteName, setInviteName] = useState("");
   const [creating, setCreating] = useState(false);
   const [lastInviteLink, setLastInviteLink] = useState<string | null>(null);
+  const [lastInviteTo, setLastInviteTo] = useState<string | null>(null);
+  const [lastInviteName, setLastInviteName] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -144,13 +146,8 @@ export function StaffManager() {
 
     const link = buildInviteLink(res.token);
     setLastInviteLink(link);
-
-    // Komfort: direkt E‑Mail‑Programm öffnen
-    openInviteMailClient({
-      to: inviteEmail.trim(),
-      link,
-      fullName: inviteName.trim() || null,
-    });
+    setLastInviteTo(inviteEmail.trim());
+    setLastInviteName(inviteName.trim() || null);
 
     if (res.error) {
       alert(res.error);
@@ -227,11 +224,12 @@ export function StaffManager() {
               className="btn-secondary"
               onClick={() =>
                 openInviteMailClient({
-                  to: "",
+                  to: lastInviteTo ?? "",
                   link: lastInviteLink,
-                  fullName: null,
+                  fullName: lastInviteName ?? null,
                 })
               }
+              disabled={!lastInviteTo}
             >
               E‑Mail‑Programm öffnen
             </button>
