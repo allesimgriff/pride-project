@@ -7,9 +7,79 @@ interface PhotoUploaderProps {
   onUploaded?: (imageUrl: string) => void;
 }
 
+const MAX_DIMENSION = 1600; // reduziert deutlich die Upload-Größe
+const OUTPUT_QUALITY = 0.78; // JPEG Qualität
+const COMPRESS_MIN_SIZE = 1.5 * 1024 * 1024; // erst komprimieren ab ca. 1.5MB
+
+function isCompressSupportedMime(mime: string) {
+  return ["image/jpeg", "image/png", "image/webp", "image/gif"].includes(mime);
+}
+
+function extFromMime(mime: string) {
+  if (mime === "image/png") return ".png";
+  if (mime === "image/webp") return ".webp";
+  if (mime === "image/gif") return ".gif";
+  return ".jpg";
+}
+
+async function compressImageToJpeg(file: File): Promise<File> {
+  // Keine Kompression wenn schon klein genug
+  if (file.size <= COMPRESS_MIN_SIZE) return file;
+
+  const originalMime = file.type || "image/jpeg";
+  if (!isCompressSupportedMime(originalMime)) return file;
+
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    const img = new Image();
+    img.decoding = "async";
+    img.src = objectUrl;
+
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject(new Error("Bild konnte nicht geladen werden."));
+    });
+
+    const width = img.naturalWidth || img.width;
+    const height = img.naturalHeight || img.height;
+
+    if (!width || !height) return file;
+
+    const maxSide = Math.max(width, height);
+    const scale = maxSide > MAX_DIMENSION ? MAX_DIMENSION / maxSide : 1;
+    const targetW = Math.max(1, Math.round(width * scale));
+    const targetH = Math.max(1, Math.round(height * scale));
+
+    const canvas = document.createElement("canvas");
+    canvas.width = targetW;
+    canvas.height = targetH;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return file;
+
+    ctx.drawImage(img, 0, 0, targetW, targetH);
+
+    const blob = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob(
+        (b) => resolve(b),
+        "image/jpeg",
+        OUTPUT_QUALITY,
+      );
+    });
+
+    if (!blob) return file;
+
+    const baseName = (file.name || "photo").replace(/\.[^/.]+$/, "");
+    return new File([blob], `${baseName}.jpg`, { type: "image/jpeg" });
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
 export function PhotoUploader({ onUploaded }: PhotoUploaderProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [compressing, setCompressing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -44,26 +114,29 @@ export function PhotoUploader({ onUploaded }: PhotoUploaderProps) {
       }
 
       const MAX_SIZE = 10 * 1024 * 1024;
-      if (file.size > MAX_SIZE) {
+
+      let uploadFile: File = file;
+      setCompressing(true);
+      try {
+        uploadFile = await compressImageToJpeg(file);
+      } finally {
+        setCompressing(false);
+      }
+
+      if (uploadFile.size > MAX_SIZE) {
         setError("Die Datei ist zu groß (max. 10 MB).");
         return;
       }
 
-      const originalName = file.name || "photo";
-      const extMatch = originalName.match(/\.[a-zA-Z0-9]+$/);
-      const extension = extMatch ? extMatch[0].toLowerCase() : ".jpg";
-      const safeExtension =
-        [".jpg", ".jpeg", ".png", ".gif", ".webp", ".heic", ".heif"].includes(extension)
-          ? extension
-          : ".jpg";
-
+      const mimeForUpload = uploadFile.type || "image/jpeg";
+      const safeExtension = extFromMime(mimeForUpload);
       const path = `${user.id}/${crypto.randomUUID()}${safeExtension}`;
 
-      const uploadContentType = file.type || "image/jpeg";
+      const uploadContentType = mimeForUpload;
 
       const { error: uploadError } = await supabase.storage
         .from("project-photos")
-        .upload(path, file, {
+        .upload(path, uploadFile, {
           cacheControl: "3600",
           upsert: false,
           contentType: uploadContentType,
@@ -132,10 +205,14 @@ export function PhotoUploader({ onUploaded }: PhotoUploaderProps) {
       <button
         type="button"
         onClick={handleClickButton}
-        disabled={uploading}
+        disabled={uploading || compressing}
         className="inline-flex items-center justify-center rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {uploading ? "Lade Foto hoch…" : "Foto aufnehmen/hinzufügen"}
+        {uploading
+          ? "Lade Foto hoch..."
+          : compressing
+            ? "Komprimiere Bild..."
+            : "Foto aufnehmen/hinzufügen"}
       </button>
 
       {error && (
