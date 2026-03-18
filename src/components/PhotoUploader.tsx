@@ -7,10 +7,10 @@ interface PhotoUploaderProps {
   onUploaded?: (imageUrl: string) => void;
 }
 
-// Ziel: unter ~3s für typische Handyfotos -> aggressivereres Downscaling + weniger Qualität
-const MAX_DIMENSION = 900;
-const OUTPUT_QUALITY = 0.65;
-const COMPRESS_MIN_SIZE = 1.2 * 1024 * 1024; // erst komprimieren ab ca. 1.2MB
+// Ziel: unter ~3s -> sehr aggressives Downscaling + niedrigere Qualität
+const MAX_DIMENSION = 430;
+const OUTPUT_QUALITY = 0.5;
+const COMPRESS_MIN_SIZE = 0.4 * 1024 * 1024; // erst komprimieren ab ca. 0.4MB
 
 function isCompressSupportedMime(mime: string) {
   return ["image/jpeg", "image/png", "image/webp", "image/gif"].includes(mime);
@@ -117,6 +117,7 @@ export function PhotoUploader({ onUploaded }: PhotoUploaderProps) {
     setUploading(true);
 
     try {
+      const totalStart = performance.now();
       const supabase = createClient();
       const {
         data: { user },
@@ -142,9 +143,8 @@ export function PhotoUploader({ onUploaded }: PhotoUploaderProps) {
         uploadFile = await compressImageToJpeg(file);
       } finally {
         setCompressing(false);
-        // eslint-disable-next-line no-console
-        console.log("photo upload compress ms:", Math.round(performance.now() - compressStart));
       }
+      const compressMs = Math.round(performance.now() - compressStart);
 
       if (uploadFile.size > MAX_SIZE) {
         setError("Die Datei ist zu groß (max. 10 MB).");
@@ -157,6 +157,7 @@ export function PhotoUploader({ onUploaded }: PhotoUploaderProps) {
 
       const uploadContentType = mimeForUpload;
 
+      const uploadStart = performance.now();
       const { error: uploadError } = await supabase.storage
         .from("project-photos")
         .upload(path, uploadFile, {
@@ -164,6 +165,7 @@ export function PhotoUploader({ onUploaded }: PhotoUploaderProps) {
           upsert: false,
           contentType: uploadContentType,
         });
+      const uploadMs = Math.round(performance.now() - uploadStart);
 
       if (uploadError) {
         const err = uploadError as {
@@ -200,7 +202,10 @@ export function PhotoUploader({ onUploaded }: PhotoUploaderProps) {
         return;
       }
 
-      setSuccess("Foto erfolgreich hochgeladen.");
+      const totalMs = Math.round(performance.now() - totalStart);
+      setSuccess(
+        `Foto hochgeladen. Kompr ${compressMs}ms, Upload ${uploadMs}ms, total ${totalMs}ms.`
+      );
       if (onUploaded) {
         onUploaded(imageUrl);
       }
