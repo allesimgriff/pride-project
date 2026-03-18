@@ -31,35 +31,25 @@ export async function uploadPhoto(formData: FormData): Promise<UploadPhotoResult
     return { error: "Nicht angemeldet." };
   }
 
-  const file = formData.get("file") as unknown;
+  const file = formData.get("file") as Blob | null;
   if (!file) {
     return { error: "Keine Datei übergeben." };
   }
 
-  const anyFile = file as {
-    size: number;
-    type: string;
-    name?: string;
-    arrayBuffer: () => Promise<ArrayBuffer>;
-  };
-
-  if (typeof anyFile.size !== "number" || typeof anyFile.type !== "string") {
-    return { error: "Ungültige Datei." };
-  }
-
-  if (anyFile.size === 0) {
+  if (file.size === 0) {
     return { error: "Die Datei ist leer." };
   }
 
-  if (anyFile.size > MAX_FILE_SIZE) {
+  if (file.size > MAX_FILE_SIZE) {
     return { error: "Die Datei ist zu groß (max. 10 MB)." };
   }
 
-  if (!ALLOWED_MIME_TYPES.includes(anyFile.type)) {
+  if (!ALLOWED_MIME_TYPES.includes((file as Blob).type)) {
     return { error: "Dieser Dateityp ist nicht erlaubt." };
   }
 
-  const originalName = anyFile.name || "photo";
+  const namedFile = file as Blob & { name?: string };
+  const originalName = namedFile.name || "photo";
   const extMatch = originalName.match(/\.[a-zA-Z0-9]+$/);
   const extension = extMatch ? extMatch[0].toLowerCase() : "";
   const safeExtension =
@@ -71,11 +61,10 @@ export async function uploadPhoto(formData: FormData): Promise<UploadPhotoResult
 
   const { error: uploadError } = await supabase.storage
     .from(BUCKET_NAME)
-    // @ts-ignore Supabase akzeptiert das File/Blob-Objekt aus FormData
-    .upload(objectPath, file as any, {
+    .upload(objectPath, file, {
       cacheControl: "3600",
       upsert: false,
-      contentType: anyFile.type || "image/jpeg",
+      contentType: (file as Blob).type || "image/jpeg",
     });
 
   if (uploadError) {
