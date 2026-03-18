@@ -59,16 +59,36 @@ export function PhotoUploader({ onUploaded }: PhotoUploaderProps) {
 
       const path = `${user.id}/${crypto.randomUUID()}${safeExtension}`;
 
+      const uploadContentType = file.type || "image/jpeg";
+
       const { error: uploadError } = await supabase.storage
         .from("project-photos")
         .upload(path, file, {
           cacheControl: "3600",
           upsert: false,
-          contentType: file.type,
+          contentType: uploadContentType,
         });
 
       if (uploadError) {
-        setError(`Fehler beim Hochladen: ${uploadError.message}`);
+        const err = uploadError as {
+          message?: string;
+          status?: number;
+          code?: string;
+          details?: string;
+          hint?: string;
+        };
+
+        const details = [
+          err.message ? `message: ${err.message}` : null,
+          err.status != null ? `status: ${err.status}` : null,
+          err.code ? `code: ${err.code}` : null,
+          err.details ? `details: ${err.details}` : null,
+          err.hint ? `hint: ${err.hint}` : null,
+        ]
+          .filter(Boolean)
+          .join(" | ");
+
+        setError(`Fehler beim Hochladen: ${details || uploadError.message}`);
         return;
       }
 
