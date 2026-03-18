@@ -137,7 +137,12 @@ export function StaffManager() {
       return;
     }
     setCreating(true);
-    const res = await createInviteAction(inviteEmail.trim(), inviteName.trim() || null);
+    const res = await createInviteAction(inviteEmail.trim(), inviteName.trim() || null).catch(
+      (err) => ({
+        token: undefined,
+        error: err instanceof Error ? err.message : String(err),
+      }),
+    );
     setCreating(false);
     if (!res.token) {
       alert(res.error ?? "Einladung konnte nicht erstellt werden.");
