@@ -115,3 +115,90 @@ export async function sendInviteEmail(params: {
   });
 }
 
+export async function sendRoleChangedEmail(params: {
+  to: string;
+  fullName: string | null;
+  role: "admin" | "entwicklung";
+}) {
+  const { to, fullName, role } = params;
+  const roleDe = role === "admin" ? "Admin" : "Mitarbeiter";
+  const roleEn = role === "admin" ? "Admin" : "Employee";
+
+  const subject = `Ihre Rolle in PRIDE wurde geändert: ${roleDe}`;
+  const text = [
+    fullName ? `Hallo ${fullName},` : "Hallo,",
+    "",
+    `Ihre Rolle in PRIDE wurde angepasst.`,
+    `Neue Rolle: ${roleDe} (${roleEn})`,
+    "",
+    "Bitte melden Sie sich neu an, falls Sie die Änderung noch nicht sehen.",
+  ].join("\n");
+
+  const html = `
+    <p>${fullName ? `Hallo ${fullName},` : "Hallo,"}</p>
+    <p>Ihre Rolle in <strong>PRIDE</strong> wurde angepasst.</p>
+    <p>Neue Rolle: <strong>${roleDe}</strong> (${roleEn})</p>
+    <p>Bitte melden Sie sich neu an, falls Sie die Änderung noch nicht sehen.</p>
+  `;
+
+  const useResend =
+    emailProvider === "resend" || (!!resendApiKey && emailProvider !== "smtp");
+
+  if (useResend) {
+    if (!resendApiKey) {
+      throw new Error("[mail] RESEND_API_KEY fehlt (EMAIL_PROVIDER=resend).");
+    }
+    if (!emailFrom) {
+      throw new Error("[mail] EMAIL_FROM fehlt für Resend.");
+    }
+
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${resendApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: emailFrom,
+        to: [to],
+        subject,
+        text,
+        html,
+      }),
+    });
+
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      throw new Error(
+        `[mail] Resend send failed (${res.status}): ${body || res.statusText}`,
+      );
+    }
+
+    return;
+  }
+
+  if (!smtpHost || !smtpUser || !smtpPass || !smtpFrom) {
+    throw new Error(
+      "[mail] SMTP-Konfiguration fehlt (SMTP_HOST/SMTP_USER/SMTP_PASS/SMTP_FROM).",
+    );
+  }
+
+  const transporter = nodemailer.createTransport({
+    host: smtpHost,
+    port: smtpPort,
+    secure: smtpPort === 465,
+    auth: {
+      user: smtpUser,
+      pass: smtpPass,
+    },
+  });
+
+  await transporter.sendMail({
+    from: smtpFrom,
+    to,
+    subject,
+    text,
+    html,
+  });
+}
+

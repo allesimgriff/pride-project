@@ -6,7 +6,7 @@ import { Plus } from "lucide-react";
 import type { Invite, Profile } from "@/types/database";
 import type { StaffEntry } from "@/app/actions/invites";
 import { listStaffAction, createInviteAction, revokeInviteAction } from "@/app/actions/invites";
-import { transferAdminAction } from "@/app/actions/staff";
+import { transferAdminAction, demoteAdminAction } from "@/app/actions/staff";
 import { useApp } from "@/components/providers/AppProvider";
 import { getT } from "@/lib/i18n";
 
@@ -96,6 +96,7 @@ export function StaffManager() {
   const [rows, setRows] = useState<StaffRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [transferingId, setTransferingId] = useState<string | null>(null);
+  const [demotingId, setDemotingId] = useState<string | null>(null);
   const [revokingId, setRevokingId] = useState<string | null>(null);
   const [loadNonce, setLoadNonce] = useState(0);
   const [inviteEmail, setInviteEmail] = useState("");
@@ -182,6 +183,24 @@ export function StaffManager() {
       return;
     }
     alert(t("staff.transferAdminDone"));
+    setLoadNonce((n) => n + 1);
+    router.refresh();
+  }
+
+  async function handleDemoteAdmin(targetId: string) {
+    if (!window.confirm(t("staff.demoteAdminConfirm"))) return;
+    setDemotingId(targetId);
+    const res = await demoteAdminAction(targetId).catch((err) => ({
+      error: err instanceof Error ? err.message : String(err),
+    }));
+    setDemotingId(null);
+
+    if (res?.error) {
+      alert(res.error);
+      return;
+    }
+
+    alert(t("staff.demoteAdminDone"));
     setLoadNonce((n) => n + 1);
     router.refresh();
   }
@@ -339,6 +358,17 @@ export function StaffManager() {
                         className="rounded-md bg-primary-100 px-3 py-1.5 text-xs font-medium text-primary-700 hover:bg-primary-200 disabled:opacity-50"
                       >
                         {transferingId === row.id ? "…" : t("staff.transferAdminButton")}
+                      </button>
+                    ) : null}
+
+                    {row.kind === "active" && row.role === "admin" ? (
+                      <button
+                        type="button"
+                        onClick={() => handleDemoteAdmin(row.id)}
+                        disabled={demotingId === row.id}
+                        className="rounded-md bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-100 disabled:opacity-50"
+                      >
+                        {demotingId === row.id ? "…" : t("staff.demoteAdminButton")}
                       </button>
                     ) : null}
                   </td>
