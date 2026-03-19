@@ -17,6 +17,7 @@ export function ProjectPhotosSection() {
   const [refreshTick, setRefreshTick] = useState(0);
   const [selectedPhoto, setSelectedPhoto] = useState<PhotoRow | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [failedPhotoIds, setFailedPhotoIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     let mounted = true;
@@ -50,6 +51,7 @@ export function ProjectPhotosSection() {
         }
 
         if (!mounted) return;
+        setFailedPhotoIds(new Set());
         setPhotos((data || []) as PhotoRow[]);
       } catch (e) {
         if (!mounted) return;
@@ -91,9 +93,11 @@ export function ProjectPhotosSection() {
           <div className="text-sm text-gray-500">Noch keine Fotos vorhanden.</div>
         )}
 
-        {photos.length > 0 && (
+        {photos.filter((p) => !failedPhotoIds.has(p.id)).length > 0 && (
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-            {photos.map((p) => (
+            {photos
+              .filter((p) => !failedPhotoIds.has(p.id))
+              .map((p) => (
               <button
                 key={p.id}
                 type="button"
@@ -106,6 +110,13 @@ export function ProjectPhotosSection() {
                   alt="Projektfoto"
                   className="aspect-square w-full object-cover"
                   loading="lazy"
+                  onError={() => {
+                    setFailedPhotoIds((prev) => new Set(prev).add(p.id));
+                    // Optionales Aufräumen: DB-Eintrag entfernen, wenn die Datei im Storage fehlt.
+                    supabase.from("photos").delete().eq("id", p.id).then(() => {
+                      setRefreshTick((t) => t + 1);
+                    }).catch(() => {});
+                  }}
                 />
               </button>
             ))}

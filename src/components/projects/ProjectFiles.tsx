@@ -245,10 +245,13 @@ export function ProjectFiles({ projectId, files, projectImageId }: ProjectFilesP
               <div className="mt-1 flex gap-2 sm:mt-0">
                 <button
                   type="button"
-                  onClick={() => {
+                  onClick={async () => {
                     const printUrl = `/api/files/${previewFile.id}/image`;
-                    const w = window.open("", "_blank", "noopener,noreferrer");
-                    if (!w) return;
+                    const w = window.open("", "_blank");
+                    if (!w) {
+                      alert(lang === "de" ? "Popup blockiert. Bitte Popups für diese Seite erlauben." : "Popup blocked. Please allow popups for this site.");
+                      return;
+                    }
                     const hint =
                       lang === "de"
                         ? (isMac
@@ -257,7 +260,13 @@ export function ProjectFiles({ projectId, files, projectImageId }: ProjectFilesP
                         : (isMac
                             ? "To print, please use ⌘+P (or the browser \"Print…\" menu)."
                             : "To print, please use Ctrl+P (or the browser \"Print…\" menu).");
-                    w.document.write(`<!doctype html>
+                    try {
+                      const res = await fetch(printUrl, { credentials: "include" });
+                      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                      const blob = await res.blob();
+                      const objectUrl = URL.createObjectURL(blob);
+
+                      w.document.write(`<!doctype html>
 <html>
   <head>
     <meta charset="utf-8" />
@@ -270,10 +279,14 @@ export function ProjectFiles({ projectId, files, projectImageId }: ProjectFilesP
   </head>
   <body>
     <p>${hint}</p>
-    <img src="${printUrl}" onload="window.print()" />
+    <img src="${objectUrl}" onload="window.print(); setTimeout(() => URL.revokeObjectURL('${objectUrl}'), 1000)" />
   </body>
 </html>`);
-                    w.document.close();
+                      w.document.close();
+                    } catch {
+                      w.close();
+                      alert(lang === "de" ? "Bild konnte zum Drucken nicht geladen werden." : "Image could not be loaded for printing.");
+                    }
                   }}
                   className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
                 >
