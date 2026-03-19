@@ -73,6 +73,13 @@ export function ProjectDetailHeader({ project }: ProjectDetailHeaderProps) {
           </h1>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="no-print rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+          >
+            {lang === "de" ? "Drucken" : "Print"}
+          </button>
           <span
             className={`badge ${statusStyles[project.status]} px-3 py-1 text-sm`}
           >
@@ -81,7 +88,7 @@ export function ProjectDetailHeader({ project }: ProjectDetailHeaderProps) {
           <button
             type="button"
             onClick={handleDelete}
-            className="rounded-md border border-red-200 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50"
+            className="no-print rounded-md border border-red-200 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50"
           >
             {lang === "de" ? "Projekt löschen" : "Delete project"}
           </button>

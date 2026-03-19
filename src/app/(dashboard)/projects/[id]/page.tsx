@@ -61,15 +61,15 @@ export default async function ProjectDetailPage({
   ]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
+    <div className="space-y-6 print-detail-page">
+      <div className="no-print flex items-center gap-4">
         <DetailBackLink />
       </div>
 
       <ProjectDetailHeader project={project} />
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-6">
+      <div className="grid gap-6 lg:grid-cols-3 print-grid">
+        <div className="lg:col-span-2 space-y-6 print-main-column">
           <div className="card p-6">
             <h2 className="mb-3 text-lg font-semibold text-gray-900">
               Fotos zum Projekt
@@ -101,7 +101,7 @@ export default async function ProjectDetailPage({
             currentUserId={(await supabase.auth.getUser()).data.user?.id}
           />
         </div>
-        <div className="space-y-6">
+        <div className="no-print space-y-6">
           <ProjectTimeline
             comments={comments || []}
             updates={updates || []}

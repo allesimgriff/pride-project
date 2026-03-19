@@ -48,3 +48,51 @@ body {
     @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
   }
 }
+
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .card {
+    box-shadow: none !important;
+    border-color: #d1d5db !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .print-detail-page {
+    gap: 0.75rem !important;
+  }
+
+  .print-grid {
+    display: block !important;
+  }
+
+  .print-main-column {
+    display: block !important;
+    width: 100% !important;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    display: none !important;
+  }
+
+  a {
+    color: #111827 !important;
+    text-decoration: none !important;
+  }
+}
