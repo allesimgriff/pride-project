@@ -10,6 +10,16 @@ export default async function StaffPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile || profile.role !== "admin") {
+    redirect("/dashboard");
+  }
+
   return (
     <div className="space-y-6">
       <PageTitle titleKey="staffPage.title" subtitleKey="staffPage.subtitle" />

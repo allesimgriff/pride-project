@@ -104,36 +104,53 @@ export function DashboardContent({
             </div>
           </div>
         </Link>
-        <div className="card p-5">
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-amber-100 p-2">
-              <CheckSquare className="h-6 w-6 text-amber-600" />
+        <a
+          href="#open-tasks"
+          className="card p-5 block hover:bg-primary-50/40 transition-colors"
+          aria-label={t("dashboard.openTasks")}
+          title={t("dashboard.openTasks")}
+        >
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-amber-100 p-2">
+                <CheckSquare className="h-6 w-6 text-amber-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-500">
+                  {t("dashboard.openTasks")}
+                </p>
+                <p className="text-2xl font-semibold text-gray-900">
+                  {openTasks?.length ?? 0}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-sm font-medium text-gray-500">
-                {t("dashboard.openTasks")}
-              </p>
-              <p className="text-2xl font-semibold text-gray-900">
-                {openTasks?.length ?? 0}
-              </p>
-            </div>
+            <ArrowRight className="h-4 w-4 text-gray-400" />
           </div>
-        </div>
-        <div className="card p-5">
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-gray-100 p-2">
-              <Clock className="h-6 w-6 text-gray-600" />
+        </a>
+
+        <a
+          href="#recent-changes"
+          className="card p-5 block hover:bg-primary-50/40 transition-colors"
+          aria-label={t("dashboard.recentChanges")}
+          title={t("dashboard.recentChanges")}
+        >
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-gray-100 p-2">
+                <Clock className="h-6 w-6 text-gray-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-500">
+                  {t("dashboard.recentChanges")}
+                </p>
+                <p className="text-2xl font-semibold text-gray-900">
+                  {recentUpdates?.length ?? 0}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-sm font-medium text-gray-500">
-                {t("dashboard.recentChanges")}
-              </p>
-              <p className="text-2xl font-semibold text-gray-900">
-                {recentUpdates?.length ?? 0}
-              </p>
-            </div>
+            <ArrowRight className="h-4 w-4 text-gray-400" />
           </div>
-        </div>
+        </a>
       </div>
 
       <div className="grid gap-8 lg:grid-cols-2">
@@ -174,7 +191,7 @@ export function DashboardContent({
         </div>
 
         <div className="space-y-6">
-          <div className="card p-6">
+          <div id="open-tasks" className="card p-6">
             <h2 className="text-lg font-semibold text-gray-900">
               {t("dashboard.openTasks")}
             </h2>
@@ -211,7 +228,7 @@ export function DashboardContent({
             )}
           </div>
 
-          <div className="card p-6">
+          <div id="recent-changes" className="card p-6">
             <h2 className="text-lg font-semibold text-gray-900">
               {t("dashboard.recentChanges")}
             </h2>
