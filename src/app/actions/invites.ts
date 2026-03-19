@@ -101,7 +101,7 @@ export async function createInviteAction(
     .select("token")
     .single();
 
-  if (error || !data) {
+  if (error || !data?.token) {
     return { error: error?.message ?? "Einladung konnte nicht angelegt werden.", token: undefined };
   }
 
@@ -109,7 +109,7 @@ export async function createInviteAction(
   try {
     await sendInviteEmail({
       to: normalizedEmail,
-      token: data.token,
+      token: data.token as string,
       fullName: cleanFullName,
     });
   } catch (e) {

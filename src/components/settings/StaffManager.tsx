@@ -142,15 +142,20 @@ export function StaffManager() {
       return;
     }
     setCreating(true);
-    const res = await createInviteAction(inviteEmail.trim(), inviteName.trim() || null).catch(
-      (err) => ({
+    let res: { token?: string; error: string | null };
+    try {
+      const out = await createInviteAction(inviteEmail.trim(), inviteName.trim() || null);
+      res = out ?? { token: undefined, error: "Keine Antwort vom Server." };
+    } catch (err) {
+      res = {
         token: undefined,
         error: err instanceof Error ? err.message : String(err),
-      }),
-    );
+      };
+    }
     setCreating(false);
-    if (!res.token) {
-      alert(res.error ?? "Einladung konnte nicht erstellt werden.");
+
+    if (!res?.token) {
+      alert(res?.error ?? "Einladung konnte nicht erstellt werden.");
       return;
     }
 
