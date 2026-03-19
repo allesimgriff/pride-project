@@ -110,12 +110,15 @@ export function ProjectPhotosSection() {
                   alt="Projektfoto"
                   className="aspect-square w-full object-cover"
                   loading="lazy"
-                  onError={() => {
+                  onError={async () => {
                     setFailedPhotoIds((prev) => new Set(prev).add(p.id));
                     // Optionales Aufräumen: DB-Eintrag entfernen, wenn die Datei im Storage fehlt.
-                    supabase.from("photos").delete().eq("id", p.id).then(() => {
+                    try {
+                      await supabase.from("photos").delete().eq("id", p.id);
                       setRefreshTick((t) => t + 1);
-                    }).catch(() => {});
+                    } catch {
+                      // no-op: Bild bleibt nur ausgeblendet
+                    }
                   }}
                 />
               </button>
