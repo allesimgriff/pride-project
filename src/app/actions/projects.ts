@@ -152,6 +152,38 @@ export async function addTaskAction(
   return {};
 }
 
+export async function addTasksBulkAction(
+  projectId: string,
+  titles: string[]
+) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Nicht angemeldet" };
+
+  const cleaned = titles
+    .map((t) => t.trim())
+    .filter((t) => t.length > 0)
+    .slice(0, 300);
+
+  if (cleaned.length === 0) return { error: "Keine Aufgaben erkannt." };
+
+  const rows = cleaned.map((title) => ({
+    project_id: projectId,
+    title,
+    description: null,
+    responsible_id: null,
+    priority: "mittel" as const,
+    due_date: null,
+    created_by: user.id,
+  }));
+
+  const { error } = await supabase.from("project_tasks").insert(rows);
+  if (error) return { error: error.message };
+  return { count: rows.length };
+}
+
 export async function toggleTaskAction(taskId: string, completed: boolean) {
   const supabase = await createClient();
   const { error } = await supabase
