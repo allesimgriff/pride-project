@@ -10,9 +10,12 @@ import type { ProjectStatus } from "@/types/database";
 import { createClient } from "@/lib/supabase/client";
 import { useApp } from "@/components/providers/AppProvider";
 import { getT } from "@/lib/i18n";
+import type { ProjectLabelMap } from "@/lib/projectLabelDefaults";
 
 interface NewProjectFormProps {
   categories: { name: string; prefix: string }[];
+  canEdit: boolean;
+  projectLabels: ProjectLabelMap;
 }
 
 const STATUSES: ProjectStatus[] = [
@@ -25,7 +28,7 @@ const STATUSES: ProjectStatus[] = [
   "archiviert",
 ];
 
-export function NewProjectForm({ categories }: NewProjectFormProps) {
+export function NewProjectForm({ categories, canEdit, projectLabels }: NewProjectFormProps) {
   const router = useRouter();
   const { lang } = useApp();
   const t = getT(lang);
@@ -37,6 +40,11 @@ export function NewProjectForm({ categories }: NewProjectFormProps) {
     { id: number; text: string; completed: boolean }[]
   >([]);
   const [nextTaskId, setNextTaskId] = useState(1);
+
+  const label = (key: keyof ProjectLabelMap, fallback: string) => {
+    const item = projectLabels[key];
+    return lang === "de" ? (item?.de || fallback) : (item?.en || fallback);
+  };
 
   async function onCategoryChange(prefix: string) {
     setForm((f) => ({ ...f, category: prefix }));
@@ -55,12 +63,15 @@ export function NewProjectForm({ categories }: NewProjectFormProps) {
     technical_notes: "",
     functions: "",
     materials: "",
-    target_price: "",
     open_points: "",
   });
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!canEdit) {
+      alert(lang === "de" ? "Nur Admin darf Projekte und Dokumentation anlegen." : "Only admin can create projects and documentation.");
+      return;
+    }
     setLoading(true);
     const technical_data = {
       technical_notes: form.technical_notes || undefined,
@@ -74,7 +85,6 @@ export function NewProjectForm({ categories }: NewProjectFormProps) {
       technical_data,
       functions: form.functions || null,
       materials: form.materials || null,
-      target_price: form.target_price ? Number(form.target_price) : null,
       open_points: form.open_points || null,
     });
     if (result?.error || !result?.id) {
@@ -178,12 +188,13 @@ export function NewProjectForm({ categories }: NewProjectFormProps) {
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              {t("newProject.category")}
+              {label("category", t("newProject.category"))}
             </label>
             <select
               value={form.category}
               onChange={(e) => onCategoryChange(e.target.value)}
               className="input-base mt-1"
+              disabled={!canEdit}
             >
               <option value="">{t("newProject.categorySelectPlaceholder")}</option>
               {categories.map((c) => (
@@ -195,7 +206,7 @@ export function NewProjectForm({ categories }: NewProjectFormProps) {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              {t("newProject.devNumber")} *
+              {label("devNumber", t("newProject.devNumber"))} *
             </label>
             <input
               value={form.dev_number}
@@ -206,12 +217,13 @@ export function NewProjectForm({ categories }: NewProjectFormProps) {
               required
               placeholder={t("newProject.categoryPlaceholder")}
               readOnly={loadingNumber}
+              disabled={!canEdit}
             />
             {loadingNumber && <p className="mt-1 text-xs text-gray-500">{t("newProject.numberSuggesting")}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              {t("newProject.productName")} *
+              {label("productName", t("newProject.productName"))} *
             </label>
             <input
               value={form.product_name}
@@ -220,11 +232,12 @@ export function NewProjectForm({ categories }: NewProjectFormProps) {
               }
               className="input-base mt-1"
               required
+              disabled={!canEdit}
             />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              {t("newProject.status")}
+              {label("status", t("newProject.status"))}
             </label>
             <select
               value={form.status}
@@ -235,6 +248,7 @@ export function NewProjectForm({ categories }: NewProjectFormProps) {
                 }))
               }
               className="input-base mt-1"
+              disabled={!canEdit}
             >
               {STATUSES.map((s) => (
                 <option key={s} value={s}>
@@ -243,24 +257,10 @@ export function NewProjectForm({ categories }: NewProjectFormProps) {
               ))}
             </select>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              {t("newProject.targetPrice")}
-            </label>
-            <input
-              type="number"
-              step="0.01"
-              value={form.target_price}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, target_price: e.target.value }))
-              }
-              className="input-base mt-1"
-            />
-          </div>
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            {t("newProject.description")}
+            {label("description", t("newProject.description"))}
           </label>
           <textarea
             value={form.description}
@@ -269,12 +269,13 @@ export function NewProjectForm({ categories }: NewProjectFormProps) {
             }
             rows={3}
             className="input-base mt-1"
+            disabled={!canEdit}
           />
         </div>
         {/* Dateien schon beim Anlegen auswählen */}
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            {t("files.title")}
+            {label("files", t("files.title"))}
           </label>
           <p className="mt-1 text-xs text-gray-500">{t("files.hint")}</p>
           <input
@@ -290,6 +291,7 @@ export function NewProjectForm({ categories }: NewProjectFormProps) {
               e.target.value = "";
             }}
             className="mt-1 block w-full text-sm text-gray-500 file:mr-2 file:rounded file:border-0 file:bg-primary-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-primary-700 hover:file:bg-primary-100"
+            disabled={!canEdit}
           />
           {uploadingFiles.length > 0 && (
             <ul className="mt-2 space-y-1 text-xs text-gray-600">
@@ -306,7 +308,7 @@ export function NewProjectForm({ categories }: NewProjectFormProps) {
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            {t("newProject.technicalNotes")}
+            {label("technicalNotes", t("newProject.technicalNotes"))}
           </label>
           <textarea
             value={form.technical_notes}
@@ -316,11 +318,12 @@ export function NewProjectForm({ categories }: NewProjectFormProps) {
             rows={2}
             className="input-base mt-1"
             placeholder={t("newProject.technicalNotesPlaceholder")}
+            disabled={!canEdit}
           />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            {t("newProject.functions")}
+            {label("functions", t("newProject.functions"))}
           </label>
           <textarea
             value={form.functions}
@@ -329,11 +332,12 @@ export function NewProjectForm({ categories }: NewProjectFormProps) {
             }
             rows={2}
             className="input-base mt-1"
+            disabled={!canEdit}
           />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            {t("newProject.materials")}
+            {label("materials", t("newProject.materials"))}
           </label>
           <textarea
             value={form.materials}
@@ -342,11 +346,12 @@ export function NewProjectForm({ categories }: NewProjectFormProps) {
             }
             rows={2}
             className="input-base mt-1"
+            disabled={!canEdit}
           />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            {t("newProject.openPoints")}
+            {label("openPoints", t("newProject.openPoints"))}
           </label>
           <textarea
             value={form.open_points}
@@ -355,6 +360,7 @@ export function NewProjectForm({ categories }: NewProjectFormProps) {
             }
             rows={2}
             className="input-base mt-1"
+            disabled={!canEdit}
           />
         </div>
         <div>
@@ -390,6 +396,7 @@ export function NewProjectForm({ categories }: NewProjectFormProps) {
                     );
                   }}
                   className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                  disabled={!canEdit}
                 />
                 <input
                   type="text"
@@ -407,6 +414,7 @@ export function NewProjectForm({ categories }: NewProjectFormProps) {
                       ? "Aufgabe oder Entwicklungsschritt"
                       : "Task or development step"
                   }
+                  disabled={!canEdit}
                 />
                 <button
                   type="button"
@@ -414,6 +422,7 @@ export function NewProjectForm({ categories }: NewProjectFormProps) {
                     setInitialTasks((items) => items.filter((it) => it.id !== task.id))
                   }
                   className="text-xs text-gray-400 hover:text-red-600"
+                  disabled={!canEdit}
                 >
                   {lang === "de" ? "Entfernen" : "Remove"}
                 </button>
@@ -429,6 +438,7 @@ export function NewProjectForm({ categories }: NewProjectFormProps) {
                 setNextTaskId((id) => id + 1);
               }}
               className="inline-flex items-center rounded-md border border-dashed border-gray-300 px-3 py-2 text-sm text-gray-600 hover:border-primary-300 hover:text-primary-700"
+              disabled={!canEdit}
             >
               {lang === "de" ? "Zelle hinzufügen" : "Add cell"}
             </button>
@@ -439,7 +449,7 @@ export function NewProjectForm({ categories }: NewProjectFormProps) {
             <ArrowLeft className="h-4 w-4" />
             {t("newProject.backToList")}
           </Link>
-          <button type="submit" disabled={loading} className="btn-primary">
+          <button type="submit" disabled={loading || !canEdit} className="btn-primary">
             {loading ? t("newProject.creating") : t("newProject.create")}
           </button>
         </div>

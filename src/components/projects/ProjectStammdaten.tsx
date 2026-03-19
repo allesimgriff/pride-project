@@ -8,6 +8,7 @@ import { updateProjectAction } from "@/app/actions/projects";
 import { Pencil, Check, X } from "lucide-react";
 import { useApp } from "@/components/providers/AppProvider";
 import { getT } from "@/lib/i18n";
+import type { ProjectLabelMap } from "@/lib/projectLabelDefaults";
 
 const STATUSES: ProjectStatus[] = [
   "idee",
@@ -22,6 +23,8 @@ const STATUSES: ProjectStatus[] = [
 interface ProjectStammdatenProps {
   project: Project;
   categories: { name: string; prefix: string }[];
+  canEdit: boolean;
+  projectLabels: ProjectLabelMap;
 }
 
 function getCategoryDisplay(category: string | null, categories: { name: string; prefix: string }[]) {
@@ -30,7 +33,7 @@ function getCategoryDisplay(category: string | null, categories: { name: string;
   return c ? `${c.name} (${c.prefix})` : category;
 }
 
-export function ProjectStammdaten({ project, categories }: ProjectStammdatenProps) {
+export function ProjectStammdaten({ project, categories, canEdit, projectLabels }: ProjectStammdatenProps) {
   const router = useRouter();
   const { lang } = useApp();
   const t = getT(lang);
@@ -45,12 +48,17 @@ export function ProjectStammdaten({ project, categories }: ProjectStammdatenProp
     technical_notes: td.technical_notes ?? "",
     functions: project.functions ?? "",
     materials: project.materials ?? "",
-    target_price: project.target_price ?? "",
     open_points: project.open_points ?? "",
   });
 
+  const label = (key: keyof ProjectLabelMap, fallback: string) => {
+    const item = projectLabels[key];
+    return lang === "de" ? (item?.de || fallback) : (item?.en || fallback);
+  };
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!canEdit) return;
     setLoading(true);
     const technical_data = form.technical_notes
       ? { technical_notes: form.technical_notes }
@@ -63,7 +71,6 @@ export function ProjectStammdaten({ project, categories }: ProjectStammdatenProp
       technical_data,
       functions: form.functions || null,
       materials: form.materials || null,
-      target_price: form.target_price ? Number(form.target_price) : null,
       open_points: form.open_points || null,
     });
     setLoading(false);
@@ -85,7 +92,6 @@ export function ProjectStammdaten({ project, categories }: ProjectStammdatenProp
       technical_notes: t.technical_notes ?? "",
       functions: project.functions ?? "",
       materials: project.materials ?? "",
-      target_price: project.target_price ?? "",
       open_points: project.open_points ?? "",
     });
     setEditing(false);
@@ -95,7 +101,7 @@ export function ProjectStammdaten({ project, categories }: ProjectStammdatenProp
     <div className="card p-6">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-gray-900">{t("stammdaten.title")}</h2>
-        {!editing ? (
+        {canEdit && !editing ? (
           <button
             type="button"
             onClick={() => setEditing(true)}
@@ -104,7 +110,8 @@ export function ProjectStammdaten({ project, categories }: ProjectStammdatenProp
             <Pencil className="h-4 w-4" />
             {t("stammdaten.edit")}
           </button>
-        ) : (
+        ) : null}
+        {canEdit && editing ? (
           <div className="flex gap-2">
             <button
               type="button"
@@ -124,16 +131,16 @@ export function ProjectStammdaten({ project, categories }: ProjectStammdatenProp
               {loading ? t("stammdaten.saving") : t("stammdaten.save")}
             </button>
           </div>
-        )}
+        ) : null}
       </div>
 
       <form id="stammdaten-form" onSubmit={handleSubmit} className="mt-6 space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              {t("stammdaten.productName")}
+              {label("productName", t("stammdaten.productName"))}
             </label>
-            {editing ? (
+            {canEdit && editing ? (
               <input
                 value={form.product_name}
                 onChange={(e) =>
@@ -148,15 +155,15 @@ export function ProjectStammdaten({ project, categories }: ProjectStammdatenProp
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              {t("stammdaten.devNumber")}
+              {label("devNumber", t("stammdaten.devNumber"))}
             </label>
             <p className="mt-1 text-sm text-gray-900">{project.dev_number}</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              {t("stammdaten.category")}
+              {label("category", t("stammdaten.category"))}
             </label>
-            {editing ? (
+            {canEdit && editing ? (
               <select
                 value={form.category}
                 onChange={(e) =>
@@ -179,9 +186,9 @@ export function ProjectStammdaten({ project, categories }: ProjectStammdatenProp
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              {t("stammdaten.status")}
+              {label("status", t("stammdaten.status"))}
             </label>
-            {editing ? (
+            {canEdit && editing ? (
               <select
                 value={form.status}
                 onChange={(e) =>
@@ -204,35 +211,13 @@ export function ProjectStammdaten({ project, categories }: ProjectStammdatenProp
               </p>
             )}
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              {t("stammdaten.targetPrice")}
-            </label>
-            {editing ? (
-              <input
-                type="number"
-                step="0.01"
-                value={form.target_price}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, target_price: e.target.value }))
-                }
-                className="input-base mt-1"
-              />
-            ) : (
-              <p className="mt-1 text-sm text-gray-900">
-                {project.target_price != null
-                  ? `${Number(project.target_price).toLocaleString("de-DE")} €`
-                  : "—"}
-              </p>
-            )}
-          </div>
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            {t("stammdaten.description")}
+            {label("description", t("stammdaten.description"))}
           </label>
-          {editing ? (
+          {canEdit && editing ? (
             <textarea
               value={form.description}
               onChange={(e) =>
@@ -250,9 +235,9 @@ export function ProjectStammdaten({ project, categories }: ProjectStammdatenProp
 
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            {t("stammdaten.technicalNotes")}
+            {label("technicalNotes", t("stammdaten.technicalNotes"))}
           </label>
-          {editing ? (
+          {canEdit && editing ? (
             <textarea
               value={form.technical_notes}
               onChange={(e) =>
@@ -271,9 +256,9 @@ export function ProjectStammdaten({ project, categories }: ProjectStammdatenProp
 
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            {t("stammdaten.functions")}
+            {label("functions", t("stammdaten.functions"))}
           </label>
-          {editing ? (
+          {canEdit && editing ? (
             <textarea
               value={form.functions}
               onChange={(e) =>
@@ -291,9 +276,9 @@ export function ProjectStammdaten({ project, categories }: ProjectStammdatenProp
 
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            {t("stammdaten.materials")}
+            {label("materials", t("stammdaten.materials"))}
           </label>
-          {editing ? (
+          {canEdit && editing ? (
             <textarea
               value={form.materials}
               onChange={(e) =>
@@ -311,9 +296,9 @@ export function ProjectStammdaten({ project, categories }: ProjectStammdatenProp
 
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            {t("stammdaten.openPoints")}
+            {label("openPoints", t("stammdaten.openPoints"))}
           </label>
-          {editing ? (
+          {canEdit && editing ? (
             <textarea
               value={form.open_points}
               onChange={(e) =>

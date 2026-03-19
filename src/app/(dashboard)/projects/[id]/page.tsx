@@ -10,6 +10,7 @@ import { ProjectChecklist } from "@/components/projects/ProjectChecklist";
 import { ProjectTimeline } from "@/components/projects/ProjectTimeline";
 import { ProjectHistory } from "@/components/projects/ProjectHistory";
 import { ProjectPhotosSection } from "@/components/projects/ProjectPhotosSection";
+import { buildProjectLabelMap } from "@/lib/projectLabelDefaults";
 
 export default async function ProjectDetailPage({
   params,
@@ -28,6 +29,20 @@ export default async function ProjectDetailPage({
   if (error || !project) {
     notFound();
   }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { data: profile } = user
+    ? await supabase.from("profiles").select("role").eq("id", user.id).single()
+    : { data: null };
+
+  const canEdit = profile?.role === "admin";
+  const { data: labelsRaw } = await supabase
+    .from("project_labels")
+    .select("key,label_de,label_en");
+  const projectLabels = buildProjectLabelMap(labelsRaw || []);
 
   const [
     { data: comments },
@@ -81,7 +96,7 @@ export default async function ProjectDetailPage({
           </div>
 
           <ProjectFiles projectId={id} files={files || []} projectImageId={project.project_image_id ?? null} />
-          <ProjectStammdaten project={project} categories={categories || []} />
+          <ProjectStammdaten project={project} categories={categories || []} canEdit={canEdit} projectLabels={projectLabels} />
           <ProjectComments
             projectId={id}
             comments={comments || []}

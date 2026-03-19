@@ -14,12 +14,22 @@ export async function createProjectAction(data: {
   technical_data?: Record<string, unknown>;
   functions?: string | null;
   materials?: string | null;
-  target_price?: number | null;
   open_points?: string | null;
 }) {
   const supabase = await createClient();
   if (!data.dev_number.trim()) return { error: "Entwicklungsnummer erforderlich", id: null };
   if (!data.product_name.trim()) return { error: "Produktname erforderlich", id: null };
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Nicht angemeldet", id: null };
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+  if (!profile || profile.role !== "admin") {
+    return { error: "Nur Admin darf Projekte und Dokumentation anlegen.", id: null };
+  }
 
   const { data: project, error } = await supabase
     .from("projects")
@@ -34,7 +44,6 @@ export async function createProjectAction(data: {
       technical_data: data.technical_data ?? {},
       functions: data.functions || null,
       materials: data.materials || null,
-      target_price: data.target_price ?? null,
       open_points: data.open_points || null,
       created_by: null,
     })
@@ -65,7 +74,6 @@ export async function updateProjectAction(
     technical_data?: Record<string, unknown>;
     functions?: string | null;
     materials?: string | null;
-    target_price?: number | null;
     open_points?: string | null;
   }
 ) {
@@ -74,6 +82,15 @@ export async function updateProjectAction(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { error: "Nicht angemeldet" };
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+  if (!profile || profile.role !== "admin") {
+    return { error: "Nur Admin darf Projekte bearbeiten." };
+  }
 
   const { error } = await supabase.from("projects").update(data).eq("id", id);
   if (error) return { error: error.message };

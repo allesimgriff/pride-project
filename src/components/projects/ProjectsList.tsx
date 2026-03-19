@@ -2,14 +2,12 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { de, enUS } from "date-fns/locale";
 import { useApp } from "@/components/providers/AppProvider";
 import { getT } from "@/lib/i18n";
 import type { ProjectStatus } from "@/types/database";
 import { ArrowRight, FileText, ImageIcon } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 
 interface ProjectRow {
   id: string;
@@ -59,29 +57,8 @@ function ProjectCard({
   const { lang } = useApp();
   const t = getT(lang);
   const dateLocale = lang === "de" ? de : enUS;
-  const [thumbId, setThumbId] = useState<string | null>(project.project_image_id);
-
-  // Nur wenn kein bevorzugtes Projektbild gesetzt ist, das erste Bild als Fallback laden
-  useEffect(() => {
-    if (project.project_image_id) return;
-    let cancelled = false;
-    async function loadThumb() {
-      const supabase = createClient();
-      const { data } = await supabase
-        .from("project_files")
-        .select("id")
-        .eq("project_id", project.id)
-        .order("created_at", { ascending: true })
-        .limit(1);
-      if (!cancelled && data && data.length > 0) {
-        setThumbId(data[0].id);
-      }
-    }
-    loadThumb();
-    return () => {
-      cancelled = true;
-    };
-  }, [project.id, project.project_image_id]);
+  // Thumbnail-ID ist serverseitig vorgeladen (siehe `projects/page.tsx`)
+  const thumbId = project.project_image_id;
 
   const updatedText = formatDistanceToNow(new Date(project.updated_at), {
     addSuffix: true,

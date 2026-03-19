@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import type { Invite, Profile } from "@/types/database";
 import type { StaffEntry } from "@/app/actions/invites";
-import { listStaffAction, createInviteAction } from "@/app/actions/invites";
+import { listStaffAction, createInviteAction, revokeInviteAction } from "@/app/actions/invites";
+import { transferAdminAction } from "@/app/actions/staff";
 import { useApp } from "@/components/providers/AppProvider";
 import { getT } from "@/lib/i18n";
 
@@ -94,6 +95,9 @@ export function StaffManager() {
   const t = getT(lang);
   const [rows, setRows] = useState<StaffRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [transferingId, setTransferingId] = useState<string | null>(null);
+  const [revokingId, setRevokingId] = useState<string | null>(null);
+  const [loadNonce, setLoadNonce] = useState(0);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteName, setInviteName] = useState("");
   const [creating, setCreating] = useState(false);
@@ -129,7 +133,7 @@ export function StaffManager() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [loadNonce]);
 
   async function handleInvite() {
     if (!inviteEmail.trim()) {
@@ -159,8 +163,44 @@ export function StaffManager() {
     } else {
       alert(t("staff.inviteCreated"));
     }
+    setLoadNonce((n) => n + 1);
     setInviteEmail("");
     setInviteName("");
+    router.refresh();
+  }
+
+  async function handleTransferAdmin(targetId: string) {
+    if (!window.confirm(t("staff.transferAdminConfirm"))) return;
+    setTransferingId(targetId);
+    const res = await transferAdminAction(targetId).catch((err) => ({
+      error: err instanceof Error ? err.message : String(err),
+    }));
+    setTransferingId(null);
+
+    if (res?.error) {
+      alert(res.error);
+      return;
+    }
+    alert(t("staff.transferAdminDone"));
+    setLoadNonce((n) => n + 1);
+    router.refresh();
+  }
+
+  async function handleRevokeInvite(inviteId: string) {
+    if (!window.confirm(t("staff.revokeInviteConfirm"))) return;
+    setRevokingId(inviteId);
+    const res = await revokeInviteAction(inviteId).catch((err) => ({
+      error: err instanceof Error ? err.message : String(err),
+    }));
+    setRevokingId(null);
+
+    if (res?.error) {
+      alert(res.error);
+      return;
+    }
+
+    alert(t("staff.revokeInviteDone"));
+    setLoadNonce((n) => n + 1);
     router.refresh();
   }
 
@@ -261,6 +301,7 @@ export function StaffManager() {
                 <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
                   {t("staff.status")}
                 </th>
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 bg-white">
@@ -277,6 +318,29 @@ export function StaffManager() {
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600">
                     {row.status === "active" ? t("staff.statusActive") : t("staff.statusInvited")}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-600">
+                    {row.kind === "invite" ? (
+                      <button
+                        type="button"
+                        onClick={() => handleRevokeInvite(row.id)}
+                        disabled={revokingId === row.id}
+                        className="rounded-md bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-100 disabled:opacity-50"
+                      >
+                        {revokingId === row.id ? "…" : t("staff.revokeInviteButton")}
+                      </button>
+                    ) : null}
+
+                    {row.kind === "active" && row.role !== "admin" ? (
+                      <button
+                        type="button"
+                        onClick={() => handleTransferAdmin(row.id)}
+                        disabled={transferingId === row.id}
+                        className="rounded-md bg-primary-100 px-3 py-1.5 text-xs font-medium text-primary-700 hover:bg-primary-200 disabled:opacity-50"
+                      >
+                        {transferingId === row.id ? "…" : t("staff.transferAdminButton")}
+                      </button>
+                    ) : null}
                   </td>
                 </tr>
               ))}

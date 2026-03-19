@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, FolderKanban, User, Users, Settings, LogOut, ChevronLeft, ChevronRight } from "lucide-react";
+import { LayoutDashboard, FolderKanban, User, Users, Settings, Type, LogOut, ChevronLeft, ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useApp } from "@/components/providers/AppProvider";
 import { getT } from "@/lib/i18n";
@@ -15,6 +15,7 @@ export const nav = (isAdmin: boolean) => {
   ];
   if (isAdmin) {
     items.push({ href: "/settings/staff", labelKey: "nav.staff", icon: Users });
+    items.push({ href: "/settings/labels", labelKey: "nav.labels", icon: Type });
     items.push({ href: "/settings/categories", labelKey: "nav.categories", icon: Settings });
   }
   return items;
@@ -47,8 +48,9 @@ export function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
         {navItems.map((item) => {
           const isActive =
             pathname === item.href ||
-            (item.href !== "/dashboard" && item.href !== "/settings/categories" && item.href !== "/settings/profile" && pathname.startsWith(item.href)) ||
+            (item.href !== "/dashboard" && item.href !== "/settings/categories" && item.href !== "/settings/profile" && item.href !== "/settings/labels" && pathname.startsWith(item.href)) ||
             (item.href === "/settings/categories" && pathname.startsWith("/settings/categories")) ||
+            (item.href === "/settings/labels" && pathname.startsWith("/settings/labels")) ||
             (item.href === "/settings/profile" && pathname.startsWith("/settings/profile"));
           const Icon = item.icon;
           const label = t(item.labelKey);

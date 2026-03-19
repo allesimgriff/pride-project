@@ -17,10 +17,34 @@ export default async function ProjectsPage() {
     .select("name, prefix")
     .order("sort_order", { ascending: true });
 
+  const projectRows = projects || [];
+
+  // Wenn `project_image_id` bei Projekten noch leer ist, laden wir einmalig das erste File pro Projekt
+  // (statt pro Karte im Browser erneut zu suchen).
+  const projectIds = projectRows.map((p) => p.id);
+  const thumbByProjectId: Record<string, string> = {};
+
+  if (projectIds.length > 0) {
+    const { data: projectFiles } = await supabase
+      .from("project_files")
+      .select("id, project_id, created_at")
+      .in("project_id", projectIds)
+      .order("created_at", { ascending: true });
+
+    (projectFiles || []).forEach((f) => {
+      if (!thumbByProjectId[f.project_id]) thumbByProjectId[f.project_id] = f.id;
+    });
+  }
+
+  const projectsWithThumbs = projectRows.map((p) => ({
+    ...p,
+    project_image_id: p.project_image_id ?? thumbByProjectId[p.id] ?? null,
+  }));
+
   return (
     <div className="space-y-6">
       <ProjectsPageHeader />
-      <ProjectsList projects={projects || []} categoryNames={categoryList || []} />
+      <ProjectsList projects={projectsWithThumbs} categoryNames={categoryList || []} />
     </div>
   );
 }

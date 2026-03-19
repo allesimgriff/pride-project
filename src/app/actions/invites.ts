@@ -119,3 +119,21 @@ export async function createInviteAction(
 
   return { token: data.token, error: null };
 }
+
+export async function revokeInviteAction(inviteId: string): Promise<{ error: string | null }> {
+  const supabase = await createClient();
+  const admin = await requireAdmin(supabase);
+  if (!admin) {
+    return { error: "Nur Admin darf Einladungen widerrufen." };
+  }
+
+  const cleanId = inviteId.trim();
+  if (!cleanId) {
+    return { error: "Ungültige Einladung." };
+  }
+
+  const { error } = await supabase.from("invites").delete().eq("id", cleanId);
+  if (error) return { error: error.message };
+
+  return { error: null };
+}
