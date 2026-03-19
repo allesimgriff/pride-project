@@ -7,6 +7,9 @@ const nextConfig: NextConfig = {
       { source: "/projekte/:path*", destination: "/projects/:path*", permanent: false },
     ];
   },
+  async rewrites() {
+    return [{ source: "/favicon.ico", destination: "/favicon.svg" }];
+  },
   images: {
     remotePatterns: [
       {

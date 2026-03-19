@@ -4,6 +4,9 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "PRIDE – Produktentwicklung Polstermöbel",
   description: "Interne Plattform für die Produktentwicklung von Polstermöbeln",
+  icons: {
+    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
+  },
 };
 
 export default function RootLayout({
