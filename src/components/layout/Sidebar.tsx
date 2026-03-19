@@ -2,7 +2,17 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, FolderKanban, User, Users, Settings, Type, LogOut, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  LayoutDashboard,
+  FolderKanban,
+  User,
+  Users,
+  Type,
+  Tag,
+  LogOut,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useApp } from "@/components/providers/AppProvider";
 import { getT } from "@/lib/i18n";
@@ -16,7 +26,7 @@ export const nav = (isAdmin: boolean) => {
   if (isAdmin) {
     items.push({ href: "/settings/staff", labelKey: "nav.staff", icon: Users });
     items.push({ href: "/settings/labels", labelKey: "nav.labels", icon: Type });
-    items.push({ href: "/settings/categories", labelKey: "nav.categories", icon: Settings });
+    items.push({ href: "/settings/categories", labelKey: "nav.categories", icon: Tag });
   }
   return items;
 };

@@ -1,0 +1,24 @@
+---
+description: PRIDE-Projekt – Kontext, Kommunikation, Deploy-Regeln
+alwaysApply: true
+---
+
+# PRIDE (Polstermöbel-Entwicklung)
+
+- **Stack:** Next.js 15, TypeScript, Supabase, Netlify. Siehe **`PROJECT-KONTEXT.md`** im Repo-Wurzelverzeichnis für vollen Überblick (Features, Pfade, Branching, lokale Dev-Hinweise).
+- **Zu Beginn größerer Aufgaben:** `PROJECT-KONTEXT.md` kurz zu Rate ziehen oder den Nutzer darauf verweisen.
+
+## Kommunikation mit dem Nutzer
+
+- Immer **Deutsch**, **knapp und klar**.
+- **Nicht** proaktiv Technik-Vorträge; Erklären nur **auf Nachfrage**.
+- **Kein automatisches Push/Deploy** – erst nach **ausdrücklicher Freigabe** des Nutzers.
+
+## Vorgehen
+
+- **Terminal:** Befehle nach Möglichkeit **selbst ausführen** (Clean, Build, Dev). Den Nutzer **nicht** zur Standard-Lösung verdonnern, Dinge nur selbst einzutippen; Ausnahmen nur wenn nötig (z. B. Zugang nur lokal beim Nutzer).
+- **Windows/PowerShell:** `&&` meiden; Befehle getrennt oder mit `;`.
+
+## Secrets
+
+- Keine Keys/Secrets in Chat oder Commits; nur `.env.local` / Hosting-Dashboard.
