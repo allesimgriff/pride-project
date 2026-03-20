@@ -17,6 +17,7 @@ interface ProjectRow {
   status: ProjectStatus;
   updated_at: string;
   project_image_id: string | null;
+  workspace_name: string | null;
 }
 
 interface ProjectsListProps {
@@ -95,6 +96,12 @@ function ProjectCard({
           {project.dev_number}
         </p>
         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-600 md:text-sm">
+          {project.workspace_name ? (
+            <span className="max-w-[12rem] truncate text-gray-600 sm:max-w-none" title={project.workspace_name}>
+              <span className="text-gray-400">{t("projects.workspace")}:</span>{" "}
+              <span className="font-medium text-gray-800">{project.workspace_name}</span>
+            </span>
+          ) : null}
           {/* Kategorie nur ab Tablet anzeigen */}
           <span className="hidden md:inline">
             {getCategoryDisplay(project.category, categoryNames)}

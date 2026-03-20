@@ -25,6 +25,7 @@ type ProjectRow = {
   status: ProjectStatus;
   updated_at: string;
   project_image_id: string | null;
+  workspace_name: string | null;
 };
 
 type TaskRow = {
@@ -66,6 +67,7 @@ export function DashboardContent({
   return (
     <div className="space-y-8">
       <PageTitle titleKey="dashboard.title" subtitleKey="dashboard.subtitle" />
+      <p className="-mt-4 text-sm text-gray-500">{t("dashboard.scopeHint")}</p>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <Link
@@ -154,6 +156,15 @@ export function DashboardContent({
                         <ArrowRight className="mt-0.5 h-4 w-4 shrink-0 text-gray-400" />
                       </div>
                       <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-gray-500">
+                        {p.workspace_name ? (
+                          <span
+                            className="max-w-[10rem] truncate text-gray-600 sm:max-w-[14rem]"
+                            title={p.workspace_name}
+                          >
+                            <span className="text-gray-400">{t("projects.workspace")}:</span>{" "}
+                            <span className="font-medium text-gray-800">{p.workspace_name}</span>
+                          </span>
+                        ) : null}
                         <span className="rounded-md bg-gray-100 px-2 py-0.5 font-medium text-gray-700">
                           {t(`status.${p.status}`)}
                         </span>

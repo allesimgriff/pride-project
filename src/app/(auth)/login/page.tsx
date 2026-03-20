@@ -1,7 +1,6 @@
 "use client";
 
 import { Suspense, useState, useEffect } from "react";
-import { createClient } from "@/lib/supabase/client";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getT } from "@/lib/i18n";
 import type { Lang } from "@/lib/i18n";
@@ -43,18 +42,34 @@ function LoginPageInner() {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    const supabase = createClient();
-    const { error: err } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    setLoading(false);
-    if (err) {
-      setError(err.message);
-      return;
+    try {
+      const res = await fetch("/api/auth/sign-in", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), password }),
+        credentials: "same-origin",
+      });
+      const data: unknown = await res.json().catch(() => ({}));
+      const msg =
+        typeof data === "object" &&
+        data !== null &&
+        "error" in data &&
+        typeof (data as { error: unknown }).error === "string"
+          ? (data as { error: string }).error
+          : null;
+      if (!res.ok) {
+        setError(msg ?? "Anmeldung fehlgeschlagen.");
+        return;
+      }
+      router.push(redirectTo);
+      router.refresh();
+    } catch {
+      setError(
+        "Netzwerkfehler. Bitte Verbindung prüfen oder Seite neu laden.",
+      );
+    } finally {
+      setLoading(false);
     }
-    router.push(redirectTo);
-    router.refresh();
   }
 
   return (

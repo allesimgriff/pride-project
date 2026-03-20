@@ -87,32 +87,48 @@ export default function RegisterClient() {
     setLoading(true);
     setError(null);
     setSuccess(null);
-    const supabase = createClient();
-
     const signupEmail = invite ? invite.email : email;
     const nextPath = `/login?email=${encodeURIComponent(signupEmail)}`;
     const emailRedirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(
       nextPath,
     )}`;
 
-    const { error: err } = await supabase.auth.signUp({
-      email: signupEmail,
-      password,
-      options: {
-        emailRedirectTo,
-        data: {
+    let errMsg: string | null = null;
+    try {
+      const res = await fetch("/api/auth/sign-up", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: signupEmail,
+          password,
+          emailRedirectTo,
           full_name: fullName || signupEmail,
-          // Wenn Einladung vorhanden ist, Rolle aus Invite übernehmen,
-          // sonst greift der Trigger (Standard: "entwicklung")
           ...(invite ? { role: invite.role } : {}),
-        },
-      },
-    });
+        }),
+        credentials: "same-origin",
+      });
+      const data: unknown = await res.json().catch(() => ({}));
+      const msg =
+        typeof data === "object" &&
+        data !== null &&
+        "error" in data &&
+        typeof (data as { error: unknown }).error === "string"
+          ? (data as { error: string }).error
+          : null;
+      if (!res.ok) {
+        errMsg = msg ?? "Registrierung fehlgeschlagen.";
+      }
+    } catch {
+      errMsg =
+        lang === "de"
+          ? "Netzwerkfehler. Bitte Verbindung prüfen oder Seite neu laden."
+          : "Network error. Please check your connection or reload the page.";
+    }
 
     setLoading(false);
 
-    if (err) {
-      setError(err.message);
+    if (errMsg) {
+      setError(errMsg);
       return;
     }
 

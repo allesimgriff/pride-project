@@ -18,6 +18,10 @@ Interne webbasierte Plattform für die gemeinsame Produktentwicklung von Polster
 
 ## Einrichtung
 
+**Wenn du nicht programmierst:** bitte nur der Datei **`LOKAL_STARTEN.md`** folgen (Schritt für Schritt, Befehle zum Kopieren).
+
+---
+
 ### 1. Abhängigkeiten
 
 ```bash

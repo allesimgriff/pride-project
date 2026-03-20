@@ -12,14 +12,16 @@ export async function getCategoriesAction() {
   return { data, error: null };
 }
 
-/** Nächste freie Entwicklungsnummer für einen Präfix (z. B. PM_Chairs_2025_001). */
-export async function getNextDevNumberAction(prefix: string) {
+/** Nächste freie Entwicklungsnummer für einen Präfix innerhalb eines Workspace (z. B. PM_Chairs_2025_001). */
+export async function getNextDevNumberAction(prefix: string, workspaceId: string) {
   const supabase = await createClient();
+  if (!workspaceId?.trim()) return { devNumber: `${prefix}_${new Date().getFullYear()}_001` };
   const year = new Date().getFullYear();
   const pattern = `${prefix}_${year}_%`;
   const { data } = await supabase
     .from("projects")
     .select("dev_number")
+    .eq("workspace_id", workspaceId)
     .ilike("dev_number", pattern)
     .order("dev_number", { ascending: false })
     .limit(1);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
@@ -13,6 +13,7 @@ import { getT } from "@/lib/i18n";
 import type { ProjectLabelMap } from "@/lib/projectLabelDefaults";
 
 interface NewProjectFormProps {
+  workspaces: { id: string; name: string }[];
   categories: { name: string; prefix: string }[];
   canEdit: boolean;
   projectLabels: ProjectLabelMap;
@@ -28,7 +29,7 @@ const STATUSES: ProjectStatus[] = [
   "archiviert",
 ];
 
-export function NewProjectForm({ categories, canEdit, projectLabels }: NewProjectFormProps) {
+export function NewProjectForm({ workspaces, categories, canEdit, projectLabels }: NewProjectFormProps) {
   const router = useRouter();
   const { lang } = useApp();
   const t = getT(lang);
@@ -46,14 +47,8 @@ export function NewProjectForm({ categories, canEdit, projectLabels }: NewProjec
     return lang === "de" ? (item?.de || fallback) : (item?.en || fallback);
   };
 
-  async function onCategoryChange(prefix: string) {
-    setForm((f) => ({ ...f, category: prefix }));
-    if (!prefix) return;
-    setLoadingNumber(true);
-    const { devNumber } = await getNextDevNumberAction(prefix);
-    setLoadingNumber(false);
-    setForm((f) => ({ ...f, dev_number: devNumber }));
-  }
+  const [workspaceId, setWorkspaceId] = useState(workspaces[0]?.id ?? "");
+
   const [form, setForm] = useState({
     dev_number: "",
     product_name: "",
@@ -66,10 +61,45 @@ export function NewProjectForm({ categories, canEdit, projectLabels }: NewProjec
     open_points: "",
   });
 
+  useEffect(() => {
+    if (workspaces.length === 0) return;
+    if (!workspaceId || !workspaces.some((w) => w.id === workspaceId)) {
+      setWorkspaceId(workspaces[0].id);
+    }
+  }, [workspaces, workspaceId]);
+
+  async function refreshDevNumber(prefix: string, wsId: string) {
+    if (!prefix || !wsId) return;
+    setLoadingNumber(true);
+    const { devNumber } = await getNextDevNumberAction(prefix, wsId);
+    setLoadingNumber(false);
+    setForm((f) => ({ ...f, dev_number: devNumber }));
+  }
+
+  async function onCategoryChange(prefix: string) {
+    setForm((f) => ({ ...f, category: prefix }));
+    if (!prefix) return;
+    await refreshDevNumber(prefix, workspaceId);
+  }
+
+  async function onWorkspaceChange(wsId: string) {
+    setWorkspaceId(wsId);
+    const cat = form.category;
+    if (cat && wsId) await refreshDevNumber(cat, wsId);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!canEdit) {
-      alert(lang === "de" ? "Nur Admin darf Projekte und Dokumentation anlegen." : "Only admin can create projects and documentation.");
+      alert(
+        lang === "de"
+          ? "Keine Berechtigung zum Anlegen von Projekten."
+          : "You are not allowed to create projects."
+      );
+      return;
+    }
+    if (!workspaceId) {
+      alert(lang === "de" ? "Bitte einen Workspace wählen." : "Please choose a workspace.");
       return;
     }
     setLoading(true);
@@ -77,6 +107,7 @@ export function NewProjectForm({ categories, canEdit, projectLabels }: NewProjec
       technical_notes: form.technical_notes || undefined,
     };
     const result = await createProjectAction({
+      workspace_id: workspaceId,
       dev_number: form.dev_number,
       product_name: form.product_name,
       category: form.category || null,
@@ -186,6 +217,23 @@ export function NewProjectForm({ categories, canEdit, projectLabels }: NewProjec
     <div className="card p-6">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
+          <div className="sm:col-span-2">
+            <label className="block text-sm font-medium text-gray-700">{t("newProject.workspace")}</label>
+            <select
+              value={workspaceId}
+              onChange={(e) => onWorkspaceChange(e.target.value)}
+              className="input-base mt-1"
+              disabled={!canEdit || workspaces.length === 0}
+              required
+            >
+              <option value="">{t("newProject.workspacePlaceholder")}</option>
+              {workspaces.map((w) => (
+                <option key={w.id} value={w.id}>
+                  {w.name}
+                </option>
+              ))}
+            </select>
+          </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">
               {label("category", t("newProject.category"))}

@@ -14,9 +14,21 @@ alwaysApply: true
 - **Nicht** proaktiv Technik-Vorträge; Erklären nur **auf Nachfrage**.
 - **Kein automatisches Push/Deploy** – erst nach **ausdrücklicher Freigabe** des Nutzers.
 
+### Nutzer ohne Programmiererfahrung
+
+- Zum **lokalen Einrichten und zur Befehls-Reihenfolge** immer **`LOKAL_STARTEN.md`** im Repo-Wurzelverzeichnis als **maßgebliche Anleitung** nennen oder dort verweisen.
+- **Terminal:** Befehle, die der Nutzer ausführt, **immer von der KI liefern**: **nummeriert**, **ein Schritt = ein Kopierfeld**, **vollständiger** PowerShell-Befehl pro Kasten — **keine** Bruchstücke. Der Nutzer tippt **nichts** im Terminal außer dem Kopierten.
+- **Terminal-Befehle** nur **einzeln**, jeweils in einem **eigenen Codeblock** zum Kopieren.
+- **Immer ausdrücklich sagen:** Ins Terminal gehört **nur** der Inhalt des **`powershell`-Kastens** – **niemals** Tabellenausgaben (`----`, `LocalAddress`, `::`), **niemals** Zeilen mit **`PS C:\`**, **niemals** Fehlermeldungen oder Erklärtexte einfügen (das sind oft Parser-Fehler in PowerShell).
+
+**Klare Struktur bei Terminal-Schritten (Pflicht):** Vor jedem Befehl kurz die drei Punkte **WAS** (ein Satz) · **WO** (Terminal in Cursor) · **NUR DIES** (ein Codeblock). Mehrere Schritte = nummeriert; Nutzer führt **nacheinander** aus, nicht alles auf einmal.
+- **Reihenfolge:** Zuerst **`.env.local` ausfüllen** und **Supabase (SQL + Auth-URLs)**, **dann erst** `npm install` / `npm run dev`. Niemals `npm run dev` vor „Zugangsdaten fertig“ empfehlen, ohne das klar an erste Stelle zu setzen.
+- Den Befehl `Copy-Item ... .env.local` klar als **nur einmal** kennzeichnen – **Warnung**, dass Wiederholung die eingetragenen Keys **überschreibt**.
+- Wenn der Nutzer etwas **nur in Supabase** (Browser) erledigen kann: das **explizit** sagen, z. B. **„Das musst du bei Supabase machen“**, plus kurz *wo* (z. B. SQL Editor, Authentication → URL Configuration). Nicht so tun, als könnte die KI das für ihn klicken.
+
 ## Vorgehen
 
-- **Terminal:** Befehle nach Möglichkeit **selbst ausführen** (Clean, Build, Dev). Den Nutzer **nicht** zur Standard-Lösung verdonnern, Dinge nur selbst einzutippen; Ausnahmen nur wenn nötig (z. B. Zugang nur lokal beim Nutzer).
+- **Terminal:** Wo der Nutzer selbst ausführen muss: **nummerierte, vollständige Kopierbefehle** liefern (siehe oben). Parallel dürfen Befehle nach Möglichkeit **vom Agenten** ausgeführt werden (Clean, Build, Dev), ohne den Nutzer zum freien Tippen zu zwingen.
 - **Windows/PowerShell:** `&&` meiden; Befehle getrennt oder mit `;`.
 
 ## Secrets

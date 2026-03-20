@@ -2,8 +2,10 @@
 
 import { createClient } from "@/lib/supabase/server";
 import type { ProjectStatus } from "@/types/database";
+import { canManageProjectAsAdmin } from "@/lib/workspacePermissions";
 
 export async function createProjectAction(data: {
+  workspace_id: string;
   dev_number: string;
   product_name: string;
   category?: string | null;
@@ -17,23 +19,17 @@ export async function createProjectAction(data: {
   open_points?: string | null;
 }) {
   const supabase = await createClient();
+  if (!data.workspace_id?.trim()) return { error: "Workspace erforderlich", id: null };
   if (!data.dev_number.trim()) return { error: "Entwicklungsnummer erforderlich", id: null };
   if (!data.product_name.trim()) return { error: "Produktname erforderlich", id: null };
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Nicht angemeldet", id: null };
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-  if (!profile || profile.role !== "admin") {
-    return { error: "Nur Admin darf Projekte und Dokumentation anlegen.", id: null };
-  }
 
   const { data: project, error } = await supabase
     .from("projects")
     .insert({
+      workspace_id: data.workspace_id.trim(),
       dev_number: data.dev_number.trim(),
       product_name: data.product_name.trim(),
       category: data.category || null,
@@ -45,7 +41,7 @@ export async function createProjectAction(data: {
       functions: data.functions || null,
       materials: data.materials || null,
       open_points: data.open_points || null,
-      created_by: null,
+      created_by: user.id,
     })
     .select("id")
     .single();
@@ -54,7 +50,7 @@ export async function createProjectAction(data: {
   // Eintrag in der Historie ist nett, aber nicht zwingend:
   await supabase.from("project_updates").insert({
     project_id: project.id,
-    author_id: null,
+    author_id: user.id,
     change_summary: "Projekt angelegt",
     changes: { dev_number: data.dev_number, product_name: data.product_name },
   });
@@ -83,13 +79,11 @@ export async function updateProjectAction(
   } = await supabase.auth.getUser();
   if (!user) return { error: "Nicht angemeldet" };
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-  if (!profile || profile.role !== "admin") {
-    return { error: "Nur Admin darf Projekte bearbeiten." };
+  const { data: proj } = await supabase.from("projects").select("workspace_id").eq("id", id).single();
+  if (!proj) return { error: "Projekt nicht gefunden." };
+
+  if (!(await canManageProjectAsAdmin(supabase, user.id, proj.workspace_id))) {
+    return { error: "Nur Workspace- oder App-Admin dürfen Stammdaten bearbeiten." };
   }
 
   const { error } = await supabase.from("projects").update(data).eq("id", id);
@@ -197,6 +191,76 @@ export async function toggleTaskAction(taskId: string, completed: boolean) {
   return {};
 }
 
+export async function moveProjectToWorkspaceAction(
+  projectId: string,
+  targetWorkspaceId: string,
+): Promise<{ error: string | null }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Nicht angemeldet." };
+
+  const tid = targetWorkspaceId.trim();
+  if (!tid) return { error: "Ziel-Workspace erforderlich." };
+
+  const { data: proj, error: pErr } = await supabase
+    .from("projects")
+    .select("workspace_id, dev_number")
+    .eq("id", projectId)
+    .single();
+
+  if (pErr || !proj) return { error: "Projekt nicht gefunden." };
+  if (proj.workspace_id === tid) return { error: null };
+
+  const canSource = await canManageProjectAsAdmin(supabase, user.id, proj.workspace_id);
+  const canTarget = await canManageProjectAsAdmin(supabase, user.id, tid);
+  if (!canSource || !canTarget) {
+    return {
+      error:
+        "Keine Berechtigung: Quell- und Ziel-Workspace erfordern Workspace- oder App-Admin.",
+    };
+  }
+
+  const { data: clash } = await supabase
+    .from("projects")
+    .select("id")
+    .eq("workspace_id", tid)
+    .eq("dev_number", proj.dev_number)
+    .neq("id", projectId)
+    .maybeSingle();
+
+  if (clash) {
+    return {
+      error: "Diese Entwicklungsnummer gibt es im Ziel-Workspace schon.",
+    };
+  }
+
+  const { error: uErr } = await supabase
+    .from("projects")
+    .update({ workspace_id: tid })
+    .eq("id", projectId);
+
+  if (uErr) {
+    const m = uErr.message.toLowerCase();
+    if (m.includes("unique") || m.includes("duplicate")) {
+      return {
+        error: "Diese Entwicklungsnummer gibt es im Ziel-Workspace schon.",
+      };
+    }
+    return { error: uErr.message };
+  }
+
+  await supabase.from("project_updates").insert({
+    project_id: projectId,
+    author_id: user.id,
+    change_summary: "In anderen Workspace verschoben",
+    changes: { workspace_id: tid },
+  });
+
+  return { error: null };
+}
+
 export async function deleteProjectAction(projectId: string) {
   const supabase = await createClient();
   const {
@@ -204,14 +268,11 @@ export async function deleteProjectAction(projectId: string) {
   } = await supabase.auth.getUser();
   if (!user) return { error: "Nicht angemeldet" };
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
+  const { data: proj } = await supabase.from("projects").select("workspace_id").eq("id", projectId).single();
+  if (!proj) return { error: "Projekt nicht gefunden." };
 
-  if (!profile || profile.role !== "admin") {
-    return { error: "Nur Admins dürfen Projekte löschen." };
+  if (!(await canManageProjectAsAdmin(supabase, user.id, proj.workspace_id))) {
+    return { error: "Nur Workspace- oder App-Admin dürfen Projekte löschen." };
   }
 
   const { error } = await supabase.from("projects").delete().eq("id", projectId);
@@ -228,6 +289,18 @@ export async function deleteTaskAction(taskId: string) {
 
 export async function setProjectImageAction(projectId: string, fileId: string | null) {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Nicht angemeldet" };
+
+  const { data: proj } = await supabase.from("projects").select("workspace_id").eq("id", projectId).single();
+  if (!proj) return { error: "Projekt nicht gefunden." };
+
+  if (!(await canManageProjectAsAdmin(supabase, user.id, proj.workspace_id))) {
+    return { error: "Nur Workspace- oder App-Admin dürfen das Projektbild setzen." };
+  }
+
   const { error } = await supabase
     .from("projects")
     .update({ project_image_id: fileId })

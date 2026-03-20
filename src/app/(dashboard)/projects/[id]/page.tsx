@@ -11,6 +11,9 @@ import { ProjectTimeline } from "@/components/projects/ProjectTimeline";
 import { ProjectHistory } from "@/components/projects/ProjectHistory";
 import { ProjectPhotosSection } from "@/components/projects/ProjectPhotosSection";
 import { buildProjectLabelMap } from "@/lib/projectLabelDefaults";
+import { canManageProjectAsAdmin } from "@/lib/workspacePermissions";
+import { listWorkspacesForProjectMoveAction } from "@/app/actions/workspaces";
+import { ProjectWorkspaceMove } from "@/components/projects/ProjectWorkspaceMove";
 
 export default async function ProjectDetailPage({
   params,
@@ -34,11 +37,21 @@ export default async function ProjectDetailPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: profile } = user
-    ? await supabase.from("profiles").select("role").eq("id", user.id).single()
-    : { data: null };
+  const canEdit = Boolean(
+    user && (await canManageProjectAsAdmin(supabase, user.id, project.workspace_id ?? null))
+  );
 
-  const canEdit = profile?.role === "admin";
+  let moveTargets: { id: string; name: string }[] = [];
+  let currentWorkspaceName = "";
+  if (canEdit && project.workspace_id) {
+    const [moveList, wsRes] = await Promise.all([
+      listWorkspacesForProjectMoveAction(),
+      supabase.from("workspaces").select("name").eq("id", project.workspace_id).single(),
+    ]);
+    moveTargets = moveList.error ? [] : moveList.data;
+    currentWorkspaceName = wsRes.data?.name ?? "—";
+  }
+
   const { data: labelsRaw } = await supabase
     .from("project_labels")
     .select("key,label_de,label_en");
@@ -82,6 +95,15 @@ export default async function ProjectDetailPage({
       </div>
 
       <ProjectDetailHeader project={project} />
+
+      {canEdit ? (
+        <ProjectWorkspaceMove
+          projectId={id}
+          currentWorkspaceId={project.workspace_id}
+          currentWorkspaceName={currentWorkspaceName}
+          targets={moveTargets}
+        />
+      ) : null}
 
       <div className="grid gap-6 lg:grid-cols-3 print-grid">
         <div className="lg:col-span-2 space-y-6 print-main-column">

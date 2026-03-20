@@ -26,6 +26,10 @@ Interne Plattform **„Produktentwicklung Polstermöbel“** (PRIDE): Projekte, 
 ## Datenbank
 
 - SQL-Migrationen: `supabase/migrations/` (z. B. `project_labels`, Admin-Policies, `invites` DELETE).  
+- **`011_workspaces.sql`:** **Workspaces** (Gruppen), **Mitglieder** (`workspace_members`, Rollen `admin`/`member`), **Einladungen** (`workspace_invites`); Projekte haben **`workspace_id`**; Sichtbarkeit/Bearbeitung von Kommentaren, Dateien, Aufgaben u. a. über `project_accessible`; **Projekt-Zeile** (`projects`): INSERT für Mitglieder des Workspace (und App-Admin), UPDATE/DELETE nur **Workspace-Admin** oder **App-Admin** (Stammdaten/Projektbild).  
+- **`012_project_rls_workspace_admin_updates.sql`:** Feinjustierung **INSERT** (App-Admin ohne Workspace-Mitgliedschaft) und **UPDATE** auf `projects` nur für App-/Workspace-Admin.  
+- Neuere/historische Migrationen (z. B. `010_…`) können ältere RLS ersetzt haben – **Reihenfolge beim Einspielen beachten**.  
+- Neue Projekte: `created_by` = anlegender User, **`workspace_id`** Pflicht (siehe `createProjectAction`, Formular „Neues Projekt“).  
 - Nach Schema-Änderungen: Migration in Supabase ausführen, falls noch nicht eingespielt.
 
 ## Kern-Funktionen (stabil auf main)
@@ -33,7 +37,8 @@ Interne Plattform **„Produktentwicklung Polstermöbel“** (PRIDE): Projekte, 
 - Login / Logout, Registrierung inkl. **Invite** (`/register?token=…`), E-Mail-Bestätigung über Supabase.  
 - **Projekte:** Liste, Detail, Stammdaten, Kategorien, Status; **Projektbild** & Galerie (Storage `project-photos`, private Auslieferung über API).  
 - **Dashboard:** KPIs (aktive Projekte, offene Aufgaben, letzte Änderungen), **Aktuelle Projekte** (Timeline, scrollbar, **Vorschaubild** wie Projektliste), Aufgaben-Liste, Änderungs-Feed.  
-- **Admin:** Mitarbeiter (Rollen, Einladungen widerrufen), **Überschriften** (`project_labels`, DE/EN), Kategorien; nur Admin bearbeitet projekt-Stammdaten-Felder (ohne Zielpreis).  
+- **Workspaces:** `/workspaces` – anlegen, Mitglieder, Einladung per E-Mail (Link `/workspaces/join?token=…`); alle Mitglieder sehen alle Projekte des Workspace.  
+- **Admin (App):** Mitarbeiter (Rollen, Einladungen widerrufen), **Überschriften** (`project_labels`, DE/EN), Kategorien; **Stammdaten** am Projekt: **Workspace-Admin** oder **App-Admin**.  
 - **Checkliste:** u. a. Massen-Import aus Text (`addTasksBulkAction`).  
 - **Drucken:** Print-Styles + Drucken auf Detailseite / Dateien (Stand je nach letztem Deploy).
 
@@ -43,6 +48,7 @@ Interne Plattform **„Produktentwicklung Polstermöbel“** (PRIDE): Projekte, 
 |--------|-----------------|
 | Dashboard | `src/app/(dashboard)/dashboard/`, `src/components/dashboard/DashboardContent.tsx` |
 | Projekte | `src/app/(dashboard)/projects/`, `src/components/projects/`, `src/app/actions/projects.ts` |
+| Workspaces | `src/app/(dashboard)/workspaces/`, `src/app/actions/workspaces.ts`, `src/lib/workspacePermissions.ts` |
 | Layout / Nav | `src/components/layout/Sidebar.tsx`, `Header.tsx`, `DashboardShell.tsx` |
 | i18n | `src/lib/i18n.ts` |
 | Supabase Server | `src/lib/supabase/server.ts`, `middleware.ts` |

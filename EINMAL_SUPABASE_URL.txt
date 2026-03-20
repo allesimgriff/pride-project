@@ -1,0 +1,11 @@
+Einmalig (von jemandem mit supabase.com-Zugang):
+
+1. Browser: supabase.com → dein Projekt → Project Settings → API
+2. „Project URL“ kopieren → in Cursor Datei .env.local bei NEXT_PUBLIC_SUPABASE_URL= einfügen (nach dem Gleichheitszeichen)
+3. „anon public“ Key kopieren → bei NEXT_PUBLIC_SUPABASE_ANON_KEY= einfügen
+4. Datei speichern (Strg+S)
+5. Terminal: npm run dev neu starten
+
+Detailliert (Mausklicks): LOKAL_STARTEN.md → Abschnitt „B3 und API: Klick für Klick“
+
+Die alte URL in .env.local war ungültig (Hostname existiert im Internet nicht).

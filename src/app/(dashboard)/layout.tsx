@@ -35,14 +35,8 @@ export default async function DashboardLayout({
     profile = res.data;
   }
 
-  const isAdmin = profile?.role === "admin";
-
   return (
-    <DashboardShell
-      isAdmin={isAdmin}
-      user={user}
-      profile={profile}
-    >
+    <DashboardShell user={user} profile={profile}>
       {children}
     </DashboardShell>
   );

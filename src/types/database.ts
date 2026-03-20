@@ -35,8 +35,37 @@ export interface Profile {
   updated_at: string;
 }
 
+export type WorkspaceMemberRole = "admin" | "member";
+
+export interface Workspace {
+  id: string;
+  name: string;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WorkspaceMember {
+  workspace_id: string;
+  user_id: string;
+  role: WorkspaceMemberRole;
+  created_at: string;
+}
+
+export interface WorkspaceInvite {
+  id: string;
+  workspace_id: string;
+  email: string;
+  token: string;
+  role: WorkspaceMemberRole;
+  invited_by: string | null;
+  accepted_at: string | null;
+  created_at: string;
+}
+
 export interface Project {
   id: string;
+  workspace_id: string;
   dev_number: string;
   product_name: string;
   category: string | null;

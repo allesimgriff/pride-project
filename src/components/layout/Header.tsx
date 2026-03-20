@@ -7,14 +7,13 @@ import type { User } from "@supabase/supabase-js";
 import type { Profile } from "@/types/database";
 import { useApp } from "@/components/providers/AppProvider";
 import { getT } from "@/lib/i18n";
-import { nav } from "@/components/layout/Sidebar";
+import { primaryNavItems, isPrimaryNavActive } from "@/components/layout/navConfig";
 import { LogOut } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 interface HeaderProps {
   user: User;
   profile: Profile | null;
-  isAdmin: boolean;
 }
 
 function getInitials(profile: Profile | null, user: User) {
@@ -28,7 +27,7 @@ function getInitials(profile: Profile | null, user: User) {
   return email ? email.slice(0, 2).toUpperCase() : "?";
 }
 
-export function Header({ user, profile, isAdmin }: HeaderProps) {
+export function Header({ user, profile }: HeaderProps) {
   const { lang, setLang } = useApp();
   const router = useRouter();
   const t = getT(lang);
@@ -37,7 +36,7 @@ export function Header({ user, profile, isAdmin }: HeaderProps) {
   const avatarUrl = profile?.avatar_url ?? null;
   const initials = getInitials(profile, user);
   const pathname = usePathname();
-  const navItems = nav(isAdmin);
+  const navItems = primaryNavItems;
 
   return (
     <header className="sticky top-0 z-30 border-b border-gray-200 bg-white">
@@ -113,9 +112,7 @@ export function Header({ user, profile, isAdmin }: HeaderProps) {
       {/* Mobile: horizontale Navigation unter der Kopfzeile */}
       <nav className="flex md:hidden border-t border-gray-200 px-1 pb-1 pt-1 overflow-x-auto bg-white">
         {navItems.map((item) => {
-          const isActive =
-            pathname === item.href ||
-            (item.href !== "/dashboard" && pathname.startsWith(item.href));
+          const isActive = isPrimaryNavActive(pathname, item);
           const Icon = item.icon;
           const label = t(item.labelKey);
           return (

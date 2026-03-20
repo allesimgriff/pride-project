@@ -2,41 +2,17 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import {
-  LayoutDashboard,
-  FolderKanban,
-  User,
-  Users,
-  Type,
-  Tag,
-  LogOut,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
+import { LogOut, ChevronLeft, ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useApp } from "@/components/providers/AppProvider";
 import { getT } from "@/lib/i18n";
+import { primaryNavItems, isPrimaryNavActive } from "@/components/layout/navConfig";
 
-export const nav = (isAdmin: boolean) => {
-  const items: { href: string; labelKey: string; icon: React.ComponentType<{ className?: string }> }[] = [
-    { href: "/dashboard", labelKey: "nav.dashboard", icon: LayoutDashboard },
-    { href: "/projects", labelKey: "nav.projects", icon: FolderKanban },
-    { href: "/settings/profile", labelKey: "nav.profile", icon: User },
-  ];
-  if (isAdmin) {
-    items.push({ href: "/settings/staff", labelKey: "nav.staff", icon: Users });
-    items.push({ href: "/settings/labels", labelKey: "nav.labels", icon: Type });
-    items.push({ href: "/settings/categories", labelKey: "nav.categories", icon: Tag });
-  }
-  return items;
-};
-
-export function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
+export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { sidebarCollapsed, setSidebarCollapsed, lang } = useApp();
   const t = getT(lang);
-  const navItems = nav(isAdmin);
 
   return (
     <aside
@@ -44,24 +20,19 @@ export function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
         sidebarCollapsed ? "w-16" : "w-64"
       }`}
     >
-      <div className={`flex h-16 items-center border-b border-gray-200 ${sidebarCollapsed ? "justify-center px-0" : "px-6"}`}>
+      <div
+        className={`flex h-16 items-center border-b border-gray-200 ${sidebarCollapsed ? "justify-center px-0" : "px-6"}`}
+      >
         {!sidebarCollapsed && (
           <Link href="/dashboard" className="flex items-center gap-2 font-semibold text-gray-900">
             <span className="text-primary-600">PRIDE</span>
           </Link>
         )}
-        {sidebarCollapsed && (
-          <span className="text-primary-600 font-semibold text-sm">P</span>
-        )}
+        {sidebarCollapsed && <span className="text-sm font-semibold text-primary-600">P</span>}
       </div>
       <nav className="flex-1 space-y-1 p-2">
-        {navItems.map((item) => {
-          const isActive =
-            pathname === item.href ||
-            (item.href !== "/dashboard" && item.href !== "/settings/categories" && item.href !== "/settings/profile" && item.href !== "/settings/labels" && pathname.startsWith(item.href)) ||
-            (item.href === "/settings/categories" && pathname.startsWith("/settings/categories")) ||
-            (item.href === "/settings/labels" && pathname.startsWith("/settings/labels")) ||
-            (item.href === "/settings/profile" && pathname.startsWith("/settings/profile"));
+        {primaryNavItems.map((item) => {
+          const isActive = isPrimaryNavActive(pathname, item);
           const Icon = item.icon;
           const label = t(item.labelKey);
           return (
