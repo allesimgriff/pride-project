@@ -37,7 +37,7 @@ export async function GET(
   return new NextResponse(blob, {
     headers: {
       "Content-Type": blob.type || mime || "image/jpeg",
-      "Cache-Control": "private, max-age=300",
+      "Cache-Control": "private, max-age=86400, stale-while-revalidate=604800",
     },
   });
 }

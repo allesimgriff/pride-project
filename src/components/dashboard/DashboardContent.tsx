@@ -10,14 +10,6 @@ import { useApp } from "@/components/providers/AppProvider";
 import { getT } from "@/lib/i18n";
 import { PageTitle } from "@/components/layout/PageTitle";
 
-const ACTIVE_STATUSES: ProjectStatus[] = [
-  "idee",
-  "konzept",
-  "entwicklung",
-  "muster",
-  "freigabe",
-];
-
 type ProjectRow = {
   id: string;
   dev_number: string;
@@ -46,6 +38,8 @@ type UpdateRow = {
 
 interface DashboardContentProps {
   projects: ProjectRow[] | null;
+  /** Gesamtanzahl „aktiver“ Projekte (Server-COUNT), nicht nur die letzten N in der Liste */
+  activeProjectsCount: number;
   openTasks: TaskRow[] | null;
   openTasksTotal: number;
   recentUpdates: UpdateRow[] | null;
@@ -53,6 +47,7 @@ interface DashboardContentProps {
 
 export function DashboardContent({
   projects,
+  activeProjectsCount,
   openTasks,
   openTasksTotal,
   recentUpdates,
@@ -60,9 +55,6 @@ export function DashboardContent({
   const { lang } = useApp();
   const t = getT(lang);
   const dateLocale = lang === "de" ? de : enUS;
-
-  const activeCount =
-    projects?.filter((p) => ACTIVE_STATUSES.includes(p.status)).length ?? 0;
 
   return (
     <div className="space-y-8">
@@ -82,7 +74,7 @@ export function DashboardContent({
               <p className="text-sm font-medium text-gray-500">
                 {t("dashboard.activeProjects")}
               </p>
-              <p className="text-2xl font-semibold text-gray-900">{activeCount}</p>
+              <p className="text-2xl font-semibold text-gray-900">{activeProjectsCount}</p>
             </div>
           </div>
         </Link>

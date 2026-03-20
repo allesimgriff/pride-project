@@ -3,17 +3,17 @@ import { ProjectsList } from "@/components/projects/ProjectsList";
 import { ProjectsPageHeader } from "@/components/projects/ProjectsPageHeader";
 import { ProjectsScopeHint } from "@/components/projects/ProjectsScopeHint";
 import type { ProjectStatus } from "@/types/database";
+import { getDashboardSession } from "@/lib/auth/cachedDashboardSession";
+import { mapFirstFileIdByProjectId } from "@/lib/supabase/firstFileThumbs";
 
 export default async function ProjectsPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const session = await getDashboardSession();
+  const user = session?.user;
+  const profile = session?.profile ?? null;
 
-  const [profileRes, workspaceRes, projectsRes, categoryRes] = await Promise.all([
-    user
-      ? supabase.from("profiles").select("role").eq("id", user.id).single()
-      : Promise.resolve({ data: null }),
+  const supabase = await createClient();
+
+  const [workspaceRes, projectsRes, categoryRes] = await Promise.all([
     user
       ? supabase
           .from("workspace_members")
@@ -32,7 +32,6 @@ export default async function ProjectsPage() {
       .order("sort_order", { ascending: true }),
   ]);
 
-  const profile = profileRes.data;
   const isAdmin = profile?.role === "admin";
   const workspaceMembershipCount = workspaceRes.count;
   const canCreateProject = isAdmin || (workspaceMembershipCount ?? 0) > 0;
@@ -40,23 +39,8 @@ export default async function ProjectsPage() {
   const categoryList = categoryRes.data;
 
   const projectRows = projects || [];
-
-  // Wenn `project_image_id` bei Projekten noch leer ist, laden wir einmalig das erste File pro Projekt
-  // (statt pro Karte im Browser erneut zu suchen).
   const projectIds = projectRows.map((p) => p.id);
-  const thumbByProjectId: Record<string, string> = {};
-
-  if (projectIds.length > 0) {
-    const { data: projectFiles } = await supabase
-      .from("project_files")
-      .select("id, project_id, created_at")
-      .in("project_id", projectIds)
-      .order("created_at", { ascending: true });
-
-    (projectFiles || []).forEach((f) => {
-      if (!thumbByProjectId[f.project_id]) thumbByProjectId[f.project_id] = f.id;
-    });
-  }
+  const thumbByProjectId = await mapFirstFileIdByProjectId(supabase, projectIds);
 
   const projectsWithThumbs = projectRows.map((p) => {
     const raw = p as {

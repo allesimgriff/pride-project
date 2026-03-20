@@ -7,6 +7,10 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    /*
+     * Session-Refresh weglassen für statische Assets und Bild-APIs (sonst pro Thumbnail
+     * ein zusätzlicher Supabase-auth/User-Roundtrip).
+     */
+    "/((?!_next/static|_next/image|favicon.ico|api/files|api/photos|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

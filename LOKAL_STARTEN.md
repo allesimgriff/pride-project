@@ -130,6 +130,7 @@ Für **jede** Datei unten:
 11. `010_project_owner_rls.sql`  
 12. `011_workspaces.sql`  
 13. `012_project_rls_workspace_admin_updates.sql`  
+14. `013_first_file_id_per_project.sql`  
 
 **Wenn eine Meldung kommt wie „existiert bereits“:** Diese eine Datei **überspringen** und zur nächsten gehen – deine Datenbank hatte den Schritt vermutlich schon. (Wenn viele Fehler kommen: anhalten und Hilfe holen.)
 

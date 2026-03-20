@@ -14,6 +14,7 @@ import { buildProjectLabelMap } from "@/lib/projectLabelDefaults";
 import { canManageProjectAsAdmin } from "@/lib/workspacePermissions";
 import { listWorkspacesForProjectMoveAction } from "@/app/actions/workspaces";
 import { ProjectWorkspaceMove } from "@/components/projects/ProjectWorkspaceMove";
+import { getAuthUser } from "@/lib/auth/cachedDashboardSession";
 
 export default async function ProjectDetailPage({
   params,
@@ -23,47 +24,28 @@ export default async function ProjectDetailPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const { data: project, error } = await supabase
-    .from("projects")
-    .select("*")
-    .eq("id", id)
-    .single();
+  const [projectRes, user, labelsRes, categoriesRes] = await Promise.all([
+    supabase.from("projects").select("*").eq("id", id).single(),
+    getAuthUser(),
+    supabase.from("project_labels").select("key,label_de,label_en"),
+    supabase
+      .from("project_categories")
+      .select("name, prefix")
+      .order("sort_order", { ascending: true }),
+  ]);
 
-  if (error || !project) {
+  if (projectRes.error || !projectRes.data) {
     notFound();
   }
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const project = projectRes.data;
+  const projectLabels = buildProjectLabelMap(labelsRes.data || []);
+  const categories = categoriesRes.data;
 
   const canEdit = Boolean(
-    user && (await canManageProjectAsAdmin(supabase, user.id, project.workspace_id ?? null))
+    user && (await canManageProjectAsAdmin(supabase, user.id, project.workspace_id ?? null)),
   );
 
-  let moveTargets: { id: string; name: string }[] = [];
-  let currentWorkspaceName = "";
-  if (canEdit && project.workspace_id) {
-    const [moveList, wsRes] = await Promise.all([
-      listWorkspacesForProjectMoveAction(),
-      supabase.from("workspaces").select("name").eq("id", project.workspace_id).single(),
-    ]);
-    moveTargets = moveList.error ? [] : moveList.data;
-    currentWorkspaceName = wsRes.data?.name ?? "—";
-  }
-
-  const { data: labelsRaw } = await supabase
-    .from("project_labels")
-    .select("key,label_de,label_en");
-  const projectLabels = buildProjectLabelMap(labelsRaw || []);
-
-  const [
-    { data: comments },
-    { data: files },
-    { data: tasks },
-    { data: updates },
-    { data: categories },
-  ] = await Promise.all([
+  const detailBundle = Promise.all([
     supabase
       .from("project_comments")
       .select("*, profiles:author_id (id, full_name)")
@@ -85,8 +67,34 @@ export default async function ProjectDetailPage({
       .select("*, profiles:author_id (id, full_name)")
       .eq("project_id", id)
       .order("created_at", { ascending: false }),
-    supabase.from("project_categories").select("name, prefix").order("sort_order", { ascending: true }),
   ]);
+
+  let moveTargets: { id: string; name: string }[] = [];
+  let currentWorkspaceName = "";
+
+  let commentsRes: Awaited<typeof detailBundle>[0];
+  let filesRes: Awaited<typeof detailBundle>[1];
+  let tasksRes: Awaited<typeof detailBundle>[2];
+  let updatesRes: Awaited<typeof detailBundle>[3];
+
+  if (canEdit && project.workspace_id) {
+    const [detail, moveList, wsRes] = await Promise.all([
+      detailBundle,
+      listWorkspacesForProjectMoveAction(),
+      supabase.from("workspaces").select("name").eq("id", project.workspace_id).single(),
+    ]);
+    moveTargets = moveList.error ? [] : moveList.data;
+    currentWorkspaceName = wsRes.data?.name ?? "—";
+    [commentsRes, filesRes, tasksRes, updatesRes] = detail;
+  } else {
+    [commentsRes, filesRes, tasksRes, updatesRes] = await detailBundle;
+  }
+
+  const comments = commentsRes.data;
+  const files = filesRes.data;
+  const tasks = tasksRes.data;
+  const updates = updatesRes.data;
+  const currentUserId = user?.id;
 
   return (
     <div className="space-y-6 print-detail-page">
@@ -122,7 +130,7 @@ export default async function ProjectDetailPage({
           <ProjectComments
             projectId={id}
             comments={comments || []}
-            currentUserId={(await supabase.auth.getUser()).data.user?.id}
+            currentUserId={currentUserId}
           />
           <ProjectChecklist
             projectId={id}
@@ -135,7 +143,7 @@ export default async function ProjectDetailPage({
           <ProjectTasks
             projectId={id}
             tasks={tasks || []}
-            currentUserId={(await supabase.auth.getUser()).data.user?.id}
+            currentUserId={currentUserId}
           />
         </div>
         <div className="no-print space-y-6">

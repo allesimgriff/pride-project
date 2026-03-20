@@ -1,8 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { DashboardContent } from "@/components/dashboard/DashboardContent";
 import type { ProjectStatus } from "@/types/database";
+import { ACTIVE_PROJECT_STATUSES } from "@/lib/projectActiveStatus";
+import { mapFirstFileIdByProjectId } from "@/lib/supabase/firstFileThumbs";
 
-// Lokale Typen, passend zu DashboardContent
 type OpenTaskForDashboard = {
   id: string;
   title: string;
@@ -21,35 +22,29 @@ type UpdateForDashboard = {
 }[];
 
 const OPEN_TASKS_PREVIEW = 5;
+/** Nur die jüngsten Einträge fürs Dashboard (KPI „aktiv“ kommt per COUNT). */
+const DASHBOARD_RECENT_PROJECTS_LIMIT = 35;
 
 export default async function DashboardPage() {
   const supabase = await createClient();
-  // Session kommt aus dem Dashboard-Layout (getUser); hier keine zweite Auth-Runde.
-
-  const { data: projectsRaw } = await supabase
-    .from("projects")
-    .select(
-      "id, dev_number, product_name, status, updated_at, project_image_id, workspaces ( name )",
-    )
-    .order("updated_at", { ascending: false });
-
-  const projectRows = projectsRaw || [];
-  const projectIds = projectRows.map((p) => p.id);
-  const thumbByProjectId: Record<string, string> = {};
-
-  const projectFilesReq =
-    projectIds.length > 0
-      ? supabase
-          .from("project_files")
-          .select("id, project_id, created_at")
-          .in("project_id", projectIds)
-          .order("created_at", { ascending: true })
-      : null;
 
   const openTasksCountReq = supabase
     .from("project_tasks")
     .select("*", { count: "exact", head: true })
     .eq("completed", false);
+
+  const activeProjectsCountReq = supabase
+    .from("projects")
+    .select("*", { count: "exact", head: true })
+    .in("status", ACTIVE_PROJECT_STATUSES);
+
+  const projectsListReq = supabase
+    .from("projects")
+    .select(
+      "id, dev_number, product_name, status, updated_at, project_image_id, workspaces ( name )",
+    )
+    .order("updated_at", { ascending: false })
+    .limit(DASHBOARD_RECENT_PROJECTS_LIMIT);
 
   const openTasksReq = supabase
     .from("project_tasks")
@@ -68,19 +63,23 @@ export default async function DashboardPage() {
     .order("created_at", { ascending: false })
     .limit(8);
 
-  const [projectFilesRes, { count: openTasksTotal }, { data: openTasks }, { data: recentUpdates }] =
-    await Promise.all([
-      projectFilesReq ?? Promise.resolve({ data: null as { id: string; project_id: string }[] | null }),
-      openTasksCountReq,
-      openTasksReq,
-      recentUpdatesReq,
-    ]);
+  const [
+    { count: activeProjectsCount },
+    { data: projectsRaw },
+    { count: openTasksTotal },
+    { data: openTasks },
+    { data: recentUpdates },
+  ] = await Promise.all([
+    activeProjectsCountReq,
+    projectsListReq,
+    openTasksCountReq,
+    openTasksReq,
+    recentUpdatesReq,
+  ]);
 
-  if (projectFilesRes.data) {
-    for (const f of projectFilesRes.data) {
-      if (!thumbByProjectId[f.project_id]) thumbByProjectId[f.project_id] = f.id;
-    }
-  }
+  const projectRows = projectsRaw || [];
+  const projectIds = projectRows.map((p) => p.id);
+  const thumbByProjectId = await mapFirstFileIdByProjectId(supabase, projectIds);
 
   const projects = projectRows.map((p) => {
     const raw = p as {
@@ -108,7 +107,7 @@ export default async function DashboardPage() {
   return (
     <DashboardContent
       projects={projects}
-      // Supabase-Response auf den erwarteten Dashboard-Typ abbilden
+      activeProjectsCount={activeProjectsCount ?? 0}
       openTasks={openTasks as OpenTaskForDashboard | null}
       openTasksTotal={openTasksTotal ?? 0}
       recentUpdates={recentUpdates as UpdateForDashboard | null}
