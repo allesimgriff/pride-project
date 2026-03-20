@@ -1,101 +1,95 @@
 # Übergabe / Kontext für einen neuen Chat (PRIDE)
 
+**Schnellstart morgen:** `NEUER_CHAT_START.md` öffnen → eine Zeile in den Chat kopieren.
+
 ---
 
-## Projekt-Inhaber & Infra (Stand)
+## Projekt-Inhaber & Infra (Stand – wichtig)
 
 - **Haupt-User / Admin:** `tb@allesimgriff.de` (aktuell einziger User).
-- **Supabase, Netlify, GitHub:** laut Nutzer eingerichtet.
+- **Supabase:** Projekt läuft; Auth, DB, Keys; **URL Configuration** für localhost und Netlify ist erledigt (siehe `LOKAL_STARTEN.md` wenn nachgeholfen werden muss).
+- **Netlify:** Site z. B. **pride-project**; **Environment variables** (`NEXT_PUBLIC_*`, SMTP o. Ä.) sind angelegt; **Deploy von GitHub**; Stand **Published**.
+- **GitHub:** Repo verbunden, Branch **`main`**, Push löst Deploy aus.
+
+**Für die KI:** **Nicht** davon ausgehen, dass Supabase/Netlify „noch gemacht“ werden müssen. Erst einrichten / erklären, wenn der Nutzer ein **konkretes Problem** meldet.
+
+---
+
+## Nutzer: Rolle & Arbeitsweise (verbindlich)
+
+- **Keine Programmierkenntnisse** – der Nutzer **ändert keinen Code**, **tippt keine Befehle freihändig**.
+- Er **führt nur aus**, was **kopierbar** ist:
+  - **Hyperlinks** → im Browser öffnen,
+  - **SQL** → komplett in den Supabase **SQL Editor** einfügen,
+  - **PowerShell** → **nummerierte** Schritte, **je ein vollständiger Befehl** im eigenen Codeblock (Inhalt **nur** aus dem Kasten, kein `PS C:\…>`, keine Tabellenreste).
+- **Tempo:** **Schritt für Schritt**; **kurz** antworten; **nicht** mit langen Erklärungen oder vielen Punkten auf einmal „zuballern“.
+- **Bilder:** der Nutzer arbeitet gern mit Screenshot + „wohin klicken“ – dann **haarklein** Wege beschreiben oder auf `LOKAL_STARTEN.md` verweisen.
 
 ---
 
 ## So redet die KI mit diesem Nutzer (verbindlich)
 
-- **Kurz**, nur Nötiges, **keine** langen Erklärungen und **keine** ausführlichen Zusammenfassungen.
+- **Kurz**, nur Nötiges, **keine** langen Erklärungen und **keine** ausführlichen Zusammenfassungen am Ende.
 - **Wenn der Nutzer etwas tun soll:** immer **explizit** sagen, **was** und **wo**:
-  - **Terminal:** Alles, was der Nutzer **im Terminal ausführen** soll, kommt **von der KI** — **nummeriert (1., 2., …)**, **nur ein Befehl pro Schritt**, jeweils **ein eigener** `powershell`-Codeblock mit dem **vollständig kopierbaren** Befehl (keine Fragmente, keine „tippe nslookup …“ ohne vollen Befehl). Der Nutzer soll **nichts** im Terminal selbst erfinden oder ergänzen.
-  - **Datei speichern** (z. B. `.env.local`) → explizit sagen.
-  - **Supabase** (Webbrowser) → explizit sagen, inkl. Menüpfad. **Wo möglich: SQL zum Kopieren** für den SQL Editor. **Ausnahme (kein SQL):** Project URL, API-Keys, **Authentication → URL Configuration** — nur Dashboard.
-  - **Netlify** (Webbrowser) → explizit sagen.
+  - **Terminal:** Alles, was der Nutzer **im Terminal ausführen** soll, kommt **von der KI** — **nummeriert (1., 2., …)**, **nur ein Befehl pro Schritt**, jeweils **ein eigener** `powershell`-Codeblock mit dem **vollständig kopierbaren** Befehl. Der Nutzer soll **nichts** im Terminal selbst erfinden.
+  - **Datei speichern** → explizit sagen (z. B. Strg+S).
+  - **Supabase (Browser):** Menüpfad nennen; **wo möglich: SQL zum Kopieren**. **Kein SQL möglich** für: Project URL, API-Keys, **Authentication → URL Configuration** – nur Dashboard-Klicks.
+  - **Netlify (Browser):** explizit nennen, wenn nötig.
 - **Wenn nichts ausdrücklich gefordert ist:** Nutzer muss **nichts** tun.
-- **Secrets / Keys** nie in Chat posten; nur in `.env.local` oder Hosting-Dashboard eintragen.
+- **Secrets / Keys** nie in Chat posten.
+- **Git push / Deploy:** nur nach **ausdrücklicher Freigabe** des Nutzers.
 
 ---
 
 ## So startest du den nächsten Chat (zum Kopieren)
 
-**Option A – eine Zeile:**
+**Eine Zeile (reicht):**
 
 ```text
-Lies die Datei HANDOFF_FUER_NEUEN_CHAT.md im Repo vollständig und arbeite danach. Antworten auf Deutsch. Befehle wie in .cursor/rules/pride-arbeitspartner.mdc.
+@HANDOFF_FUER_NEUEN_CHAT.md vollständig lesen und danach arbeiten. Deutsch. Meine Arbeitsweise steht darin und in @NEUER_CHAT_START.md – Schritt für Schritt, ich führe nur Links / SQL / kopierte Terminalbefehle aus.
 ```
 
-**Option B – Datei anhängen:** Im Chat `@HANDOFF_FUER_NEUEN_CHAT.md` verwenden (und ggf. `@LOKAL_STARTEN.md` bei Setup).
-
-**Weitere Projekt-Doku:** `PROJECT-KONTEXT.md` (Gesamtüberblick), `LOKAL_STARTEN.md` (lokal starten, Schritt für Schritt). **Regeln:** `.cursor/rules/pride-arbeitspartner.mdc` (immer aktiv).
-
----
-
-## Nutzer & Kommunikation
-
-- **Sprache:** Deutsch.
-- **Erfahrung:** programmiert wenig → **nummerierte Schritte**, **PowerShell-Befehle jeweils in eigenem Codeblock**, **nur Inhalt des Kastens** ins Terminal (**kein** `PS C:\…>`, keine Tabellenreste, keine Fehlermeldung als „Befehl“).
-- **Struktur:** wo sinnvoll **WAS · WO · NUR DIES** (Regeldatei).
-- **Secrets:** keine Keys in Chat posten; nur `.env.local` / Supabase-Dashboard.
-- **Deploy/Push:** nur auf ausdrückliche Freigabe.
+**Weitere Doku:** `PROJECT-KONTEXT.md`, `LOKAL_STARTEN.md` (lokal + Supabase-Klicks). **Regeln:** `.cursor/rules/pride-arbeitspartner.mdc`.
 
 ---
 
 ## Technischer Stack (Kurz)
 
-- **Next.js 15.5.x** (Webpack), React 18, TypeScript, Tailwind.
-- **Supabase:** Auth (Login), DB, Storage.
-- **Deploy:** Netlify (u. a. `pride-project.netlify.app` – laut früherem Kontext).
-- **Lokal:** `http://localhost:3000`, `.env.local` mit u. a.  
-  `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_APP_URL=http://localhost:3000`
+- **Next.js 15.5.x**, React 18, TypeScript, Tailwind, Webpack.
+- **Supabase:** Auth, DB, Storage.
+- **Deploy:** Netlify (mit GitHub).
+- **Lokal:** `http://localhost:3000`, `.env.local` (nicht im Git): u. a. `NEXT_PUBLIC_SUPABASE_*`, `NEXT_PUBLIC_APP_URL` (lokal vs. Production).
 
 ---
 
-## Chronologie des Problems (dieser Verlauf)
+## Historisch: Login / Supabase-Erreichbarkeit (gelöst)
 
-1. **Browser:** `TypeError: Failed to fetch` bei `signInWithPassword` auf der Login-Seite.
-2. **Anpassungen:** u. a. Env-`.trim()`, Middleware-Cookies (Supabase-SSR), Login über **Server-API** statt direkt Supabase im Client.
-3. **Weiterer Fehler:** `fetch failed` – auch von Node/Server.
-4. **Diagnose:** `GET /api/auth/supabase-reachability` (nur **Entwicklung**) →  
-   `getaddrinfo ENOTFOUND` für Host **`zcdaxjfpszpatupjjbgx.supabase.co`**.
-5. **DNS-Check:** Mit **8.8.8.8** ebenfalls **Non-existent domain** → der Hostname **existiert global nicht** (kein „nur Fritzbox-DNS“-Spezialfall).
-6. **Folgerung:** **`NEXT_PUBLIC_SUPABASE_URL` in `.env.local` war faktisch ungültig** (falscher/ref-Typo/veraltetes/unrichtiges Projekt). **Kein Secret-Key-Problem.**
+Früher: falsche **Project URL** (Tippfehler in der Ref), **`fetch failed`**; Reachability-Route fehlte zunächst **`apikey`**-Header (401 „No API key“) – behoben. Bei **ähnlichen Symptomen:** `LOKAL_STARTEN.md` → Reachability-URL; **`npm run clean`** / **`npm run dev:clean`** bei kaputtem `.next`-Cache.
 
-**Offener Schritt für den Nutzer:** Im **Supabase-Dashboard** (richtiges Projekt) **Project URL** und **öffentlichen** Key (**anon public** oder **Publishable**) **neu kopieren**, in `.env.local` eintragen, speichern, `npm run dev` neu starten, Reachability erneut prüfen bis **`"ok": true`**.
-
-**Wichtig:** **`Copy-Item .env.example .env.local`** nicht wieder ausführen, wenn echte Werte drinstehen – überschreibt sie (**siehe LOKAL_STARTEN.md STOP**).
-
-**Supabase Auth:** **Authentication → URL Configuration:** Site URL + Redirects für `http://localhost:3000/**` und Production-URL (z. B. Netlify) – siehe **LOKAL_STARTEN.md B3**.
+**Korrekte Project-URL:** aus **Project Settings → General → Project ID** ableitbar: `https://<PROJECT_ID>.supabase.co`
 
 ---
 
-## Geänderte / neue Dateien (Code-Stand)
+## Wichtige Pfade (Code)
 
-| Datei | Zweck |
-|--------|--------|
-| `src/lib/supabase/public-env.ts` | Trim für `NEXT_PUBLIC_*`, zentrale Leselogik |
-| `src/lib/supabase/network-error.ts` | Technische Fehlertexte (fetch/cause) |
-| `src/lib/supabase/client.ts` | Nutzt `getPublicConfig()`, klare Fehlermeldung wenn Env fehlt |
-| `src/lib/supabase/server.ts` | Nutzt `getPublicConfig()`, Cookie `setAll` mit `options` |
-| `src/lib/supabase/middleware.ts` | SSR-Cookies: Request + **Response** (`NextResponse.next` nach Supabase-Doku) |
-| `src/app/api/auth/sign-in/route.ts` | **POST** Login serverseitig; Netzwerk-Fehler → **503** + Hinweis Reachability |
-| `src/app/api/auth/sign-up/route.ts` | **POST** Registrierung serverseitig; `emailRedirectTo` muss zum Request-**Origin** passen |
-| `src/app/api/auth/supabase-reachability/route.ts` | **GET** nur bei `NODE_ENV !== production`, prüft `/auth/v1/health` |
-| `src/app/(auth)/login/page.tsx` | Ruft `/api/auth/sign-in` per `fetch` auf (kein Browser-`signInWithPassword`) |
-| `src/app/(auth)/register/RegisterClient.tsx` | `signUp` per `/api/auth/sign-up`; Einladungs-**Select** weiter per Supabase-Client |
-| `LOKAL_STARTEN.md` | Tabelle „fetch failed“ / Reachability |
-| `HANDOFF_FUER_NEUEN_CHAT.md` | diese Übergabe |
-
-**Middleware-Einstieg:** `src/middleware.ts` (nicht Repo-Wurzel).
+| Bereich | Dateien |
+|--------|---------|
+| Auth API | `src/app/api/auth/sign-in/`, `sign-up/`, `supabase-reachability/` |
+| Supabase | `src/lib/supabase/*`, `src/middleware.ts` |
+| Workspaces | `src/app/(dashboard)/workspaces/`, `src/app/actions/workspaces.ts`, `src/lib/workspacePermissions.ts` |
+| Navigation | `src/components/layout/navConfig.tsx`, `Sidebar`, `Header` – **Einstellungen**-Hub `/settings` |
+| Projekt verschieben | `ProjectWorkspaceMove.tsx`, `moveProjectToWorkspaceAction` in `projects.ts` |
+| Migrationen | `supabase/migrations/`, `ALL_MIGRATIONS_ONE_FILE.sql` |
 
 ---
 
-## Kurz-Kommandos (Referenz, nicht alles auf einmal ausführen)
+## Registrierung vs. Einladung
+
+- **`signUp`** über **`/api/auth/sign-up`**; **Einladung laden** (`invites`) kann noch Browser-Client nutzen.
+
+---
+
+## Kurz-Kommandos (Referenz)
 
 Projektordner:
 
@@ -103,74 +97,21 @@ Projektordner:
 Set-Location c:\Users\Beck\pride
 ```
 
-Dev-Server:
+Dev (nach Problemen mit `.next`):
 
 ```powershell
-npm run dev
+npm run dev:clean
 ```
 
-Diagnose (Browser, nur lokal):
+Reachability (nur Entwicklung, Browser):
 
 ```text
 http://localhost:3000/api/auth/supabase-reachability
 ```
 
-DNS-Test (Host **an echte Project URL aus Dashboard anpassen**):
-
-```powershell
-nslookup DEIN-HOSTOHNE-PFAD.supabase.co 8.8.8.8
-```
-
-Erwartung bei **richtigem** Projekt: **kein** „Non-existent domain“, sondern **Adresse(n)**.
-
----
-
-## Registrierung vs. Einladung laden
-
-- **`signUp`** läuft über **`/api/auth/sign-up`** (wie Login über den Server).
-- **Einladung per Token** (`invites`-Select) nutzt weiter den **Browser-Supabase-Client** – bei falschem `NEXT_PUBLIC_SUPABASE_URL` schlägt auch das fehl; langfristig ggf. serverseitige Invite-Route.
-
 ---
 
 ## Stand dieser Datei
 
-- Zusammengetragen aus dem Chat-Verlauf zu Login, Supabase-Erreichbarkeit, DNS **ENOTFOUND** und Repo-Anpassungen.
-- Nutzer-Präferenzen und Infra-Stand siehe oben („Projekt-Inhaber“, „So redet die KI“).
-- Nach Korrektur von `.env.local` Reachability und Login **neu testen**; bei Erfolg Abschnitt „Chronologie / offener Schritt“ hier als erledigt kennzeichnen.
-
----
-
-## Rezept: Lokal wieder mit Supabase verbinden (nur wenn Login / Reachability scheitert)
-
-**A – Supabase (Webbrowser, du klickst):** Project wählen → **Project Settings** (Zahnrad) → **API** → **Project URL** und **anon public** (oder **Publishable**) kopieren (nicht in Chat einfügen).
-
-**B – Datei `.env.local` im Projektordner `c:\Users\Beck\pride`:** In Cursor öffnen. Diese drei Zeilen **vollständig** setzen (Werte **ohne** Anführungszeichen; nach dem `=` einfügen):
-
-```env
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-```
-
-**Datei speichern** (Strg+S).  
-**Hinweis:** Wenn `.env.local` noch nicht existiert: **einmal** aus `.env.example` anlegen – **nicht** `Copy-Item` wiederholen, wenn schon echte Keys drinstehen (Überschreiben). Siehe **LOKAL_STARTEN.md**.
-
-**C – Terminal (PowerShell), Befehle nacheinander, jeweils nur den Kasten:**
-
-1. Projektordner:
-
-```powershell
-Set-Location c:\Users\Beck\pride
-```
-
-2. Falls `npm run dev` noch läuft: im Terminal **Strg+C** (Server stoppen).
-
-3. Server neu starten:
-
-```powershell
-npm run dev
-```
-
-**D – Browser:**  
-`http://localhost:3000/api/auth/supabase-reachability` — es soll **`"ok":true`** erscheinen (kein `ok:false`).  
-Dann **`http://localhost:3000/login`** mit `tb@allesimgriff.de` testen.
+- Infra **voll**, Nutzer-Arbeitsweise und **keine Programmierarbeit** dokumentiert.
+- Chronologie Login/DNS nur noch **historisch**.
