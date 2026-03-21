@@ -2,7 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { NewProjectForm } from "@/components/projects/NewProjectForm";
 import { PageTitle } from "@/components/layout/PageTitle";
 import { redirect } from "next/navigation";
-import { buildProjectLabelMap } from "@/lib/projectLabelDefaults";
+import { projectLabelRowsToMap } from "@/lib/projectLabelDefaults";
+import { listMergedProjectLabelsForWorkspaceAction } from "@/app/actions/workspaceProjectLabels";
 
 export default async function NewProjectPage() {
   const supabase = await createClient();
@@ -19,11 +20,9 @@ export default async function NewProjectPage() {
     .select("name, prefix")
     .order("sort_order", { ascending: true });
 
-  const { data: labelsRaw } = await supabase
-    .from("project_labels")
-    .select("key,label_de,label_en");
-
-  const projectLabels = buildProjectLabelMap(labelsRaw || []);
+  const firstWs = workspaces[0].id;
+  const { data: mergedRows } = await listMergedProjectLabelsForWorkspaceAction(firstWs);
+  const projectLabels = projectLabelRowsToMap(mergedRows ?? []);
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">

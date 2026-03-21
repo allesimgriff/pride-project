@@ -24,7 +24,7 @@ export function Sidebar() {
         className={`flex h-16 items-center border-b border-gray-200 ${sidebarCollapsed ? "justify-center px-0" : "px-6"}`}
       >
         {!sidebarCollapsed && (
-          <Link href="/dashboard" className="flex items-center gap-2 font-semibold text-gray-900">
+          <Link href="/projects" className="flex items-center gap-2 font-semibold text-gray-900">
             <span className="text-primary-600">PRIDE</span>
           </Link>
         )}

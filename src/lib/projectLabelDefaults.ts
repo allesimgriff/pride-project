@@ -50,3 +50,34 @@ export function buildProjectLabelMap(
   return map;
 }
 
+/** Globale `project_labels` + optionale Overrides aus `workspace_project_labels` (Workspace gewinnt). */
+export function buildMergedProjectLabelMap(
+  globalRows: Array<{ key: string; label_de: string; label_en: string }> | null | undefined,
+  workspaceRows: Array<{ key: string; label_de: string; label_en: string }> | null | undefined,
+): ProjectLabelMap {
+  const map = buildProjectLabelMap(globalRows);
+  (workspaceRows || []).forEach((row) => {
+    const key = row.key as ProjectLabelKey;
+    if (!PROJECT_LABEL_DEFAULTS.some((d) => d.key === key)) return;
+    map[key] = { de: row.label_de, en: row.label_en };
+  });
+  return map;
+}
+
+export function projectLabelMapToRows(map: ProjectLabelMap): ProjectLabelRow[] {
+  return PROJECT_LABEL_DEFAULTS.map((d) => ({
+    key: d.key,
+    label_de: map[d.key]?.de ?? d.label_de,
+    label_en: map[d.key]?.en ?? d.label_en,
+    sort_order: d.sort_order,
+  }));
+}
+
+export function projectLabelRowsToMap(rows: ProjectLabelRow[]): ProjectLabelMap {
+  const map: ProjectLabelMap = {};
+  rows.forEach((r) => {
+    map[r.key] = { de: r.label_de, en: r.label_en };
+  });
+  return map;
+}
+

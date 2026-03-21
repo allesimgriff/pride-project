@@ -6,14 +6,17 @@ import { AppProvider, useApp } from "@/components/providers/AppProvider";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
 import { NavigationProgress } from "@/components/layout/NavigationProgress";
+import { WorkspaceStorageWarningBanner } from "@/components/layout/WorkspaceStorageWarningBanner";
+import type { WorkspaceStorageWarning } from "@/lib/workspaceStorageQuota";
 
 interface DashboardShellProps {
   children: React.ReactNode;
   user: User;
   profile: Profile | null;
+  storageWarnings?: WorkspaceStorageWarning[];
 }
 
-export function DashboardShell({ children, user, profile }: DashboardShellProps) {
+export function DashboardShell({ children, user, profile, storageWarnings = [] }: DashboardShellProps) {
   return (
     <AppProvider>
       <NavigationProgress />
@@ -22,7 +25,7 @@ export function DashboardShell({ children, user, profile }: DashboardShellProps)
         <div className="hidden md:block">
           <Sidebar />
         </div>
-        <MainBlock user={user} profile={profile}>
+        <MainBlock user={user} profile={profile} storageWarnings={storageWarnings}>
           {children}
         </MainBlock>
       </div>
@@ -34,10 +37,12 @@ function MainBlock({
   children,
   user,
   profile,
+  storageWarnings,
 }: {
   children: React.ReactNode;
   user: User;
   profile: Profile | null;
+  storageWarnings: WorkspaceStorageWarning[];
 }) {
   const { sidebarCollapsed } = useApp();
   return (
@@ -48,6 +53,7 @@ function MainBlock({
       }`}
     >
       <Header user={user} profile={profile} />
+      <WorkspaceStorageWarningBanner warnings={storageWarnings} />
       <main className="flex-1 p-4 md:p-6">{children}</main>
     </div>
   );

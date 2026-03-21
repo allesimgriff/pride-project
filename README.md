@@ -100,7 +100,7 @@ src/
   app/
     (auth)/login/        # Login-Seite
     (dashboard)/         # Geschützte Bereiche
-      dashboard/         # Dashboard
+      dashboard/         # leitet nach /projects um
       projects/          # Liste, Neu, Detail [id]
     api/
       auth/signout/      # Abmeldung

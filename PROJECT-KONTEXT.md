@@ -35,8 +35,7 @@ Interne Plattform **„Produktentwicklung Polstermöbel“** (PRIDE): Projekte, 
 ## Kern-Funktionen (stabil auf main)
 
 - Login / Logout, Registrierung inkl. **Invite** (`/register?token=…`), E-Mail-Bestätigung über Supabase.  
-- **Projekte:** Liste, Detail, Stammdaten, Kategorien, Status; **Projektbild** & Galerie (Storage `project-photos`, private Auslieferung über API).  
-- **Dashboard:** KPIs (aktive Projekte, offene Aufgaben, letzte Änderungen), **Aktuelle Projekte** (Timeline, scrollbar, **Vorschaubild** wie Projektliste), Aufgaben-Liste, Änderungs-Feed.  
+- **Projekte:** Liste, Detail, Stammdaten, Kategorien, Status; **Projektbild** & Galerie (Storage `project-photos`, private Auslieferung über API). Einstieg nach Login: **Projektliste** (`/projects`; `/dashboard` leitet dorthin um).  
 - **Workspaces:** `/workspaces` – anlegen, Mitglieder, Einladung per E-Mail (Link `/workspaces/join?token=…`); alle Mitglieder sehen alle Projekte des Workspace.  
 - **Admin (App):** Mitarbeiter (Rollen, Einladungen widerrufen), **Überschriften** (`project_labels`, DE/EN), Kategorien; **Stammdaten** am Projekt: **Workspace-Admin** oder **App-Admin**.  
 - **Checkliste:** u. a. Massen-Import aus Text (`addTasksBulkAction`).  
@@ -46,8 +45,8 @@ Interne Plattform **„Produktentwicklung Polstermöbel“** (PRIDE): Projekte, 
 
 | Bereich | Pfad (Auswahl) |
 |--------|-----------------|
-| Dashboard | `src/app/(dashboard)/dashboard/`, `src/components/dashboard/DashboardContent.tsx` |
 | Projekte | `src/app/(dashboard)/projects/`, `src/components/projects/`, `src/app/actions/projects.ts` |
+| Überschriften | Global: `project_labels` / Einstellungen; pro Workspace: `workspace_project_labels`, `workspaces/[id]/labels` |
 | Workspaces | `src/app/(dashboard)/workspaces/`, `src/app/actions/workspaces.ts`, `src/lib/workspacePermissions.ts` |
 | Layout / Nav | `src/components/layout/Sidebar.tsx`, `Header.tsx`, `DashboardShell.tsx` |
 | i18n | `src/lib/i18n.ts` |

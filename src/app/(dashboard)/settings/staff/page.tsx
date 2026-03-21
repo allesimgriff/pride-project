@@ -17,7 +17,7 @@ export default async function StaffPage() {
     .single();
 
   if (!profile || profile.role !== "admin") {
-    redirect("/dashboard");
+    redirect("/projects");
   }
 
   return (

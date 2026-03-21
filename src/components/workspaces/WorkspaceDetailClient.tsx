@@ -81,8 +81,16 @@ export function WorkspaceDetailClient({
         </Link>
       </div>
 
-      <div>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-semibold text-gray-900">{initial.workspace.name}</h1>
+        {initial.canManage && (
+          <Link
+            href={`/workspaces/${workspaceId}/labels`}
+            className="text-sm font-medium text-primary-600 hover:text-primary-800 shrink-0"
+          >
+            {t("workspaces.editLabels")}
+          </Link>
+        )}
       </div>
 
       {initial.canManage && (

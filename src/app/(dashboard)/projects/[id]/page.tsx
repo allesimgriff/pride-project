@@ -10,7 +10,7 @@ import { ProjectChecklist } from "@/components/projects/ProjectChecklist";
 import { ProjectTimeline } from "@/components/projects/ProjectTimeline";
 import { ProjectHistory } from "@/components/projects/ProjectHistory";
 import { ProjectPhotosSection } from "@/components/projects/ProjectPhotosSection";
-import { buildProjectLabelMap } from "@/lib/projectLabelDefaults";
+import { buildMergedProjectLabelMap } from "@/lib/projectLabelDefaults";
 import { canManageProjectAsAdmin } from "@/lib/workspacePermissions";
 import { listWorkspacesForProjectMoveAction } from "@/app/actions/workspaces";
 import { ProjectWorkspaceMove } from "@/components/projects/ProjectWorkspaceMove";
@@ -24,21 +24,27 @@ export default async function ProjectDetailPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const [projectRes, user, labelsRes, categoriesRes] = await Promise.all([
-    supabase.from("projects").select("*").eq("id", id).single(),
+  const projectRes = await supabase.from("projects").select("*").eq("id", id).single();
+
+  if (projectRes.error || !projectRes.data) {
+    notFound();
+  }
+  const project = projectRes.data;
+
+  const [user, labelsRes, wsLabelsRes, categoriesRes] = await Promise.all([
     getAuthUser(),
     supabase.from("project_labels").select("key,label_de,label_en"),
+    supabase
+      .from("workspace_project_labels")
+      .select("key,label_de,label_en")
+      .eq("workspace_id", project.workspace_id),
     supabase
       .from("project_categories")
       .select("name, prefix")
       .order("sort_order", { ascending: true }),
   ]);
 
-  if (projectRes.error || !projectRes.data) {
-    notFound();
-  }
-  const project = projectRes.data;
-  const projectLabels = buildProjectLabelMap(labelsRes.data || []);
+  const projectLabels = buildMergedProjectLabelMap(labelsRes.data || [], wsLabelsRes.data || []);
   const categories = categoriesRes.data;
 
   const canEdit = Boolean(

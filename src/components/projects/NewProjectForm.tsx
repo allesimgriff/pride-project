@@ -10,7 +10,8 @@ import type { ProjectStatus } from "@/types/database";
 import { createClient } from "@/lib/supabase/client";
 import { useApp } from "@/components/providers/AppProvider";
 import { getT } from "@/lib/i18n";
-import type { ProjectLabelMap } from "@/lib/projectLabelDefaults";
+import { type ProjectLabelMap, projectLabelRowsToMap } from "@/lib/projectLabelDefaults";
+import { listMergedProjectLabelsForWorkspaceAction } from "@/app/actions/workspaceProjectLabels";
 
 interface NewProjectFormProps {
   workspaces: { id: string; name: string }[];
@@ -29,10 +30,11 @@ const STATUSES: ProjectStatus[] = [
   "archiviert",
 ];
 
-export function NewProjectForm({ workspaces, categories, canEdit, projectLabels }: NewProjectFormProps) {
+export function NewProjectForm({ workspaces, categories, canEdit, projectLabels: initialProjectLabels }: NewProjectFormProps) {
   const router = useRouter();
   const { lang } = useApp();
   const t = getT(lang);
+  const [projectLabels, setProjectLabels] = useState<ProjectLabelMap>(initialProjectLabels);
   const [loading, setLoading] = useState(false);
   const [loadingNumber, setLoadingNumber] = useState(false);
   const [uploadingFiles, setUploadingFiles] = useState<File[]>([]);
@@ -41,6 +43,7 @@ export function NewProjectForm({ workspaces, categories, canEdit, projectLabels 
     { id: number; text: string; completed: boolean }[]
   >([]);
   const [nextTaskId, setNextTaskId] = useState(1);
+  const skipInitialLabelFetch = useRef(true);
 
   const label = (key: keyof ProjectLabelMap, fallback: string) => {
     const item = projectLabels[key];
@@ -67,6 +70,23 @@ export function NewProjectForm({ workspaces, categories, canEdit, projectLabels 
       setWorkspaceId(workspaces[0].id);
     }
   }, [workspaces, workspaceId]);
+
+  useEffect(() => {
+    if (!workspaceId) return;
+    if (skipInitialLabelFetch.current) {
+      skipInitialLabelFetch.current = false;
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await listMergedProjectLabelsForWorkspaceAction(workspaceId);
+      if (cancelled || error || !data) return;
+      setProjectLabels(projectLabelRowsToMap(data));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [workspaceId]);
 
   async function refreshDevNumber(prefix: string, wsId: string) {
     if (!prefix || !wsId) return;

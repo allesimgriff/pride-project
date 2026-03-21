@@ -16,7 +16,7 @@ function LoginPageInner() {
   const [lang, setLang] = useState<Lang>("de");
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("redirectTo") ?? "/dashboard";
+  const redirectTo = searchParams.get("redirectTo") ?? "/projects";
   const prefillEmail = searchParams.get("email") ?? "";
 
   useEffect(() => {

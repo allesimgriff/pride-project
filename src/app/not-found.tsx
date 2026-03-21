@@ -6,14 +6,11 @@ export default function NotFound() {
       <p className="text-sm font-medium text-primary-600">404</p>
       <h1 className="mt-2 text-xl font-semibold text-gray-900">Seite nicht gefunden</h1>
       <p className="mt-2 max-w-md text-center text-sm text-gray-600">
-        Diese Adresse gibt es hier nicht. Prüfen Sie die URL oder kehren Sie zum Dashboard zurück.
+        Diese Adresse gibt es hier nicht. Prüfen Sie die URL oder kehren Sie zu den Projekten zurück.
       </p>
       <div className="mt-6 flex flex-wrap justify-center gap-3">
-        <Link href="/dashboard" className="btn-primary inline-flex">
-          Zum Dashboard
-        </Link>
-        <Link href="/projects" className="btn-secondary inline-flex">
-          Projekte
+        <Link href="/projects" className="btn-primary inline-flex">
+          Zu den Projekten
         </Link>
         <Link href="/login" className="btn-secondary inline-flex">
           Anmelden

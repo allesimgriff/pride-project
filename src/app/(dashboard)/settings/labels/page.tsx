@@ -12,7 +12,7 @@ export default async function ProjectLabelsPage() {
   if (!user) redirect("/login");
 
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
-  if (profile?.role !== "admin") redirect("/dashboard");
+    if (profile?.role !== "admin") redirect("/projects");
 
   const { data: labels } = await listProjectLabelsAction();
 

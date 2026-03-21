@@ -5,6 +5,13 @@ export const translations = {
     ui: {
       pageLoading: "Seite wird geladen …",
     },
+    storage: {
+      warningIntro:
+        "Speicher-Hinweis: mindestens 75 % des Limits für Projektdateien sind belegt (pro Workspace):",
+      warningLine:
+        "„{{name}}“: {{percent}} % belegt ({{used}} von {{limit}}).",
+      workspacesLink: "Workspaces verwalten",
+    },
     nav: {
       dashboard: "Dashboard",
       projects: "Projekte",
@@ -21,7 +28,7 @@ export const translations = {
       subtitle: "Workspaces, Team und Konfiguration der Stammdaten.",
       workspacesDesc: "Teams und Projektbereiche, Einladungen verwalten.",
       staffDesc: "Mitarbeiter einladen und Rollen verwalten.",
-      labelsDesc: "Bezeichnungen auf Projektseiten anpassen.",
+      labelsDesc: "Globale Standard-Überschriften; Workspace-Admins können pro Team abweichen.",
       categoriesDesc: "Kategorien und Präfixe für Entwicklungsnummern.",
     },
     header: {
@@ -218,6 +225,15 @@ export const translations = {
       joinButton: "Beitreten",
       joinInvalid: "Ungültiger oder fehlender Einladungslink.",
       joinSuccess: "Sie sind dem Workspace beigetreten.",
+      backToWorkspace: "Zurück zum Workspace",
+      editLabels: "Überschriften für diesen Workspace",
+      labelsTitle: "Workspace-Überschriften",
+      labelsSubtitle:
+        "Nur Workspace-Admin oder App-Admin. Diese Texte gelten für Projekte in diesem Workspace und überschreiben die globalen Standard-Überschriften.",
+      labelsSave: "Speichern",
+      labelsReset: "Standard",
+      labelsResetConfirm: "Eigenen Text verwerfen und globale Standard-Überschrift verwenden?",
+      labelsActions: "Aktionen",
       joinError: "Beitritt ist fehlgeschlagen.",
       noAccess: "Kein Zugriff auf diesen Workspace.",
     },
@@ -281,7 +297,8 @@ export const translations = {
     },
     labelsPage: {
       title: "Überschriften",
-      subtitle: "Standard-Überschriften für den Projektbereich bearbeiten.",
+      subtitle:
+        "Globale Standard-Überschriften für alle Workspaces. Workspace-Admins können unter jedem Workspace abweichende Texte setzen.",
     },
     staffPage: {
       title: "Mitarbeiter",
@@ -331,6 +348,12 @@ export const translations = {
     ui: {
       pageLoading: "Loading page …",
     },
+    storage: {
+      warningIntro:
+        "Storage notice: at least 75% of the project-files limit is in use (per workspace):",
+      warningLine: "“{{name}}”: {{percent}}% used ({{used}} of {{limit}}).",
+      workspacesLink: "Manage workspaces",
+    },
     nav: {
       dashboard: "Dashboard",
       projects: "Projects",
@@ -347,7 +370,7 @@ export const translations = {
       subtitle: "Workspaces, team, and master-data configuration.",
       workspacesDesc: "Teams and project areas, manage invitations.",
       staffDesc: "Invite staff and manage roles.",
-      labelsDesc: "Customize labels on project pages.",
+      labelsDesc: "Global default headings; workspace admins can override per team.",
       categoriesDesc: "Categories and prefixes for development numbers.",
     },
     header: {
@@ -543,6 +566,15 @@ export const translations = {
       joinButton: "Join",
       joinInvalid: "Invalid or missing invitation link.",
       joinSuccess: "You have joined the workspace.",
+      backToWorkspace: "Back to workspace",
+      editLabels: "Headings for this workspace",
+      labelsTitle: "Workspace headings",
+      labelsSubtitle:
+        "Workspace admin or app admin only. These labels apply to projects in this workspace and override global defaults.",
+      labelsSave: "Save",
+      labelsReset: "Default",
+      labelsResetConfirm: "Discard custom text and use the global default heading?",
+      labelsActions: "Actions",
       joinError: "Could not join.",
       noAccess: "No access to this workspace.",
     },
@@ -606,7 +638,8 @@ export const translations = {
     },
     labelsPage: {
       title: "Headings",
-      subtitle: "Edit default headings for project area.",
+      subtitle:
+        "Global default headings for all workspaces. Workspace admins can set different text per workspace.",
     },
     staffPage: {
       title: "Staff",
