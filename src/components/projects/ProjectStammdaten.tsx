@@ -9,6 +9,8 @@ import { Pencil, Check, X } from "lucide-react";
 import { useApp } from "@/components/providers/AppProvider";
 import { getT } from "@/lib/i18n";
 import type { ProjectLabelMap } from "@/lib/projectLabelDefaults";
+import { EditableProjectLabel } from "@/components/projects/EditableProjectLabel";
+import { WorkspaceCategoryEditor } from "@/components/projects/WorkspaceCategoryEditor";
 
 const STATUSES: ProjectStatus[] = [
   "idee",
@@ -22,18 +24,30 @@ const STATUSES: ProjectStatus[] = [
 
 interface ProjectStammdatenProps {
   project: Project;
-  categories: { name: string; prefix: string }[];
+  categories: { id: string; name: string; prefix: string; sort_order: number; workspace_id: string }[];
   canEdit: boolean;
   projectLabels: ProjectLabelMap;
+  workspaceId: string | null;
+  canEditLabels: boolean;
 }
 
-function getCategoryDisplay(category: string | null, categories: { name: string; prefix: string }[]) {
+function getCategoryDisplay(
+  category: string | null,
+  categories: { name: string; prefix: string }[],
+) {
   if (!category) return "—";
   const c = categories.find((x) => x.prefix === category);
   return c ? `${c.name} (${c.prefix})` : category;
 }
 
-export function ProjectStammdaten({ project, categories, canEdit, projectLabels }: ProjectStammdatenProps) {
+export function ProjectStammdaten({
+  project,
+  categories,
+  canEdit,
+  projectLabels,
+  workspaceId,
+  canEditLabels,
+}: ProjectStammdatenProps) {
   const router = useRouter();
   const { lang } = useApp();
   const t = getT(lang);
@@ -51,10 +65,10 @@ export function ProjectStammdaten({ project, categories, canEdit, projectLabels 
     open_points: project.open_points ?? "",
   });
 
-  const label = (key: keyof ProjectLabelMap, fallback: string) => {
-    const item = projectLabels[key];
-    return lang === "de" ? (item?.de || fallback) : (item?.en || fallback);
-  };
+  const labelNrTitle =
+    lang === "de"
+      ? "Entspricht der Spalte „Nr.“ unter Überschriften für diesen Workspace"
+      : "Matches the “Nr.” column under headings for this workspace";
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -100,7 +114,18 @@ export function ProjectStammdaten({ project, categories, canEdit, projectLabels 
   return (
     <div className="card p-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">{t("stammdaten.title")}</h2>
+        <h2 className="flex flex-wrap items-center gap-2 text-lg font-semibold text-gray-900">
+          <EditableProjectLabel
+            labelKey="stammdatenHeading"
+            fallback={t("stammdaten.title")}
+            workspaceId={workspaceId}
+            projectLabels={projectLabels}
+            canEdit={canEditLabels}
+            showNr
+            nrTitle={labelNrTitle}
+            textClassName="text-lg font-semibold text-gray-900"
+          />
+        </h2>
         {canEdit && !editing ? (
           <button
             type="button"
@@ -138,7 +163,15 @@ export function ProjectStammdaten({ project, categories, canEdit, projectLabels 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              {label("productName", t("stammdaten.productName"))}
+              <EditableProjectLabel
+                labelKey="productName"
+                fallback={t("stammdaten.productName")}
+                workspaceId={workspaceId}
+                projectLabels={projectLabels}
+                canEdit={canEditLabels}
+                showNr
+                nrTitle={labelNrTitle}
+              />
             </label>
             {canEdit && editing ? (
               <input
@@ -155,13 +188,29 @@ export function ProjectStammdaten({ project, categories, canEdit, projectLabels 
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              {label("devNumber", t("stammdaten.devNumber"))}
+              <EditableProjectLabel
+                labelKey="devNumber"
+                fallback={t("stammdaten.devNumber")}
+                workspaceId={workspaceId}
+                projectLabels={projectLabels}
+                canEdit={canEditLabels}
+                showNr
+                nrTitle={labelNrTitle}
+              />
             </label>
             <p className="mt-1 text-sm text-gray-900">{project.dev_number}</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              {label("category", t("stammdaten.category"))}
+              <EditableProjectLabel
+                labelKey="category"
+                fallback={t("stammdaten.category")}
+                workspaceId={workspaceId}
+                projectLabels={projectLabels}
+                canEdit={canEditLabels}
+                showNr
+                nrTitle={labelNrTitle}
+              />
             </label>
             {canEdit && editing ? (
               <select
@@ -173,7 +222,7 @@ export function ProjectStammdaten({ project, categories, canEdit, projectLabels 
               >
                 <option value="">{t("common.select")}</option>
                 {categories.map((c) => (
-                  <option key={c.prefix} value={c.prefix}>
+                  <option key={c.id} value={c.prefix}>
                     {c.name} ({c.prefix})
                   </option>
                 ))}
@@ -183,10 +232,27 @@ export function ProjectStammdaten({ project, categories, canEdit, projectLabels 
                 {getCategoryDisplay(project.category, categories)}
               </p>
             )}
+            {canEdit && workspaceId && categories.length > 0 && (categories.length === 1 || Boolean(form.category || project.category)) ? (
+              <WorkspaceCategoryEditor
+                workspaceId={workspaceId}
+                categories={categories}
+                selectedPrefix={form.category || project.category || categories[0].prefix}
+                canManage={canEdit}
+                onSaved={(newPrefix) => setForm((f) => ({ ...f, category: newPrefix }))}
+              />
+            ) : null}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              {label("status", t("stammdaten.status"))}
+              <EditableProjectLabel
+                labelKey="status"
+                fallback={t("stammdaten.status")}
+                workspaceId={workspaceId}
+                projectLabels={projectLabels}
+                canEdit={canEditLabels}
+                showNr
+                nrTitle={labelNrTitle}
+              />
             </label>
             {canEdit && editing ? (
               <select
@@ -215,7 +281,15 @@ export function ProjectStammdaten({ project, categories, canEdit, projectLabels 
 
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            {label("description", t("stammdaten.description"))}
+            <EditableProjectLabel
+              labelKey="description"
+              fallback={t("stammdaten.description")}
+              workspaceId={workspaceId}
+              projectLabels={projectLabels}
+              canEdit={canEditLabels}
+              showNr
+              nrTitle={labelNrTitle}
+            />
           </label>
           {canEdit && editing ? (
             <textarea
@@ -235,7 +309,15 @@ export function ProjectStammdaten({ project, categories, canEdit, projectLabels 
 
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            {label("technicalNotes", t("stammdaten.technicalNotes"))}
+            <EditableProjectLabel
+              labelKey="technicalNotes"
+              fallback={t("stammdaten.technicalNotes")}
+              workspaceId={workspaceId}
+              projectLabels={projectLabels}
+              canEdit={canEditLabels}
+              showNr
+              nrTitle={labelNrTitle}
+            />
           </label>
           {canEdit && editing ? (
             <textarea
@@ -256,7 +338,15 @@ export function ProjectStammdaten({ project, categories, canEdit, projectLabels 
 
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            {label("functions", t("stammdaten.functions"))}
+            <EditableProjectLabel
+              labelKey="functions"
+              fallback={t("stammdaten.functions")}
+              workspaceId={workspaceId}
+              projectLabels={projectLabels}
+              canEdit={canEditLabels}
+              showNr
+              nrTitle={labelNrTitle}
+            />
           </label>
           {canEdit && editing ? (
             <textarea
@@ -276,7 +366,15 @@ export function ProjectStammdaten({ project, categories, canEdit, projectLabels 
 
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            {label("materials", t("stammdaten.materials"))}
+            <EditableProjectLabel
+              labelKey="materials"
+              fallback={t("stammdaten.materials")}
+              workspaceId={workspaceId}
+              projectLabels={projectLabels}
+              canEdit={canEditLabels}
+              showNr
+              nrTitle={labelNrTitle}
+            />
           </label>
           {canEdit && editing ? (
             <textarea
@@ -296,7 +394,15 @@ export function ProjectStammdaten({ project, categories, canEdit, projectLabels 
 
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            {label("openPoints", t("stammdaten.openPoints"))}
+            <EditableProjectLabel
+              labelKey="openPoints"
+              fallback={t("stammdaten.openPoints")}
+              workspaceId={workspaceId}
+              projectLabels={projectLabels}
+              canEdit={canEditLabels}
+              showNr
+              nrTitle={labelNrTitle}
+            />
           </label>
           {canEdit && editing ? (
             <textarea

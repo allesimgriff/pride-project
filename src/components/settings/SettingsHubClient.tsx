@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Building2, Users, Type, Tag } from "lucide-react";
+import { Building2, Users } from "lucide-react";
 import { useApp } from "@/components/providers/AppProvider";
 import { getT } from "@/lib/i18n";
 
@@ -27,20 +27,6 @@ export function SettingsHubClient({ isAdmin }: { isAdmin: boolean }) {
       labelKey: "nav.staff",
       descKey: "settingsHub.staffDesc",
       icon: Users,
-      adminOnly: true,
-    },
-    {
-      href: "/settings/labels",
-      labelKey: "nav.labels",
-      descKey: "settingsHub.labelsDesc",
-      icon: Type,
-      adminOnly: true,
-    },
-    {
-      href: "/settings/categories",
-      labelKey: "nav.categories",
-      descKey: "settingsHub.categoriesDesc",
-      icon: Tag,
       adminOnly: true,
     },
   ];

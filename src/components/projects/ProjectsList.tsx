@@ -11,6 +11,7 @@ import { ArrowRight, FileText, ImageIcon } from "lucide-react";
 
 interface ProjectRow {
   id: string;
+  workspace_id: string;
   dev_number: string;
   product_name: string;
   category: string | null;
@@ -22,7 +23,7 @@ interface ProjectRow {
 
 interface ProjectsListProps {
   projects: ProjectRow[];
-  categoryNames?: { name: string; prefix: string }[];
+  categoriesByWorkspace?: Record<string, { name: string; prefix: string }[]>;
 }
 
 function StatusBadge({ status, label }: { status: ProjectStatus; label: string }) {
@@ -42,18 +43,23 @@ function StatusBadge({ status, label }: { status: ProjectStatus; label: string }
   );
 }
 
-function getCategoryDisplay(category: string | null, categoryNames: { name: string; prefix: string }[] | undefined) {
+function getCategoryDisplay(
+  category: string | null,
+  workspaceId: string,
+  categoriesByWorkspace: Record<string, { name: string; prefix: string }[]> | undefined,
+) {
   if (!category) return "—";
-  const found = categoryNames?.find((c) => c.prefix === category);
+  const list = categoriesByWorkspace?.[workspaceId];
+  const found = list?.find((c) => c.prefix === category);
   return found ? `${found.name} (${found.prefix})` : category;
 }
 
 function ProjectCard({
   project,
-  categoryNames,
+  categoriesByWorkspace,
 }: {
   project: ProjectRow;
-  categoryNames?: { name: string; prefix: string }[];
+  categoriesByWorkspace?: Record<string, { name: string; prefix: string }[]>;
 }) {
   const { lang } = useApp();
   const t = getT(lang);
@@ -104,7 +110,7 @@ function ProjectCard({
           ) : null}
           {/* Kategorie nur ab Tablet anzeigen */}
           <span className="hidden md:inline">
-            {getCategoryDisplay(project.category, categoryNames)}
+            {getCategoryDisplay(project.category, project.workspace_id, categoriesByWorkspace)}
           </span>
           <StatusBadge
             status={project.status}
@@ -120,7 +126,7 @@ function ProjectCard({
   );
 }
 
-export function ProjectsList({ projects, categoryNames }: ProjectsListProps) {
+export function ProjectsList({ projects, categoriesByWorkspace }: ProjectsListProps) {
   const { lang } = useApp();
   const t = getT(lang);
 
@@ -144,7 +150,7 @@ export function ProjectsList({ projects, categoryNames }: ProjectsListProps) {
         <ProjectCard
           key={project.id}
           project={project}
-          categoryNames={categoryNames}
+          categoriesByWorkspace={categoriesByWorkspace}
         />
       ))}
     </div>

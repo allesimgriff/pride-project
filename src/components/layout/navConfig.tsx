@@ -19,9 +19,7 @@ export function isPrimaryNavActive(pathname: string, item: PrimaryNavItem): bool
     return (
       pathname === "/settings" ||
       pathname.startsWith("/workspaces") ||
-      pathname.startsWith("/settings/staff") ||
-      pathname.startsWith("/settings/labels") ||
-      pathname.startsWith("/settings/categories")
+      pathname.startsWith("/settings/staff")
     );
   }
   if (item.match === "profile") {

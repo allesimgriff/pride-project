@@ -1,23 +1,42 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { createProjectAction } from "@/app/actions/projects";
-import { getNextDevNumberAction } from "@/app/actions/categories";
+import {
+  canManageWorkspaceCategoriesAction,
+  getNextDevNumberAction,
+} from "@/app/actions/categories";
 import type { ProjectStatus } from "@/types/database";
 import { createClient } from "@/lib/supabase/client";
 import { useApp } from "@/components/providers/AppProvider";
 import { getT } from "@/lib/i18n";
 import { type ProjectLabelMap, projectLabelRowsToMap } from "@/lib/projectLabelDefaults";
-import { listMergedProjectLabelsForWorkspaceAction } from "@/app/actions/workspaceProjectLabels";
+import {
+  canEditWorkspaceLabelsForWorkspaceAction,
+  listMergedProjectLabelsForWorkspaceAction,
+} from "@/app/actions/workspaceProjectLabels";
+import { EditableProjectLabel } from "@/components/projects/EditableProjectLabel";
+import { WorkspaceCategoryEditor } from "@/components/projects/WorkspaceCategoryEditor";
+import type { ProjectLabelKey } from "@/lib/projectLabelDefaults";
 
 interface NewProjectFormProps {
   workspaces: { id: string; name: string }[];
-  categories: { name: string; prefix: string }[];
+  categories: {
+    id: string;
+    name: string;
+    prefix: string;
+    sort_order: number;
+    workspace_id: string;
+  }[];
   canEdit: boolean;
   projectLabels: ProjectLabelMap;
+  /** Aus `/projects/new?workspace=…` — Workspace-Dropdown vorauswählen. */
+  initialWorkspaceId?: string | null;
+  /** Server-seitig: sofort Stift/Inline-Edit ohne Warten auf Client-Permission-Call. */
+  initialCanEditLabels?: boolean;
 }
 
 const STATUSES: ProjectStatus[] = [
@@ -30,7 +49,14 @@ const STATUSES: ProjectStatus[] = [
   "archiviert",
 ];
 
-export function NewProjectForm({ workspaces, categories, canEdit, projectLabels: initialProjectLabels }: NewProjectFormProps) {
+export function NewProjectForm({
+  workspaces,
+  categories,
+  canEdit,
+  projectLabels: initialProjectLabels,
+  initialWorkspaceId = null,
+  initialCanEditLabels = false,
+}: NewProjectFormProps) {
   const router = useRouter();
   const { lang } = useApp();
   const t = getT(lang);
@@ -44,13 +70,30 @@ export function NewProjectForm({ workspaces, categories, canEdit, projectLabels:
   >([]);
   const [nextTaskId, setNextTaskId] = useState(1);
   const skipInitialLabelFetch = useRef(true);
+  const [canEditLabels, setCanEditLabels] = useState(initialCanEditLabels);
+  const [canManageCategories, setCanManageCategories] = useState(false);
 
-  const label = (key: keyof ProjectLabelMap, fallback: string) => {
-    const item = projectLabels[key];
-    return lang === "de" ? (item?.de || fallback) : (item?.en || fallback);
-  };
+  function onLabelMapUpdate(key: ProjectLabelKey, de: string, en: string) {
+    setProjectLabels((prev) => ({ ...prev, [key]: { de, en } }));
+  }
 
-  const [workspaceId, setWorkspaceId] = useState(workspaces[0]?.id ?? "");
+  const labelNrTitle =
+    lang === "de"
+      ? "Entspricht der Spalte „Nr.“ unter Überschriften für diesen Workspace"
+      : "Matches the “Nr.” column under headings for this workspace";
+
+  const [workspaceId, setWorkspaceId] = useState(() => {
+    if (initialWorkspaceId && workspaces.some((w) => w.id === initialWorkspaceId)) {
+      return initialWorkspaceId;
+    }
+    return workspaces[0]?.id ?? "";
+  });
+
+  const wsCats = useMemo(() => {
+    return categories
+      .filter((c) => c.workspace_id === workspaceId)
+      .sort((a, b) => a.sort_order - b.sort_order);
+  }, [categories, workspaceId]);
 
   const [form, setForm] = useState({
     dev_number: "",
@@ -72,6 +115,28 @@ export function NewProjectForm({ workspaces, categories, canEdit, projectLabels:
   }, [workspaces, workspaceId]);
 
   useEffect(() => {
+    if (!workspaceId) {
+      setCanEditLabels(false);
+      setCanManageCategories(false);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const [{ canEdit }, { canEdit: canCat }] = await Promise.all([
+        canEditWorkspaceLabelsForWorkspaceAction(workspaceId),
+        canManageWorkspaceCategoriesAction(workspaceId),
+      ]);
+      if (!cancelled) {
+        setCanEditLabels(canEdit);
+        setCanManageCategories(canCat);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [workspaceId]);
+
+  useEffect(() => {
     if (!workspaceId) return;
     if (skipInitialLabelFetch.current) {
       skipInitialLabelFetch.current = false;
@@ -88,13 +153,20 @@ export function NewProjectForm({ workspaces, categories, canEdit, projectLabels:
     };
   }, [workspaceId]);
 
-  async function refreshDevNumber(prefix: string, wsId: string) {
+  const refreshDevNumber = useCallback(async (prefix: string, wsId: string) => {
     if (!prefix || !wsId) return;
     setLoadingNumber(true);
     const { devNumber } = await getNextDevNumberAction(prefix, wsId);
     setLoadingNumber(false);
     setForm((f) => ({ ...f, dev_number: devNumber }));
-  }
+  }, []);
+
+  useEffect(() => {
+    if (!workspaceId || wsCats.length !== 1) return;
+    const p = wsCats[0].prefix;
+    setForm((f) => (f.category === p ? f : { ...f, category: p }));
+    void refreshDevNumber(p, workspaceId);
+  }, [workspaceId, wsCats, refreshDevNumber]);
 
   async function onCategoryChange(prefix: string) {
     setForm((f) => ({ ...f, category: prefix }));
@@ -104,8 +176,22 @@ export function NewProjectForm({ workspaces, categories, canEdit, projectLabels:
 
   async function onWorkspaceChange(wsId: string) {
     setWorkspaceId(wsId);
-    const cat = form.category;
-    if (cat && wsId) await refreshDevNumber(cat, wsId);
+    setForm((f) => ({ ...f, category: "" }));
+  }
+
+  function renderLabel(key: ProjectLabelKey, fallback: string) {
+    return (
+      <EditableProjectLabel
+        labelKey={key}
+        fallback={fallback}
+        workspaceId={workspaceId || null}
+        projectLabels={projectLabels}
+        canEdit={canEditLabels}
+        showNr
+        nrTitle={labelNrTitle}
+        onMapUpdate={onLabelMapUpdate}
+      />
+    );
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -120,6 +206,10 @@ export function NewProjectForm({ workspaces, categories, canEdit, projectLabels:
     }
     if (!workspaceId) {
       alert(lang === "de" ? "Bitte einen Workspace wählen." : "Please choose a workspace.");
+      return;
+    }
+    if (wsCats.length > 0 && !form.category.trim()) {
+      alert(lang === "de" ? "Bitte eine Kategorie wählen." : "Please select a category.");
       return;
     }
     setLoading(true);
@@ -236,6 +326,7 @@ export function NewProjectForm({ workspaces, categories, canEdit, projectLabels:
   return (
     <div className="card p-6">
       <form onSubmit={handleSubmit} className="space-y-4">
+        <p className="text-xs text-gray-500">{t("newProject.formIntroHint")}</p>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
             <label className="block text-sm font-medium text-gray-700">{t("newProject.workspace")}</label>
@@ -254,27 +345,46 @@ export function NewProjectForm({ workspaces, categories, canEdit, projectLabels:
               ))}
             </select>
           </div>
-          <div>
+          <div className="sm:col-span-2">
             <label className="block text-sm font-medium text-gray-700">
-              {label("category", t("newProject.category"))}
+              {renderLabel("category", t("newProject.category"))}
             </label>
-            <select
-              value={form.category}
-              onChange={(e) => onCategoryChange(e.target.value)}
-              className="input-base mt-1"
-              disabled={!canEdit}
-            >
-              <option value="">{t("newProject.categorySelectPlaceholder")}</option>
-              {categories.map((c) => (
-                <option key={c.prefix} value={c.prefix}>
-                  {c.name} ({c.prefix})
-                </option>
-              ))}
-            </select>
+            {wsCats.length > 0 ? (
+              <>
+                <select
+                  value={form.category}
+                  onChange={(e) => onCategoryChange(e.target.value)}
+                  className="input-base mt-1"
+                  disabled={!canEdit || wsCats.length === 1}
+                  required={wsCats.length > 0}
+                >
+                  <option value="">{t("newProject.categorySelectPlaceholder")}</option>
+                  {wsCats.map((c) => (
+                    <option key={c.id} value={c.prefix}>
+                      {c.name} ({c.prefix})
+                    </option>
+                  ))}
+                </select>
+                {canManageCategories && wsCats.length > 0 && (wsCats.length === 1 || Boolean(form.category)) ? (
+                  <WorkspaceCategoryEditor
+                    workspaceId={workspaceId}
+                    categories={wsCats}
+                    selectedPrefix={form.category || wsCats[0].prefix}
+                    canManage={canManageCategories}
+                    onSaved={(newPrefix) => {
+                      setForm((f) => ({ ...f, category: newPrefix }));
+                      void refreshDevNumber(newPrefix, workspaceId);
+                    }}
+                  />
+                ) : null}
+              </>
+            ) : (
+              <p className="mt-1 text-sm text-amber-800">{t("newProject.noCategoriesInWorkspace")}</p>
+            )}
           </div>
-          <div>
+          <div className="sm:col-span-2">
             <label className="block text-sm font-medium text-gray-700">
-              {label("devNumber", t("newProject.devNumber"))} *
+              {renderLabel("devNumber", t("newProject.devNumber"))}
             </label>
             <input
               value={form.dev_number}
@@ -291,7 +401,10 @@ export function NewProjectForm({ workspaces, categories, canEdit, projectLabels:
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              {label("productName", t("newProject.productName"))} *
+              <span className="inline-flex flex-wrap items-center gap-1">
+                {renderLabel("productName", t("newProject.productName"))}
+                <span aria-hidden>*</span>
+              </span>
             </label>
             <input
               value={form.product_name}
@@ -304,9 +417,7 @@ export function NewProjectForm({ workspaces, categories, canEdit, projectLabels:
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">
-              {label("status", t("newProject.status"))}
-            </label>
+            <label className="block text-sm font-medium text-gray-700">{renderLabel("status", t("newProject.status"))}</label>
             <select
               value={form.status}
               onChange={(e) =>
@@ -328,7 +439,7 @@ export function NewProjectForm({ workspaces, categories, canEdit, projectLabels:
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            {label("description", t("newProject.description"))}
+            {renderLabel("description", t("newProject.description"))}
           </label>
           <textarea
             value={form.description}
@@ -342,9 +453,7 @@ export function NewProjectForm({ workspaces, categories, canEdit, projectLabels:
         </div>
         {/* Dateien schon beim Anlegen auswählen */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">
-            {label("files", t("files.title"))}
-          </label>
+          <label className="block text-sm font-medium text-gray-700">{renderLabel("files", t("files.title"))}</label>
           <p className="mt-1 text-xs text-gray-500">{t("files.hint")}</p>
           <input
             ref={fileInputRef}
@@ -376,7 +485,7 @@ export function NewProjectForm({ workspaces, categories, canEdit, projectLabels:
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            {label("technicalNotes", t("newProject.technicalNotes"))}
+            {renderLabel("technicalNotes", t("newProject.technicalNotes"))}
           </label>
           <textarea
             value={form.technical_notes}
@@ -390,9 +499,7 @@ export function NewProjectForm({ workspaces, categories, canEdit, projectLabels:
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700">
-            {label("functions", t("newProject.functions"))}
-          </label>
+          <label className="block text-sm font-medium text-gray-700">{renderLabel("functions", t("newProject.functions"))}</label>
           <textarea
             value={form.functions}
             onChange={(e) =>
@@ -404,9 +511,7 @@ export function NewProjectForm({ workspaces, categories, canEdit, projectLabels:
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700">
-            {label("materials", t("newProject.materials"))}
-          </label>
+          <label className="block text-sm font-medium text-gray-700">{renderLabel("materials", t("newProject.materials"))}</label>
           <textarea
             value={form.materials}
             onChange={(e) =>
@@ -418,9 +523,7 @@ export function NewProjectForm({ workspaces, categories, canEdit, projectLabels:
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700">
-            {label("openPoints", t("newProject.openPoints"))}
-          </label>
+          <label className="block text-sm font-medium text-gray-700">{renderLabel("openPoints", t("newProject.openPoints"))}</label>
           <textarea
             value={form.open_points}
             onChange={(e) =>

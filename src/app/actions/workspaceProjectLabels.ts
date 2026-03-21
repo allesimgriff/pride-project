@@ -7,16 +7,28 @@ import {
   buildMergedProjectLabelMap,
   projectLabelMapToRows,
 } from "@/lib/projectLabelDefaults";
-import { isAppAdmin, isWorkspaceAdmin } from "@/lib/workspacePermissions";
+import { canEditWorkspaceLabels } from "@/lib/workspacePermissions";
 
-async function canEditWorkspaceLabels(supabase: Awaited<ReturnType<typeof createClient>>, workspaceId: string) {
+/** App-Admin oder Workspace-Admin. */
+async function getEditorForWorkspaceLabels(supabase: Awaited<ReturnType<typeof createClient>>, workspaceId: string) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
-  if (await isAppAdmin(supabase, user.id)) return user;
-  if (await isWorkspaceAdmin(supabase, user.id, workspaceId)) return user;
+  if (await canEditWorkspaceLabels(supabase, user.id, workspaceId)) return user;
   return null;
+}
+
+export async function canEditWorkspaceLabelsForWorkspaceAction(
+  workspaceId: string,
+): Promise<{ canEdit: boolean }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { canEdit: false };
+  const ok = await canEditWorkspaceLabels(supabase, user.id, workspaceId);
+  return { canEdit: ok };
 }
 
 /** Effektive Überschriften (global + Workspace-Overrides) als Tabellenzeilen. */
@@ -41,9 +53,9 @@ export async function saveWorkspaceProjectLabelAction(input: {
   label_en: string;
 }): Promise<{ error: string | null }> {
   const supabase = await createClient();
-  const editor = await canEditWorkspaceLabels(supabase, input.workspaceId);
+  const editor = await getEditorForWorkspaceLabels(supabase, input.workspaceId);
   if (!editor) {
-    return { error: "Nur Workspace-Admin oder App-Admin darf Überschriften bearbeiten." };
+    return { error: "Nur App-Administratoren dürfen Überschriften bearbeiten." };
   }
 
   const label_de = input.label_de.trim();
@@ -73,9 +85,9 @@ export async function deleteWorkspaceProjectLabelOverrideAction(input: {
   key: ProjectLabelKey;
 }): Promise<{ error: string | null }> {
   const supabase = await createClient();
-  const editor = await canEditWorkspaceLabels(supabase, input.workspaceId);
+  const editor = await getEditorForWorkspaceLabels(supabase, input.workspaceId);
   if (!editor) {
-    return { error: "Nur Workspace-Admin oder App-Admin darf Überschriften bearbeiten." };
+    return { error: "Keine Berechtigung für Überschriften in diesem Workspace." };
   }
 
   const { error } = await supabase

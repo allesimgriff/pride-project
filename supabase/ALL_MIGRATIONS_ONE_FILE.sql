@@ -356,7 +356,7 @@ CREATE POLICY "Only admins can delete categories"
 INSERT INTO public.project_categories (name, prefix, sort_order) VALUES
   ('Sessel', 'PM_Chairs', 1),
   ('Polstergarnituren', 'PM_Sofa', 2),
-  ('Auftsehsessel', 'PM_MC', 3),
+  ('Aufstehsessel', 'PM_MC', 3),
   ('Bettgestelle', 'PM_Bed', 4);
 
 -- =============================================================================
@@ -1270,5 +1270,218 @@ CREATE POLICY "workspace_project_labels_delete"
     public.is_app_admin()
     OR public.user_is_workspace_admin(workspace_id)
   );
+
+-- 015_project_label_sections.sql
+-- Zusätzliche editierbare Bereichs-Überschriften (Nr. 11–19)
+
+INSERT INTO public.project_labels (key, label_de, label_en, sort_order)
+VALUES
+  ('stammdatenHeading', 'Stammdaten', 'Master data', 11),
+  ('photosHeading', 'Fotos zum Projekt', 'Photos for the project', 12),
+  (
+    'photosIntro',
+    'Hier kannst du direkt vom Handy (Kamera/Galerie) oder vom Rechner Fotos hochladen.',
+    'Upload photos from your phone (camera/gallery) or from your computer.',
+    13
+  ),
+  ('commentsHeading', 'Kommentare', 'Comments', 14),
+  ('tasksHeading', 'Aufgaben', 'Tasks', 15),
+  ('checklistHeading', 'Checkliste', 'Checklist', 16),
+  ('timelineHeading', 'Timeline', 'Timeline', 17),
+  (
+    'timelineSubtitle',
+    'Wer hat wann etwas geschrieben, geändert oder hochgeladen',
+    'Who wrote, changed or uploaded something and when',
+    18
+  ),
+  ('historyHeading', 'Historie', 'History', 19)
+ON CONFLICT (key) DO UPDATE SET
+  label_de = EXCLUDED.label_de,
+  label_en = EXCLUDED.label_en,
+  sort_order = EXCLUDED.sort_order;
+
+UPDATE public.project_labels
+SET
+  label_de = 'Bilder, Zeichnungen, PDFs, Präsentationen',
+  label_en = 'Images, drawings, PDFs, presentations'
+WHERE key = 'files';
+
+-- 016_header_title_label.sql
+INSERT INTO public.project_labels (key, label_de, label_en, sort_order)
+VALUES
+  (
+    'headerTitle',
+    'Projektname',
+    'Project name',
+    20
+  )
+ON CONFLICT (key) DO NOTHING;
+
+-- 017_workspace_project_labels_app_admin_only.sql
+DROP POLICY IF EXISTS "workspace_project_labels_insert" ON public.workspace_project_labels;
+CREATE POLICY "workspace_project_labels_insert"
+  ON public.workspace_project_labels FOR INSERT TO authenticated
+  WITH CHECK (public.is_app_admin());
+
+DROP POLICY IF EXISTS "workspace_project_labels_update" ON public.workspace_project_labels;
+CREATE POLICY "workspace_project_labels_update"
+  ON public.workspace_project_labels FOR UPDATE TO authenticated
+  USING (public.is_app_admin())
+  WITH CHECK (public.is_app_admin());
+
+DROP POLICY IF EXISTS "workspace_project_labels_delete" ON public.workspace_project_labels;
+CREATE POLICY "workspace_project_labels_delete"
+  ON public.workspace_project_labels FOR DELETE TO authenticated
+  USING (public.is_app_admin());
+
+-- 018_header_title_default_projektname.sql
+UPDATE public.project_labels
+SET
+  label_de = 'Projektname',
+  label_en = 'Project name'
+WHERE key = 'headerTitle'
+  AND (
+    label_de = 'Produktentwicklung Polstermöbel'
+    OR label_en = 'Product Development Upholstery'
+  );
+
+-- 019_project_categories_defaults.sql
+INSERT INTO public.project_categories (name, prefix, sort_order) VALUES
+  ('Sessel', 'PM_Chairs', 1),
+  ('Polstergarnituren', 'PM_Sofa', 2),
+  ('Aufstehsessel', 'PM_MC', 3),
+  ('Bettgestelle', 'PM_Bed', 4)
+ON CONFLICT (prefix) DO UPDATE SET
+  name = EXCLUDED.name,
+  sort_order = EXCLUDED.sort_order;
+
+-- 020_project_label_categories_prefix_footnote.sql
+INSERT INTO public.project_labels (key, label_de, label_en, sort_order)
+VALUES
+  (
+    'categoriesPrefixFootnote',
+    '* (das, was vor einer laufenden Nummerierung stehen soll, die automatisch generiert wird).',
+    '* (the text that should appear before the automatically generated serial number).',
+    21
+  )
+ON CONFLICT (key) DO NOTHING;
+
+-- 021_project_label_stammdaten_affixes.sql
+INSERT INTO public.project_labels (key, label_de, label_en, sort_order)
+VALUES
+  ('categoryLabelPrefix', '', '', 1),
+  ('devNumberLabelPrefix', '*', '*', 2)
+ON CONFLICT (key) DO UPDATE SET
+  label_de = EXCLUDED.label_de,
+  label_en = EXCLUDED.label_en,
+  sort_order = EXCLUDED.sort_order;
+
+-- 022_project_categories_per_workspace.sql
+ALTER TABLE public.project_categories
+  ADD COLUMN IF NOT EXISTS workspace_id uuid REFERENCES public.workspaces (id) ON DELETE CASCADE;
+
+ALTER TABLE public.project_categories DROP CONSTRAINT IF EXISTS project_categories_prefix_key;
+
+INSERT INTO public.project_categories (workspace_id, name, prefix, sort_order)
+SELECT w.id, c.name, c.prefix, c.sort_order
+FROM public.workspaces w
+CROSS JOIN public.project_categories c
+WHERE c.workspace_id IS NULL
+  AND NOT EXISTS (
+    SELECT 1
+    FROM public.project_categories x
+    WHERE x.workspace_id = w.id
+      AND x.prefix = c.prefix
+  );
+
+DELETE FROM public.project_categories WHERE workspace_id IS NULL;
+
+ALTER TABLE public.project_categories ALTER COLUMN workspace_id SET NOT NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS project_categories_workspace_prefix_unique
+  ON public.project_categories (workspace_id, prefix);
+
+CREATE INDEX IF NOT EXISTS idx_project_categories_workspace ON public.project_categories (workspace_id);
+
+DROP POLICY IF EXISTS "Categories are viewable by authenticated users" ON public.project_categories;
+DROP POLICY IF EXISTS "Only admins can insert categories" ON public.project_categories;
+DROP POLICY IF EXISTS "Only admins can update categories" ON public.project_categories;
+DROP POLICY IF EXISTS "Only admins can delete categories" ON public.project_categories;
+
+CREATE POLICY "project_categories_select"
+  ON public.project_categories FOR SELECT TO authenticated
+  USING (
+    public.is_app_admin ()
+    OR public.user_in_workspace (workspace_id)
+  );
+
+CREATE POLICY "project_categories_insert"
+  ON public.project_categories FOR INSERT TO authenticated
+  WITH CHECK (
+    public.is_app_admin ()
+    OR public.user_is_workspace_admin (workspace_id)
+  );
+
+CREATE POLICY "project_categories_update"
+  ON public.project_categories FOR UPDATE TO authenticated
+  USING (
+    public.is_app_admin ()
+    OR public.user_is_workspace_admin (workspace_id)
+  )
+  WITH CHECK (
+    public.is_app_admin ()
+    OR public.user_is_workspace_admin (workspace_id)
+  );
+
+CREATE POLICY "project_categories_delete"
+  ON public.project_categories FOR DELETE TO authenticated
+  USING (
+    public.is_app_admin ()
+    OR public.user_is_workspace_admin (workspace_id)
+  );
+
+-- 023_workspace_project_labels_workspace_admin_write.sql
+DROP POLICY IF EXISTS "workspace_project_labels_insert" ON public.workspace_project_labels;
+CREATE POLICY "workspace_project_labels_insert"
+  ON public.workspace_project_labels FOR INSERT TO authenticated
+  WITH CHECK (
+    public.is_app_admin ()
+    OR public.user_is_workspace_admin (workspace_id)
+  );
+
+DROP POLICY IF EXISTS "workspace_project_labels_update" ON public.workspace_project_labels;
+CREATE POLICY "workspace_project_labels_update"
+  ON public.workspace_project_labels FOR UPDATE TO authenticated
+  USING (
+    public.is_app_admin ()
+    OR public.user_is_workspace_admin (workspace_id)
+  )
+  WITH CHECK (
+    public.is_app_admin ()
+    OR public.user_is_workspace_admin (workspace_id)
+  );
+
+DROP POLICY IF EXISTS "workspace_project_labels_delete" ON public.workspace_project_labels;
+CREATE POLICY "workspace_project_labels_delete"
+  ON public.workspace_project_labels FOR DELETE TO authenticated
+  USING (
+    public.is_app_admin ()
+    OR public.user_is_workspace_admin (workspace_id)
+  );
+
+-- 024_remove_stammdaten_affix_label_keys.sql
+DELETE FROM public.workspace_project_labels
+WHERE key IN (
+  'categoryLabelPrefix',
+  'devNumberLabelPrefix',
+  'categoriesPrefixFootnote'
+);
+
+DELETE FROM public.project_labels
+WHERE key IN (
+  'categoryLabelPrefix',
+  'devNumberLabelPrefix',
+  'categoriesPrefixFootnote'
+);
 
 -- Ende ALL_MIGRATIONS_ONE_FILE.sql

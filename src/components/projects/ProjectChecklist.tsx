@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { CheckSquare, Plus, Square } from "lucide-react";
 import { addTaskAction, addTasksBulkAction, toggleTaskAction, deleteTaskAction } from "@/app/actions/projects";
 import { useApp } from "@/components/providers/AppProvider";
+import type { ProjectLabelMap } from "@/lib/projectLabelDefaults";
+import { EditableProjectLabel } from "@/components/projects/EditableProjectLabel";
 
 interface ChecklistTask {
   id: string;
@@ -15,11 +17,18 @@ interface ChecklistTask {
 interface ProjectChecklistProps {
   projectId: string;
   tasks: ChecklistTask[];
+  projectLabels: ProjectLabelMap;
+  workspaceId: string | null;
+  canEditLabels: boolean;
 }
 
-export function ProjectChecklist({ projectId, tasks }: ProjectChecklistProps) {
+export function ProjectChecklist({ projectId, tasks, projectLabels, workspaceId, canEditLabels }: ProjectChecklistProps) {
   const router = useRouter();
   const { lang } = useApp();
+  const labelNrTitle =
+    lang === "de"
+      ? "Entspricht der Spalte „Nr.“ unter Überschriften für diesen Workspace"
+      : "Matches the “Nr.” column under headings for this workspace";
   const [adding, setAdding] = useState(false);
   const [bulkAdding, setBulkAdding] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -104,9 +113,18 @@ export function ProjectChecklist({ projectId, tasks }: ProjectChecklistProps) {
   return (
     <div className="card p-6">
       <div className="flex items-center justify-between">
-        <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900">
-          <CheckSquare className="h-5 w-5" />
-          {lang === "de" ? "Checkliste" : "Checklist"}
+        <h2 className="flex flex-wrap items-center gap-2 text-lg font-semibold text-gray-900">
+          <CheckSquare className="h-5 w-5 shrink-0" />
+          <EditableProjectLabel
+            labelKey="checklistHeading"
+            fallback={lang === "de" ? "Checkliste" : "Checklist"}
+            workspaceId={workspaceId}
+            projectLabels={projectLabels}
+            canEdit={canEditLabels}
+            showNr
+            nrTitle={labelNrTitle}
+            textClassName="text-lg font-semibold text-gray-900"
+          />
         </h2>
         <div className="flex items-center gap-2">
           <button

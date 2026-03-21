@@ -9,12 +9,13 @@ import { ProjectTasks } from "@/components/projects/ProjectTasks";
 import { ProjectChecklist } from "@/components/projects/ProjectChecklist";
 import { ProjectTimeline } from "@/components/projects/ProjectTimeline";
 import { ProjectHistory } from "@/components/projects/ProjectHistory";
-import { ProjectPhotosSection } from "@/components/projects/ProjectPhotosSection";
+import { ProjectPhotosBlock } from "@/components/projects/ProjectPhotosBlock";
 import { buildMergedProjectLabelMap } from "@/lib/projectLabelDefaults";
-import { canManageProjectAsAdmin } from "@/lib/workspacePermissions";
+import { canEditWorkspaceLabels, canManageProjectAsAdmin } from "@/lib/workspacePermissions";
 import { listWorkspacesForProjectMoveAction } from "@/app/actions/workspaces";
 import { ProjectWorkspaceMove } from "@/components/projects/ProjectWorkspaceMove";
 import { getAuthUser } from "@/lib/auth/cachedDashboardSession";
+import { SetWorkspaceHeader } from "@/components/layout/SetWorkspaceHeader";
 
 export default async function ProjectDetailPage({
   params,
@@ -40,7 +41,8 @@ export default async function ProjectDetailPage({
       .eq("workspace_id", project.workspace_id),
     supabase
       .from("project_categories")
-      .select("name, prefix")
+      .select("id, name, prefix, sort_order, workspace_id")
+      .eq("workspace_id", project.workspace_id)
       .order("sort_order", { ascending: true }),
   ]);
 
@@ -50,6 +52,11 @@ export default async function ProjectDetailPage({
   const canEdit = Boolean(
     user && (await canManageProjectAsAdmin(supabase, user.id, project.workspace_id ?? null)),
   );
+  let canEditLabels = false;
+  if (user && project.workspace_id) {
+    canEditLabels = await canEditWorkspaceLabels(supabase, user.id, project.workspace_id);
+  }
+  const workspaceId = project.workspace_id ?? null;
 
   const detailBundle = Promise.all([
     supabase
@@ -104,6 +111,7 @@ export default async function ProjectDetailPage({
 
   return (
     <div className="space-y-6 print-detail-page">
+      <SetWorkspaceHeader workspaceId={project.workspace_id} />
       <div className="no-print flex items-center gap-4">
         <DetailBackLink />
       </div>
@@ -121,22 +129,35 @@ export default async function ProjectDetailPage({
 
       <div className="grid gap-6 lg:grid-cols-3 print-grid">
         <div className="lg:col-span-2 space-y-6 print-main-column">
-          <div className="card p-6">
-            <h2 className="mb-3 text-lg font-semibold text-gray-900">
-              Fotos zum Projekt
-            </h2>
-            <p className="mb-3 text-sm text-gray-500">
-              Hier kannst du direkt vom Handy (Kamera/Galerie) oder vom Rechner Fotos hochladen.
-            </p>
-            <ProjectPhotosSection />
-          </div>
+          <ProjectPhotosBlock
+            projectLabels={projectLabels}
+            workspaceId={workspaceId}
+            canEditLabels={canEditLabels}
+          />
 
-          <ProjectFiles projectId={id} files={files || []} projectImageId={project.project_image_id ?? null} />
-          <ProjectStammdaten project={project} categories={categories || []} canEdit={canEdit} projectLabels={projectLabels} />
+          <ProjectFiles
+            projectId={id}
+            files={files || []}
+            projectImageId={project.project_image_id ?? null}
+            projectLabels={projectLabels}
+            workspaceId={workspaceId}
+            canEditLabels={canEditLabels}
+          />
+          <ProjectStammdaten
+            project={project}
+            categories={categories || []}
+            canEdit={canEdit}
+            projectLabels={projectLabels}
+            workspaceId={workspaceId}
+            canEditLabels={canEditLabels}
+          />
           <ProjectComments
             projectId={id}
             comments={comments || []}
             currentUserId={currentUserId}
+            projectLabels={projectLabels}
+            workspaceId={workspaceId}
+            canEditLabels={canEditLabels}
           />
           <ProjectChecklist
             projectId={id}
@@ -145,11 +166,17 @@ export default async function ProjectDetailPage({
               title: t.title,
               completed: t.completed,
             }))}
+            projectLabels={projectLabels}
+            workspaceId={workspaceId}
+            canEditLabels={canEditLabels}
           />
           <ProjectTasks
             projectId={id}
             tasks={tasks || []}
             currentUserId={currentUserId}
+            projectLabels={projectLabels}
+            workspaceId={workspaceId}
+            canEditLabels={canEditLabels}
           />
         </div>
         <div className="no-print space-y-6">
@@ -157,8 +184,16 @@ export default async function ProjectDetailPage({
             comments={comments || []}
             updates={updates || []}
             files={files || []}
+            projectLabels={projectLabels}
+            workspaceId={workspaceId}
+            canEditLabels={canEditLabels}
           />
-          <ProjectHistory updates={updates || []} />
+          <ProjectHistory
+            updates={updates || []}
+            projectLabels={projectLabels}
+            workspaceId={workspaceId}
+            canEditLabels={canEditLabels}
+          />
         </div>
       </div>
     </div>

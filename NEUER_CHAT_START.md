@@ -1,10 +1,11 @@
-# Morgen: neuer Chat – kurz lesen, dann eine Zeile einfügen
+# Neuer Chat – kurz lesen, dann eine Zeile einfügen
 
 ## Was die KI wissen soll (Stand)
 
 - **Supabase, Netlify und GitHub sind voll eingerichtet** (kein „erst Projekt anlegen“). Live-Deploy läuft (Build von `main`, Published).
 - **Repo:** `pride` auf dem Rechner, u. a. `c:\Users\Beck\pride`. Remote: `allesimgriff/pride-project`.
 - **Admin-Account:** `tb@allesimgriff.de`.
+- **UI:** Kategorie / Entwicklungsnummer getrennt; **Kategorien & Präfixe** über Modal (`CategoryPrefixesModal`) – siehe `HANDOFF_FUER_NEUEN_CHAT.md` → „Stand dieser Datei“.
 
 ## Deine Arbeitsweise (für die KI)
 

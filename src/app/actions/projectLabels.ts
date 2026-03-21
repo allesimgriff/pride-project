@@ -1,7 +1,12 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { PROJECT_LABEL_DEFAULTS, type ProjectLabelKey, type ProjectLabelRow } from "@/lib/projectLabelDefaults";
+import {
+  PROJECT_LABEL_DEFAULTS,
+  mergeProjectLabelRowsFromDb,
+  type ProjectLabelKey,
+  type ProjectLabelRow,
+} from "@/lib/projectLabelDefaults";
 
 async function requireAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
   const {
@@ -21,17 +26,11 @@ export async function listProjectLabelsAction(): Promise<{ data: ProjectLabelRow
     .order("sort_order", { ascending: true });
 
   if (error) {
-    // Fallback: wenn Tabelle noch nicht existiert oder leer ist, Defaults zeigen
     return { data: PROJECT_LABEL_DEFAULTS, error: null };
   }
 
-  if (!data || data.length === 0) {
-    return { data: PROJECT_LABEL_DEFAULTS, error: null };
-  }
-
-  const valid = data.filter((row) => PROJECT_LABEL_DEFAULTS.some((d) => d.key === row.key));
   return {
-    data: (valid.length > 0 ? valid : PROJECT_LABEL_DEFAULTS) as ProjectLabelRow[],
+    data: mergeProjectLabelRowsFromDb(data),
     error: null,
   };
 }

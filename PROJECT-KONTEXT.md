@@ -4,7 +4,7 @@ Kurzüberblick, damit ein neuer Chat sofort orientiert ist. **Keine Secrets hier
 
 ## Produkt & Zielgruppe
 
-Interne Plattform **„Produktentwicklung Polstermöbel“** (PRIDE): Projekte, Dateien, Fotos, Checklisten, Timeline, Mitarbeiter, Einladungen.
+Interne Plattform **PRIDE** (Kopfzeile standardmäßig „Projektname“ / anpassbar): Projekte, Dateien, Fotos, Checklisten, Timeline, Mitarbeiter, Einladungen.
 
 ## Stack
 
@@ -46,7 +46,8 @@ Interne Plattform **„Produktentwicklung Polstermöbel“** (PRIDE): Projekte, 
 | Bereich | Pfad (Auswahl) |
 |--------|-----------------|
 | Projekte | `src/app/(dashboard)/projects/`, `src/components/projects/`, `src/app/actions/projects.ts` |
-| Überschriften | Global: `project_labels` / Einstellungen; pro Workspace: `workspace_project_labels`, `workspaces/[id]/labels` |
+| Überschriften | Global: `project_labels` / `settings/labels`; pro Workspace: `workspace_project_labels` – **nur App-Admin** (global und Overrides); Bearbeitung **inline** auf Projektseite / „Neues Projekt“ (Text oder Stift). u. a. `headerTitle` (20), `categoriesPrefixFootnote` (21) unter Kategorien. Alte URL `workspaces/[id]/labels` → Redirect zur Workspace-Übersicht. |
+| Kategorien | `project_categories` (Defaults in `004`/`019`, Liste in `src/lib/projectCategoryDefaults.ts`), `settings/categories`; auf Projektseite/Neues Projekt: Bearbeitung **Name/Präfix** per Modal (`CategoryPrefixesModal` + `CategoryPrefixesInlinePanel`), nicht in der Kategorie-Überschrift eingebettet |
 | Workspaces | `src/app/(dashboard)/workspaces/`, `src/app/actions/workspaces.ts`, `src/lib/workspacePermissions.ts` |
 | Layout / Nav | `src/components/layout/Sidebar.tsx`, `Header.tsx`, `DashboardShell.tsx` |
 | i18n | `src/lib/i18n.ts` |
@@ -71,4 +72,4 @@ Interne Plattform **„Produktentwicklung Polstermöbel“** (PRIDE): Projekte, 
 - `DEPLOYMENT-NOTIZEN.md` – Repo/Deploy-Hinweise (URLs ggf. aktualisieren).  
 - Diese Datei **`PROJECT-KONTEXT.md`** – beim Start eines neuen Chats kurz lesen oder per `@` einbinden.
 
-*Zuletzt sinnvoll ergänzt für nahtlose Chat-Fortsetzung.*
+*Zuletzt ergänzt: Handoff-Dateien `HANDOFF_FUER_NEUEN_CHAT.md`, `NEUER_CHAT_START.md` (März 2026) auf aktuellen Stand – siehe dort „Stand dieser Datei“.*

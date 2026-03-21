@@ -22,7 +22,8 @@ export interface ProjectCategory {
   name: string;
   prefix: string;
   sort_order: number;
-  created_at: string;
+  workspace_id: string;
+  created_at?: string;
 }
 
 export interface Profile {

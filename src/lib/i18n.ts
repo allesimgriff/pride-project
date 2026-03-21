@@ -28,11 +28,11 @@ export const translations = {
       subtitle: "Workspaces, Team und Konfiguration der Stammdaten.",
       workspacesDesc: "Teams und Projektbereiche, Einladungen verwalten.",
       staffDesc: "Mitarbeiter einladen und Rollen verwalten.",
-      labelsDesc: "Globale Standard-Überschriften; Workspace-Admins können pro Team abweichen.",
+      labelsDesc: "Globale Standard-Überschriften; bearbeiten nur App-Administratoren.",
       categoriesDesc: "Kategorien und Präfixe für Entwicklungsnummern.",
     },
     header: {
-      title: "Produktentwicklung Polstermöbel",
+      title: "Projektname",
       user: "Benutzer",
       langLabel: "DE / EN:",
     },
@@ -101,6 +101,9 @@ export const translations = {
       deleteConfirm: "Kategorie wirklich löschen? Projekte mit dieser Kategorie behalten den gespeicherten Präfix.",
       fillNamePrefix: "Name und Präfix ausfüllen.",
       titleManager: "Kategorien & Präfixe",
+      prefixColumn: "Präfix*",
+      prefixFootnote:
+        "* (das, was vor einer laufenden Nummerierung stehen soll, die automatisch generiert wird).",
     },
     common: {
       save: "Speichern",
@@ -109,6 +112,7 @@ export const translations = {
       edit: "Bearbeiten",
       back: "Zurück",
       select: "— Auswählen —",
+      close: "Schließen",
     },
     roles: {
       admin: "Admin",
@@ -192,6 +196,17 @@ export const translations = {
       openPoints: "Offene Punkte",
       workspace: "Workspace",
       workspacePlaceholder: "— Workspace wählen —",
+      formIntroHint:
+        "Weitere Feldüberschriften können nur App-Administratoren anpassen (Stift neben der Überschrift). Kategorie und Präfix für diesen Workspace siehe unten.",
+      noCategoriesInWorkspace:
+        "Für diesen Workspace sind keine Kategorien hinterlegt. Bitte den Administrator informieren.",
+    },
+    categoryEditor: {
+      hint: "Aus dem Präfix werden laufende Nummern gebildet (z. B. kat_1_2025_001).",
+      name: "Anzeigename",
+      prefix: "Präfix",
+      save: "Kategorie speichern",
+      fillBoth: "Bitte Name und Präfix ausfüllen.",
     },
     workspaces: {
       title: "Workspaces",
@@ -225,17 +240,40 @@ export const translations = {
       joinButton: "Beitreten",
       joinInvalid: "Ungültiger oder fehlender Einladungslink.",
       joinSuccess: "Sie sind dem Workspace beigetreten.",
+      newProjectHere: "Neues Projekt in diesem Workspace",
+      newProjectHereHint:
+        "Legt ein Projekt genau in diesem Workspace an (Workspace ist im Formular vorausgewählt). Feld-Nummern 1–10 entsprechen der Überschriften-Tabelle.",
       backToWorkspace: "Zurück zum Workspace",
-      editLabels: "Überschriften für diesen Workspace",
+      renameWorkspace: "Workspace umbenennen",
+      editLabels: "Überschriften für diesen Workspace (Nr. 1–20)",
       labelsTitle: "Workspace-Überschriften",
       labelsSubtitle:
-        "Nur Workspace-Admin oder App-Admin. Diese Texte gelten für Projekte in diesem Workspace und überschreiben die globalen Standard-Überschriften.",
+        "Nur App-Administratoren. Diese Texte gelten für Projekte in diesem Workspace und überschreiben die globalen Standard-Überschriften.",
       labelsSave: "Speichern",
       labelsReset: "Standard",
       labelsResetConfirm: "Eigenen Text verwerfen und globale Standard-Überschrift verwenden?",
       labelsActions: "Aktionen",
       joinError: "Beitritt ist fehlgeschlagen.",
       noAccess: "Kein Zugriff auf diesen Workspace.",
+      editLabelsHint:
+        "Überschriften ändern nur App-Administratoren – direkt auf der Projektseite oder bei „Neues Projekt“ (Text oder Stift-Symbol). Nummerierung wie in der Überschriften-Tabelle.",
+    },
+    labelsInline: {
+      edit: "Überschrift bearbeiten",
+      de: "Deutsch",
+      en: "English",
+      headingDe: "Überschrift (Deutsch)",
+      headingEn: "Überschrift (English)",
+      affixDe: "Zusatz neben der Überschrift (Deutsch)",
+      affixEn: "Zusatz neben der Überschrift (English)",
+      save: "Speichern",
+      reset: "Auf Standard",
+      resetConfirmWorkspace: "Workspace-Text verwerfen und globale Standard-Überschrift verwenden?",
+      resetConfirmGlobal: "Globale Standard-Überschrift aus der Tabelle wiederherstellen?",
+      categoryPrefixesTitle: "Kategorien & Präfixe",
+      categoryPrefixesHint: "Gleiche Daten wie unter Einstellungen → Kategorien.",
+      saveRow: "Zeile speichern",
+      editCategoryPrefixes: "Kategorien & Präfixe bearbeiten …",
     },
     comments: {
       title: "Kommentare",
@@ -280,7 +318,7 @@ export const translations = {
     },
     login: {
       title: "PRIDE",
-      subtitle: "Produktentwicklung Polstermöbel",
+      subtitle: "Projektname",
       email: "E-Mail",
       emailPlaceholder: "name@firma.de",
       password: "Passwort",
@@ -298,7 +336,7 @@ export const translations = {
     labelsPage: {
       title: "Überschriften",
       subtitle:
-        "Globale Standard-Überschriften für alle Workspaces. Workspace-Admins können unter jedem Workspace abweichende Texte setzen.",
+        "Globale Standard-Überschriften für alle Workspaces. Nur App-Administratoren können Texte und Abweichungen pro Workspace ändern (hier oder inline).",
     },
     staffPage: {
       title: "Mitarbeiter",
@@ -370,11 +408,11 @@ export const translations = {
       subtitle: "Workspaces, team, and master-data configuration.",
       workspacesDesc: "Teams and project areas, manage invitations.",
       staffDesc: "Invite staff and manage roles.",
-      labelsDesc: "Global default headings; workspace admins can override per team.",
+      labelsDesc: "Global default headings; only app administrators can edit them.",
       categoriesDesc: "Categories and prefixes for development numbers.",
     },
     header: {
-      title: "Product Development Upholstery",
+      title: "Project name",
       user: "User",
       langLabel: "DE / EN:",
     },
@@ -443,6 +481,9 @@ export const translations = {
       deleteConfirm: "Really delete this category? Projects with this category keep the stored prefix.",
       fillNamePrefix: "Please fill in name and prefix.",
       titleManager: "Categories & prefixes",
+      prefixColumn: "Prefix*",
+      prefixFootnote:
+        "* (the text that should appear before the automatically generated serial number).",
     },
     common: {
       save: "Save",
@@ -534,6 +575,17 @@ export const translations = {
       openPoints: "Open points",
       workspace: "Workspace",
       workspacePlaceholder: "— Choose workspace —",
+      formIntroHint:
+        "Other field headings can only be changed by app administrators (pencil next to the heading). Category and prefix for this workspace are below.",
+      noCategoriesInWorkspace:
+        "No categories are set up for this workspace. Please contact an administrator.",
+    },
+    categoryEditor: {
+      hint: "Serial numbers are built from this prefix (e.g. kat_1_2025_001).",
+      name: "Display name",
+      prefix: "Prefix",
+      save: "Save category",
+      fillBoth: "Please fill in name and prefix.",
     },
     workspaces: {
       title: "Workspaces",
@@ -566,17 +618,40 @@ export const translations = {
       joinButton: "Join",
       joinInvalid: "Invalid or missing invitation link.",
       joinSuccess: "You have joined the workspace.",
+      newProjectHere: "New project in this workspace",
+      newProjectHereHint:
+        "Creates a project in this workspace (workspace is pre-selected in the form). Field numbers 1–10 match the headings table.",
       backToWorkspace: "Back to workspace",
-      editLabels: "Headings for this workspace",
+      renameWorkspace: "Rename workspace",
+      editLabels: "Headings for this workspace (numbers as in the table)",
       labelsTitle: "Workspace headings",
       labelsSubtitle:
-        "Workspace admin or app admin only. These labels apply to projects in this workspace and override global defaults.",
+        "App administrators only. These labels apply to projects in this workspace and override global defaults.",
       labelsSave: "Save",
       labelsReset: "Default",
       labelsResetConfirm: "Discard custom text and use the global default heading?",
       labelsActions: "Actions",
       joinError: "Could not join.",
       noAccess: "No access to this workspace.",
+      editLabelsHint:
+        "Only app administrators can edit headings – on the project page or on “New project” (text or pencil icon). Numbering matches the headings table.",
+    },
+    labelsInline: {
+      edit: "Edit heading",
+      de: "German",
+      en: "English",
+      headingDe: "Heading (German)",
+      headingEn: "Heading (English)",
+      affixDe: "Affix next to heading (German)",
+      affixEn: "Affix next to heading (English)",
+      save: "Save",
+      reset: "Reset to default",
+      resetConfirmWorkspace: "Discard workspace text and use the global default heading?",
+      resetConfirmGlobal: "Restore the global default heading from the table?",
+      categoryPrefixesTitle: "Categories & prefixes",
+      categoryPrefixesHint: "Same data as under Settings → Categories.",
+      saveRow: "Save row",
+      editCategoryPrefixes: "Edit categories & prefixes …",
     },
     comments: {
       title: "Comments",
@@ -621,7 +696,7 @@ export const translations = {
     },
     login: {
       title: "PRIDE",
-      subtitle: "Product development upholstery",
+      subtitle: "Project name",
       email: "Email",
       emailPlaceholder: "name@company.com",
       password: "Password",
@@ -639,7 +714,7 @@ export const translations = {
     labelsPage: {
       title: "Headings",
       subtitle:
-        "Global default headings for all workspaces. Workspace admins can set different text per workspace.",
+        "Global default headings for all workspaces. Only app administrators can change text and per-workspace overrides (here or inline).",
     },
     staffPage: {
       title: "Staff",

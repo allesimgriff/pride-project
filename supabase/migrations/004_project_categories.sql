@@ -38,5 +38,5 @@ CREATE POLICY "Only admins can delete categories"
 INSERT INTO public.project_categories (name, prefix, sort_order) VALUES
   ('Sessel', 'PM_Chairs', 1),
   ('Polstergarnituren', 'PM_Sofa', 2),
-  ('Auftsehsessel', 'PM_MC', 3),
+  ('Aufstehsessel', 'PM_MC', 3),
   ('Bettgestelle', 'PM_Bed', 4);

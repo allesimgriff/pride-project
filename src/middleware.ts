@@ -8,9 +8,8 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Session-Refresh weglassen für statische Assets und Bild-APIs (sonst pro Thumbnail
-     * ein zusätzlicher Supabase-auth/User-Roundtrip).
+     * Session-Refresh weglassen für alles unter /_next/ (Chunks, CSS, HMR, …) und Bild-APIs.
      */
-    "/((?!_next/static|_next/image|favicon.ico|api/files|api/photos|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/|favicon.ico|api/files|api/photos|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

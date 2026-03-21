@@ -8,6 +8,8 @@ import { MessageSquare, Send } from "lucide-react";
 import { addCommentAction } from "@/app/actions/projects";
 import { useApp } from "@/components/providers/AppProvider";
 import { getT } from "@/lib/i18n";
+import type { ProjectLabelMap } from "@/lib/projectLabelDefaults";
+import { EditableProjectLabel } from "@/components/projects/EditableProjectLabel";
 
 interface Comment {
   id: string;
@@ -20,15 +22,25 @@ interface ProjectCommentsProps {
   projectId: string;
   comments: Comment[];
   currentUserId?: string | null;
+  projectLabels: ProjectLabelMap;
+  workspaceId: string | null;
+  canEditLabels: boolean;
 }
 
 export function ProjectComments({
   projectId,
   comments,
+  projectLabels,
+  workspaceId,
+  canEditLabels,
 }: ProjectCommentsProps) {
   const router = useRouter();
   const { lang } = useApp();
   const t = getT(lang);
+  const labelNrTitle =
+    lang === "de"
+      ? "Entspricht der Spalte „Nr.“ unter Überschriften für diesen Workspace"
+      : "Matches the “Nr.” column under headings for this workspace";
   const dateLocale = lang === "de" ? de : enUS;
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
@@ -49,9 +61,18 @@ export function ProjectComments({
 
   return (
     <div className="card p-6">
-      <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900">
-        <MessageSquare className="h-5 w-5" />
-        {t("comments.title")}
+      <h2 className="flex flex-wrap items-center gap-2 text-lg font-semibold text-gray-900">
+        <MessageSquare className="h-5 w-5 shrink-0" />
+        <EditableProjectLabel
+          labelKey="commentsHeading"
+          fallback={t("comments.title")}
+          workspaceId={workspaceId}
+          projectLabels={projectLabels}
+          canEdit={canEditLabels}
+          showNr
+          nrTitle={labelNrTitle}
+          textClassName="text-lg font-semibold text-gray-900"
+        />
       </h2>
 
       <form onSubmit={handleSubmit} className="mt-4">

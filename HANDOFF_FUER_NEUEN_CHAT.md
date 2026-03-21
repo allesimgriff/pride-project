@@ -79,6 +79,8 @@ Früher: falsche **Project URL** (Tippfehler in der Ref), **`fetch failed`**; Re
 | Workspaces | `src/app/(dashboard)/workspaces/`, `src/app/actions/workspaces.ts`, `src/lib/workspacePermissions.ts` |
 | Navigation | `src/components/layout/navConfig.tsx`, `Sidebar`, `Header` – **Einstellungen**-Hub `/settings` |
 | Projekt verschieben | `ProjectWorkspaceMove.tsx`, `moveProjectToWorkspaceAction` in `projects.ts` |
+| Neues Projekt / Stammdaten | `NewProjectForm.tsx`, `ProjectStammdaten.tsx`, `EditableProjectLabel.tsx` |
+| Kategorien & Präfixe (UI) | `CategoryPrefixesModal.tsx`, `CategoryPrefixesInlinePanel.tsx` – Modal statt eingebettet in Kategorie-Überschrift |
 | Migrationen | `supabase/migrations/`, `ALL_MIGRATIONS_ONE_FILE.sql` |
 
 ---
@@ -111,7 +113,9 @@ http://localhost:3000/api/auth/supabase-reachability
 
 ---
 
-## Stand dieser Datei
+## Stand dieser Datei (März 2026)
 
 - Infra **voll**, Nutzer-Arbeitsweise und **keine Programmierarbeit** dokumentiert.
 - Chronologie Login/DNS nur noch **historisch**.
+- **Letzte inhaltliche Ergänzung:** Formular **Neues Projekt** / **Stammdaten:** **Kategorie** und **Entwicklungsnummer** stehen **untereinander** (volle Breite); Bearbeitung der Liste **„Kategorien & Präfixe“** nur noch über **eigenes Modal** (Link „Kategorien & Präfixe bearbeiten …“), nicht mehr im Popover der Kategorie-Überschrift. **Keine** neue Supabase-Migration dafür nötig.
+- **Cursor-Regeln:** `.cursor/rules/pride-arbeitspartner.mdc` (Deutsch, Terminal nur kopierbar, kein Auto-Push).

@@ -28,7 +28,7 @@ export default async function ProjectsPage() {
       .order("updated_at", { ascending: false }),
     supabase
       .from("project_categories")
-      .select("name, prefix")
+      .select("workspace_id, name, prefix")
       .order("sort_order", { ascending: true }),
   ]);
 
@@ -36,7 +36,13 @@ export default async function ProjectsPage() {
   const workspaceMembershipCount = workspaceRes.count;
   const canCreateProject = isAdmin || (workspaceMembershipCount ?? 0) > 0;
   const projects = projectsRes.data;
-  const categoryList = categoryRes.data;
+  const categoryRows = categoryRes.data ?? [];
+  const categoriesByWorkspace: Record<string, { name: string; prefix: string }[]> = {};
+  for (const row of categoryRows) {
+    const wid = row.workspace_id as string;
+    if (!categoriesByWorkspace[wid]) categoriesByWorkspace[wid] = [];
+    categoriesByWorkspace[wid].push({ name: row.name, prefix: row.prefix });
+  }
 
   const projectRows = projects || [];
   const projectIds = projectRows.map((p) => p.id);
@@ -45,6 +51,7 @@ export default async function ProjectsPage() {
   const projectsWithThumbs = projectRows.map((p) => {
     const raw = p as {
       id: string;
+      workspace_id: string;
       dev_number: string;
       product_name: string;
       category: string | null;
@@ -57,6 +64,7 @@ export default async function ProjectsPage() {
     const workspaceName = Array.isArray(w) ? w[0]?.name : w?.name;
     return {
       id: raw.id,
+      workspace_id: raw.workspace_id,
       dev_number: raw.dev_number,
       product_name: raw.product_name,
       category: raw.category,
@@ -71,7 +79,7 @@ export default async function ProjectsPage() {
     <div className="space-y-6">
       <ProjectsPageHeader canCreateProject={canCreateProject} />
       {Boolean(profile) && <ProjectsScopeHint />}
-      <ProjectsList projects={projectsWithThumbs} categoryNames={categoryList || []} />
+      <ProjectsList projects={projectsWithThumbs} categoriesByWorkspace={categoriesByWorkspace} />
     </div>
   );
 }

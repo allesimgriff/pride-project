@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -10,10 +11,20 @@ import { getT } from "@/lib/i18n";
 import { primaryNavItems, isPrimaryNavActive } from "@/components/layout/navConfig";
 import { LogOut } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import type { ProjectLabelMap } from "@/lib/projectLabelDefaults";
+import { projectLabelRowsToMap } from "@/lib/projectLabelDefaults";
+import { EditableProjectLabel } from "@/components/projects/EditableProjectLabel";
+import { useHeaderWorkspace } from "@/components/layout/HeaderWorkspaceContext";
+import {
+  canEditWorkspaceLabelsForWorkspaceAction,
+  listMergedProjectLabelsForWorkspaceAction,
+} from "@/app/actions/workspaceProjectLabels";
 
 interface HeaderProps {
   user: User;
   profile: Profile | null;
+  headerProjectLabels: ProjectLabelMap;
+  canEditGlobalLabels: boolean;
 }
 
 function getInitials(profile: Profile | null, user: User) {
@@ -27,10 +38,42 @@ function getInitials(profile: Profile | null, user: User) {
   return email ? email.slice(0, 2).toUpperCase() : "?";
 }
 
-export function Header({ user, profile }: HeaderProps) {
+export function Header({ user, profile, headerProjectLabels, canEditGlobalLabels }: HeaderProps) {
   const { lang, setLang } = useApp();
   const router = useRouter();
   const t = getT(lang);
+  const { workspaceId } = useHeaderWorkspace();
+  const [displayLabels, setDisplayLabels] = useState(headerProjectLabels);
+  const [canEditWorkspaceHeader, setCanEditWorkspaceHeader] = useState(false);
+
+  useEffect(() => {
+    if (!workspaceId) setDisplayLabels(headerProjectLabels);
+  }, [headerProjectLabels, workspaceId]);
+
+  useEffect(() => {
+    if (!workspaceId) {
+      setCanEditWorkspaceHeader(false);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const [{ data, error }, { canEdit }] = await Promise.all([
+        listMergedProjectLabelsForWorkspaceAction(workspaceId),
+        canEditWorkspaceLabelsForWorkspaceAction(workspaceId),
+      ]);
+      if (cancelled) return;
+      if (!error && data) setDisplayLabels(projectLabelRowsToMap(data));
+      setCanEditWorkspaceHeader(canEdit);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [workspaceId]);
+
+  const canEditTitle = workspaceId ? canEditWorkspaceHeader : canEditGlobalLabels;
+  const titleEditScope: "workspace" | "global" = workspaceId ? "workspace" : "global";
+  const titleWorkspaceId = workspaceId || null;
+
   const displayName = profile?.full_name || user.email?.split("@")[0] || t("header.user");
   const roleLabel = profile ? t(`roles.${profile.role}`) : "—";
   const avatarUrl = profile?.avatar_url ?? null;
@@ -43,7 +86,18 @@ export function Header({ user, profile }: HeaderProps) {
       <div className="flex h-16 items-center justify-between px-4 md:px-6">
         <div className="flex items-center gap-4">
           <h1 className="text-base md:text-lg font-semibold text-gray-900">
-            {t("header.title")}
+            <EditableProjectLabel
+              labelKey="headerTitle"
+              fallback={t("header.title")}
+              workspaceId={titleWorkspaceId}
+              projectLabels={displayLabels}
+              canEdit={canEditTitle}
+              editScope={titleEditScope}
+              textClassName="text-base md:text-lg font-semibold text-gray-900"
+              onMapUpdate={(key, de, en) =>
+                setDisplayLabels((prev) => ({ ...prev, [key]: { de, en } }))
+              }
+            />
           </h1>
         </div>
         <div className="flex items-center gap-4">

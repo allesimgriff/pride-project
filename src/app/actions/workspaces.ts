@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { DEFAULT_WORKSPACE_FIRST_CATEGORY } from "@/lib/projectCategoryDefaults";
 import { randomUUID } from "crypto";
 import { isAppAdmin, isWorkspaceAdmin } from "@/lib/workspacePermissions";
 import type { WorkspaceMemberRole } from "@/types/database";
@@ -61,7 +62,37 @@ export async function createWorkspaceAction(name: string): Promise<{ id: string 
   });
 
   if (mErr) return { id: null, error: mErr.message };
+
+  const { error: catErr } = await supabase.from("project_categories").insert({
+    workspace_id: ws.id,
+    name: DEFAULT_WORKSPACE_FIRST_CATEGORY.name,
+    prefix: DEFAULT_WORKSPACE_FIRST_CATEGORY.prefix,
+    sort_order: DEFAULT_WORKSPACE_FIRST_CATEGORY.sortOrder,
+  });
+  if (catErr) return { id: null, error: catErr.message };
+
   return { id: ws.id, error: null };
+}
+
+export async function updateWorkspaceNameAction(
+  workspaceId: string,
+  name: string,
+): Promise<{ error: string | null }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Nicht angemeldet." };
+
+  const trimmed = name.trim();
+  if (!trimmed) return { error: "Name erforderlich." };
+
+  if (!(await isWorkspaceAdmin(supabase, user.id, workspaceId)) && !(await isAppAdmin(supabase, user.id))) {
+    return { error: "Nur Workspace-Admins dürfen den Namen ändern." };
+  }
+
+  const { error } = await supabase.from("workspaces").update({ name: trimmed }).eq("id", workspaceId);
+  return { error: error?.message ?? null };
 }
 
 export async function getWorkspaceDetailAction(workspaceId: string): Promise<{

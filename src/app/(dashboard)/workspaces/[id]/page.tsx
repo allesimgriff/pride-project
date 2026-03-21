@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { getWorkspaceDetailAction } from "@/app/actions/workspaces";
 import { WorkspaceDetailClient } from "@/components/workspaces/WorkspaceDetailClient";
+import { SetWorkspaceHeader } from "@/components/layout/SetWorkspaceHeader";
 
 export default async function WorkspaceDetailPage({
   params,
@@ -21,6 +22,7 @@ export default async function WorkspaceDetailPage({
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
+      <SetWorkspaceHeader workspaceId={id} />
       <WorkspaceDetailClient
         workspaceId={id}
         initial={{

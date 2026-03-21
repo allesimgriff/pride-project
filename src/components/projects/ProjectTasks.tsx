@@ -9,6 +9,8 @@ import { addTaskAction, toggleTaskAction, deleteTaskAction } from "@/app/actions
 import type { TaskPriority } from "@/types/database";
 import { useApp } from "@/components/providers/AppProvider";
 import { getT } from "@/lib/i18n";
+import type { ProjectLabelMap } from "@/lib/projectLabelDefaults";
+import { EditableProjectLabel } from "@/components/projects/EditableProjectLabel";
 
 interface Task {
   id: string;
@@ -24,6 +26,9 @@ interface ProjectTasksProps {
   projectId: string;
   tasks: Task[];
   currentUserId?: string | null;
+  projectLabels: ProjectLabelMap;
+  workspaceId: string | null;
+  canEditLabels: boolean;
 }
 
 const priorityColors: Record<TaskPriority, string> = {
@@ -36,10 +41,17 @@ const priorityColors: Record<TaskPriority, string> = {
 export function ProjectTasks({
   projectId,
   tasks,
+  projectLabels,
+  workspaceId,
+  canEditLabels,
 }: ProjectTasksProps) {
   const router = useRouter();
   const { lang } = useApp();
   const t = getT(lang);
+  const labelNrTitle =
+    lang === "de"
+      ? "Entspricht der Spalte „Nr.“ unter Überschriften für diesen Workspace"
+      : "Matches the “Nr.” column under headings for this workspace";
   const dateLocale = lang === "de" ? de : enUS;
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -87,9 +99,18 @@ export function ProjectTasks({
   return (
     <div className="card p-6">
       <div className="flex items-center justify-between">
-        <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900">
-          <CheckSquare className="h-5 w-5" />
-          {t("tasks.title")}
+        <h2 className="flex flex-wrap items-center gap-2 text-lg font-semibold text-gray-900">
+          <CheckSquare className="h-5 w-5 shrink-0" />
+          <EditableProjectLabel
+            labelKey="tasksHeading"
+            fallback={t("tasks.title")}
+            workspaceId={workspaceId}
+            projectLabels={projectLabels}
+            canEdit={canEditLabels}
+            showNr
+            nrTitle={labelNrTitle}
+            textClassName="text-lg font-semibold text-gray-900"
+          />
         </h2>
         <button
           type="button"

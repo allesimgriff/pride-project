@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "PRIDE – Produktentwicklung Polstermöbel",
+  title: "PRIDE – Projektname",
   description: "Interne Plattform für die Produktentwicklung von Polstermöbeln",
   icons: {
     icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],

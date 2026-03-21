@@ -5,6 +5,8 @@ import { de, enUS } from "date-fns/locale";
 import { MessageSquare, History, Paperclip } from "lucide-react";
 import { useApp } from "@/components/providers/AppProvider";
 import { getT } from "@/lib/i18n";
+import type { ProjectLabelMap } from "@/lib/projectLabelDefaults";
+import { EditableProjectLabel } from "@/components/projects/EditableProjectLabel";
 
 interface Comment {
   id: string;
@@ -36,6 +38,9 @@ interface ProjectTimelineProps {
   comments: Comment[];
   updates: Update[];
   files: File[];
+  projectLabels: ProjectLabelMap;
+  workspaceId: string | null;
+  canEditLabels: boolean;
 }
 
 function buildTimeline(
@@ -77,17 +82,48 @@ function buildTimeline(
   return items;
 }
 
-export function ProjectTimeline({ comments, updates, files }: ProjectTimelineProps) {
+export function ProjectTimeline({
+  comments,
+  updates,
+  files,
+  projectLabels,
+  workspaceId,
+  canEditLabels,
+}: ProjectTimelineProps) {
   const { lang } = useApp();
   const t = getT(lang);
+  const labelNrTitle =
+    lang === "de"
+      ? "Entspricht der Spalte „Nr.“ unter Überschriften für diesen Workspace"
+      : "Matches the “Nr.” column under headings for this workspace";
   const dateLocale = lang === "de" ? de : enUS;
   const items = buildTimeline(comments, updates, files, t("comments.unknown"));
 
   return (
     <div className="card p-6">
-      <h2 className="text-lg font-semibold text-gray-900">{t("timeline.title")}</h2>
+      <h2 className="text-lg font-semibold text-gray-900">
+        <EditableProjectLabel
+          labelKey="timelineHeading"
+          fallback={t("timeline.title")}
+          workspaceId={workspaceId}
+          projectLabels={projectLabels}
+          canEdit={canEditLabels}
+          showNr
+          nrTitle={labelNrTitle}
+          textClassName="text-lg font-semibold text-gray-900"
+        />
+      </h2>
       <p className="mt-1 text-sm text-gray-500">
-        {t("timeline.subtitle")}
+        <EditableProjectLabel
+          labelKey="timelineSubtitle"
+          fallback={t("timeline.subtitle")}
+          workspaceId={workspaceId}
+          projectLabels={projectLabels}
+          canEdit={canEditLabels}
+          showNr
+          nrTitle={labelNrTitle}
+          textClassName="text-sm text-gray-500"
+        />
       </p>
       <ul className="mt-4 space-y-0">
         {items.map((item) => (

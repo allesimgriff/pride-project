@@ -31,3 +31,14 @@ export async function canManageProjectAsAdmin(
   if (!workspaceId) return false;
   return isWorkspaceAdmin(supabase, userId, workspaceId);
 }
+
+/** Überschriften-Overrides pro Workspace: App-Admin oder Workspace-Admin */
+export async function canEditWorkspaceLabels(
+  supabase: Supabase,
+  userId: string,
+  workspaceId: string | null
+): Promise<boolean> {
+  if (!workspaceId) return false;
+  if (await isAppAdmin(supabase, userId)) return true;
+  return isWorkspaceAdmin(supabase, userId, workspaceId);
+}

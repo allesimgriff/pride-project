@@ -1,14 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Pencil, Plus } from "lucide-react";
 import type { WorkspaceMemberRole } from "@/types/database";
 import {
   inviteToWorkspaceAction,
   revokeWorkspaceInviteAction,
   removeWorkspaceMemberAction,
   leaveWorkspaceAction,
+  updateWorkspaceNameAction,
 } from "@/app/actions/workspaces";
 import { useApp } from "@/components/providers/AppProvider";
 import { getT } from "@/lib/i18n";
@@ -36,6 +38,13 @@ export function WorkspaceDetailClient({
   const [inviteRole, setInviteRole] = useState<WorkspaceMemberRole>("member");
   const [busy, setBusy] = useState(false);
   const [lastToken, setLastToken] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState(false);
+  const [nameDraft, setNameDraft] = useState(initial.workspace.name);
+  const [nameBusy, setNameBusy] = useState(false);
+
+  useEffect(() => {
+    setNameDraft(initial.workspace.name);
+  }, [initial.workspace.name]);
 
   async function onInvite(e: React.FormEvent) {
     e.preventDefault();
@@ -57,6 +66,19 @@ export function WorkspaceDetailClient({
     const u = new URL(window.location.origin + "/workspaces/join");
     u.searchParams.set("token", token);
     return u.toString();
+  }
+
+  async function onSaveWorkspaceName() {
+    if (nameBusy) return;
+    setNameBusy(true);
+    const { error } = await updateWorkspaceNameAction(workspaceId, nameDraft);
+    setNameBusy(false);
+    if (error) {
+      alert(error);
+      return;
+    }
+    setEditingName(false);
+    router.refresh();
   }
 
   async function copyInviteLink(token: string) {
@@ -81,15 +103,64 @@ export function WorkspaceDetailClient({
         </Link>
       </div>
 
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-semibold text-gray-900">{initial.workspace.name}</h1>
-        {initial.canManage && (
+      {currentUserId && (
+        <div className="card p-4 sm:p-5">
+          <p className="text-sm text-gray-600">{t("workspaces.newProjectHereHint")}</p>
           <Link
-            href={`/workspaces/${workspaceId}/labels`}
-            className="text-sm font-medium text-primary-600 hover:text-primary-800 shrink-0"
+            href={`/projects/new?workspace=${encodeURIComponent(workspaceId)}`}
+            className="btn-primary mt-3 inline-flex items-center gap-2"
           >
-            {t("workspaces.editLabels")}
+            <Plus className="h-4 w-4" />
+            {t("workspaces.newProjectHere")}
           </Link>
+        </div>
+      )}
+
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        {initial.canManage && editingName ? (
+          <div className="flex w-full max-w-xl flex-col gap-2 sm:flex-row sm:items-center">
+            <input
+              type="text"
+              className="input-base flex-1"
+              value={nameDraft}
+              onChange={(e) => setNameDraft(e.target.value)}
+              disabled={nameBusy}
+              autoFocus
+              aria-label={t("workspaces.nameLabel")}
+            />
+            <div className="flex shrink-0 gap-2">
+              <button type="button" className="btn-primary" onClick={onSaveWorkspaceName} disabled={nameBusy}>
+                {t("common.save")}
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => {
+                  setNameDraft(initial.workspace.name);
+                  setEditingName(false);
+                }}
+                disabled={nameBusy}
+              >
+                {t("common.cancel")}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <h1 className="text-2xl font-semibold text-gray-900">{initial.workspace.name}</h1>
+        )}
+        {initial.canManage && (
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
+            {!editingName && (
+              <button
+                type="button"
+                onClick={() => setEditingName(true)}
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-600 hover:text-gray-900"
+              >
+                <Pencil className="h-4 w-4" />
+                {t("workspaces.renameWorkspace")}
+              </button>
+            )}
+          </div>
         )}
       </div>
 
