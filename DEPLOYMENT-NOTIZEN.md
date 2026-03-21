@@ -4,18 +4,26 @@
 
 - GitHub-Repo: https://github.com/allesimgriff/pride-project
 
+## Netlify (gleiche Variablennamen für jede Site – PRIDE vs. Handwerker)
+
+| Variable in Netlify | Woher der Wert (Supabase-Dashboard) |
+|---------------------|-------------------------------------|
+| `NEXT_PUBLIC_SUPABASE_URL` | **Project Settings → API Keys** → **Project URL** (`https://<ref>.supabase.co`) |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | **API Keys** → **Legacy** Tab → **anon** „public“ (JWT), **oder** Tab **Publishable** → Key `sb_publishable_…` (Code akzeptiert beides) |
+| `NEXT_PUBLIC_APP_URL` | **Nicht** aus Supabase: die **öffentliche URL dieser Netlify-Site** (`https://….netlify.app`) |
+
+**Wichtig:** Pro **Netlify-Site** die Werte aus dem **passenden** Supabase-Projekt (PRIDE vs. Handwerker). URL und Key **immer im Paar** aus **demselben** Projekt.
+
+**Nie** echte Keys in diese Datei schreiben – nur Platzhalter. Keys nur in Netlify / `.env.local`.
+
 ## Netlify
 
-- Site-Name: pride-polster (oder was Netlify anzeigt)
-- URL: https://<DEINE-NETLIFY-URL>.netlify.app
+- Site-Name: z. B. pride-project / handwerker-allesimgriff (wie im Dashboard)
+- URL: `https://<DEINE-NETLIFY-URL>.netlify.app`
 
 ## Supabase
 
-- NEXT_PUBLIC_SUPABASE_URL  
-  https://zcdaxjfzszpatupjjbgx.supabase.co
-
-- NEXT_PUBLIC_SUPABASE_ANON_KEY  
-  eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjZGF4amZ6c3pwYXR1cGpqYmd4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1NzY5NzMsImV4cCI6MjA4OTE1Mjk3M30.EboSLXnH3NOe0mWo4YpLUYwQb19BxP1jS4SfjTbeKMs
+- Werte nur im **Supabase-Projekt** unter **Project Settings → API Keys** kopieren (nicht hier).
 
 ## Nützliche Befehle
 
