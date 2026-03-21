@@ -2,6 +2,9 @@ export type Lang = "de" | "en";
 
 export const translations = {
   de: {
+    ui: {
+      pageLoading: "Seite wird geladen …",
+    },
     nav: {
       dashboard: "Dashboard",
       projects: "Projekte",
@@ -325,6 +328,9 @@ export const translations = {
     },
   },
   en: {
+    ui: {
+      pageLoading: "Loading page …",
+    },
     nav: {
       dashboard: "Dashboard",
       projects: "Projects",

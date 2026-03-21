@@ -5,6 +5,7 @@ import type { Profile } from "@/types/database";
 import { AppProvider, useApp } from "@/components/providers/AppProvider";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
+import { NavigationProgress } from "@/components/layout/NavigationProgress";
 
 interface DashboardShellProps {
   children: React.ReactNode;
@@ -15,6 +16,7 @@ interface DashboardShellProps {
 export function DashboardShell({ children, user, profile }: DashboardShellProps) {
   return (
     <AppProvider>
+      <NavigationProgress />
       <div className="flex min-h-screen bg-surface-100">
         {/* Desktop: feste Sidebar links */}
         <div className="hidden md:block">

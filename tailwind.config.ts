@@ -42,6 +42,15 @@ const config: Config = {
         sans: ["system-ui", "Segoe UI", "Roboto", "sans-serif"],
         mono: ["ui-monospace", "monospace"],
       },
+      keyframes: {
+        "nav-progress": {
+          "0%": { transform: "translateX(-100%)" },
+          "100%": { transform: "translateX(400%)" },
+        },
+      },
+      animation: {
+        "nav-progress": "nav-progress 1.05s ease-in-out infinite",
+      },
     },
   },
   plugins: [],
