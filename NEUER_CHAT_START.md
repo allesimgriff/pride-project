@@ -8,17 +8,14 @@
 - **Repo:** `c:\Users\Beck\pride`, Remote `allesimgriff/pride-project`. Branch **`company`** = Commit **`4d44967`** (Firmen-Stand); **`main`** = neuere Entwicklung.
 - **Details:** `HANDOFF_FUER_NEUEN_CHAT.md` voll lesen.
 
-## Deine Arbeitsweise (für die KI)
+## Arbeitsweise
 
-- Du **programmierst nicht** – nur **kopierbare** Schritte: Links, **komplettes** SQL, **nummerierte** Terminal-Befehle (**ein Befehl pro Kasten**, **nur PowerShell-Inhalt**).
-- **Kurz**, Schritt für Schritt; **keine** langen Erklärungen. **Vollständige** Codes, **keine** Bruchstücke.
-- **Explizit** sagen, wenn du etwas tun sollst: Terminal / Datei speichern / Supabase / Netlify. Sonst: **nichts** tun.
-- **Keys** nie in den Chat.
+- Alles Verbindliche steht in **`HANDOFF_FUER_NEUEN_CHAT.md`** → **„Arbeitsmodus (Thomas)“** und in **`.cursor/rules/pride-arbeitspartner.mdc`**. Hier **nicht** wiederholen.
 
 ## Diese eine Zeile in den neuen Chat kopieren
 
 ```text
-@HANDOFF_FUER_NEUEN_CHAT.md vollständig lesen – zuerst Abschnitt „Stand der Arbeit“. Deutsch. Pro Antwort nur EIN Schritt für mich. Sonst wie in @NEUER_CHAT_START.md – kurz, nur Kopierbares.
+@HANDOFF_FUER_NEUEN_CHAT.md vollständig lesen – zuerst „Arbeitsmodus (Thomas)“ und „Stand der Arbeit“. Deutsch. Pro Antwort nur EIN Schritt für mich. Kurz, nur Kopierbares.
 ```
 
 (Optional zusätzlich anhängen: `@LOKAL_STARTEN.md` nur wenn es um lokales Setup geht.)

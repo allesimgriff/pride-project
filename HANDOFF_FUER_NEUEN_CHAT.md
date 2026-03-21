@@ -29,10 +29,8 @@
 
 ### Erledigt (Referenz)
 
-- Handoff-Regeln: **pro Antwort nur ein Nutzer-Schritt** (außer er will eine Übersicht).
-- **`.env.example`:** Vorlage mit Platzhaltern; **keine** echten Keys in dieser Datei.
-- **`.env.local`:** nur PRIDE; von der KI **nicht** mit Handwerker-Keys überschreiben.
-- Git: Branch **`company`** = Firmen-Stand **`4d44967`**; **`main`** = weiterentwickeln; **Push/Deploy** nur wenn Thomas explizit will (oder KI nach Freigabe).
+- **`.env.example`:** Vorlage; **keine** echten Keys. **`.env.local`:** nur PRIDE; KI **nicht** mit Handwerker-Keys überschreiben.
+- Git: **`company`** = **`4d44967`** (Firmen-Stand); **`main`** = aktuell; Push/Deploy nur mit Freigabe (siehe Arbeitsmodus oben).
 
 ### Noch zu tun / offen (bis erledigt – Liste abarbeiten)
 
@@ -46,54 +44,17 @@
 
 ### Pflicht für die KI
 
-- Abschnitt **„Arbeitsmodus (Thomas)“** und **„Stand der Arbeit“** immer mit einbeziehen.
-- Nach **erledigten Meilensteinen** diesen Abschnitt **in dieser Datei** aktualisieren: Datum, „Wo wir sind“, „Offen“ anpassen.
-- Wenn der Nutzer **einen Satz** unter „Vom Nutzer“ einträgt, **nicht** ignorieren.
+- **„Arbeitsmodus (Thomas)“** und **„Stand der Arbeit“** beachten; **nicht** dieselben Regeln mehrfach in dieser Datei wiederholen (Details: `.cursor/rules/pride-arbeitspartner.mdc`).
+- Nach Meilensteinen: Datum, „Wo wir sind“, „Offen“ hier anpassen.
+- Satz unter **„Vom Nutzer“** nicht ignorieren.
 
 ---
 
-## Projekt-Inhaber & Infra (Stand – wichtig)
+## Nur für die KI: Zwei Supabase / `.env`
 
-- **Haupt-User / Admin:** `tb@allesimgriff.de` (aktuell einziger User).
-- **Supabase (PRIDE / bestehend):** läuft; Auth, DB, Keys; URL-Konfiguration für localhost + Netlify (siehe `LOKAL_STARTEN.md` bei Problemen).
-- **Supabase zweites Projekt (`handwerker_app`):** für neuen Produkt-Strang; **Migrationen erfolgreich** über die drei Dateien `supabase/FRESH_DB_STEP1_001_through_010.sql` → `FRESH_DB_STEP2_auth_user_and_profile.sql` → `FRESH_DB_STEP3_011_through_end.sql` (User vor Schritt 2 in Authentication anlegen). **App-Keys** für dieses Projekt noch in Env/Netlify eintragen, wenn die Handwerker-App daran hängen soll.
-- **Netlify:** z. B. **pride-project**; Env-Variablen; Deploy von GitHub. **Firmen-/alter Stand:** Branch **`company`** zeigt auf Commit **`4d44967`**; **`main`** = neuere Entwicklung (Push nicht ohne Absprache).
-- **GitHub:** `allesimgriff/pride-project`, **`main`** + Branch **`company`**.
-
-**Für die KI:** Infra ist grundsätzlich da. Nur bei **konkretem Problem** oder **neuem Schritt** Details – **nicht** proaktiv „alles erklären“.
-
-### Zwei Supabase-Projekte / `.env` (verbindlich für die KI)
-
-- **Widerspruch vermeiden:** Wenn der Nutzer **nichts tun muss**, darf die KI **nicht** im selben Atemzug sagen: „du musst eine neue `.env` anlegen und füllen“. **Keys gehören nicht** in den Chat.
-- **PRIDE** bleibt an **`.env.local`** (nicht überschreiben). **Handwerker / zweites Supabase:** bevorzugt **Netlify Environment variables** (Werte im Browser von Supabase **API settings** kopieren → Netlify einfügen) **ohne** dass der Nutzer „eine zweite .env-Datei von Hand programmiert“.
-- Wenn **lokal** zwei Konfigurationen nötig sind: **entweder** die **KI** legt eine **zusätzliche** Env-Datei an und dokumentiert den **einen** Startweg – **oder** es bleibt bei einem Projekt pro Checkout/Ordner. **Nicht** annehmen, dass Thomas **frei** `.env`-Syntax zusammenbaut.
-
----
-
-## Nutzer: Rolle & Arbeitsweise (verbindlich)
-
-- **Siehe oben:** Abschnitt **„Arbeitsmodus (Thomas)“** – dort ist die Maßgabe.
-- **Kein Programmieren** – Idee und Feedback; **Ergebnis beurteilen**, nicht Code schreiben.
-- **Schritt für Schritt**; **kurz**; **keine** langen Erklärungen und **keine** ausführlichen Zusammenfassungen.
-- **Zum Kopieren:** nur **vollständige** Inhalte (ganzes SQL, ganze Datei, ganzer Befehl) – **keine** Code-Fragmente.
-- **Was der Nutzer ausführt:** nur **kopierbar** – Links, **komplettes** SQL, **nummerierte** Terminal-Befehle (**nur ein Befehl pro Kasten**, Inhalt nur aus dem Kasten).
-- **Explizit sagen**, wenn er etwas tun soll: **Terminal** (genauer Befehl), **Datei speichern** (z. B. Strg+S), **Supabase** (Browser), **Netlify** (Browser). **Wenn nichts gesagt ist:** er muss **nichts** tun.
-- **Secrets/Keys** nie in den Chat.
-
----
-
-## So redet die KI mit diesem Nutzer (verbindlich)
-
-- **Kurz**, nur Nötiges, **keine** langen Erklärungen und **keine** ausführlichen Zusammenfassungen am Ende.
-- **Wenn der Nutzer etwas tun soll:** immer **explizit** sagen, **was** und **wo**:
-  - **Terminal:** Alles, was der Nutzer **im Terminal ausführen** soll, kommt **von der KI** — **nummeriert (1., 2., …)**, **nur ein Befehl pro Schritt**, jeweils **ein eigener** `powershell`-Codeblock mit dem **vollständig kopierbaren** Befehl. Der Nutzer soll **nichts** im Terminal selbst erfinden.
-  - **Datei speichern** → explizit sagen (z. B. Strg+S).
-  - **Supabase (Browser):** Menüpfad nennen; **wo möglich: SQL zum Kopieren**. **Kein SQL möglich** für: Project URL, API-Keys, **Authentication → URL Configuration** – nur Dashboard-Klicks.
-  - **Netlify (Browser):** explizit nennen, wenn nötig.
-- **Wenn nichts ausdrücklich gefordert ist:** Nutzer muss **nichts** tun.
-- **Secrets / Keys** nie in Chat posten.
-- **Git push / Deploy:** nur nach **ausdrücklicher Freigabe** des Nutzers (oder wenn er die KI ausdrücklich dazu auffordert).
-- **Keine Schritt-Listen mit vielen Punkten auf einmal:** Pro Antwort **höchstens eine** Sache, die der Nutzer **jetzt** tun soll (ein Klickpfad, ein Feld, **ein** Terminal-Befehl). Erst wenn das erledigt ist, der nächste Schritt. **Ausnahme:** Nutzer verlangt ausdrücklich eine Übersicht oder „alles auf einmal“.
+- **Keys nie** in den Chat.
+- **PRIDE:** `.env.local` (nicht mit Handwerker-Keys überschreiben). **Handwerker:** **Netlify** Env (Supabase Dashboard → kopieren → Netlify).
+- Lokale Doppel-Konfiguration nur mit klarem Weg (KI legt Datei an **oder** eigener Ordner) – Thomas keine freie `.env`-Syntax zumuten.
 
 ---
 
@@ -102,7 +63,7 @@
 **Eine Zeile (reicht):**
 
 ```text
-@HANDOFF_FUER_NEUEN_CHAT.md vollständig lesen – zuerst Abschnitt „Stand der Arbeit“. Deutsch. Pro Antwort nur EIN Schritt für mich. Sonst wie in @NEUER_CHAT_START.md – kurz, nur Kopierbares.
+@HANDOFF_FUER_NEUEN_CHAT.md vollständig lesen – zuerst „Arbeitsmodus (Thomas)“ und „Stand der Arbeit“. Deutsch. Pro Antwort nur EIN Schritt für mich. Kurz, nur Kopierbares.
 ```
 
 **Weitere Doku:** `PROJECT-KONTEXT.md`, `LOKAL_STARTEN.md` (lokal + Supabase-Klicks). **Regeln:** `.cursor/rules/pride-arbeitspartner.mdc`.
