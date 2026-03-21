@@ -17,7 +17,7 @@ export async function GET() {
       {
         ok: false,
         step: "env",
-        hint: ".env.local: NEXT_PUBLIC_SUPABASE_URL und NEXT_PUBLIC_SUPABASE_ANON_KEY fehlen.",
+        hint: ".env.local: NEXT_PUBLIC_SUPABASE_URL und öffentlicher Key fehlen (ANON oder PUBLISHABLE_DEFAULT).",
       },
       { status: 500 },
     );

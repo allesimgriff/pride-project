@@ -6,7 +6,7 @@ export async function createClient() {
   const cfg = getSupabasePublicConfig();
   if (!cfg) {
     throw new Error(
-      "Supabase: NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY fehlen.",
+      "Supabase: NEXT_PUBLIC_SUPABASE_URL / öffentlicher Key fehlen (NEXT_PUBLIC_SUPABASE_ANON_KEY oder NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY).",
     );
   }
 
