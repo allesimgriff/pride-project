@@ -3,19 +3,28 @@
 import { createContext, useContext, useState, useCallback, useEffect } from "react";
 import type { Lang } from "@/lib/i18n";
 import { getT } from "@/lib/i18n";
+import type { AppEdition } from "@/lib/appEdition";
 
 type AppContextType = {
   sidebarCollapsed: boolean;
   setSidebarCollapsed: (v: boolean) => void;
   lang: Lang;
   setLang: (v: Lang) => void;
+  /** Build-Zeit: pride = volle UI, handwerker = reduziert */
+  edition: AppEdition;
 };
 
 const AppContext = createContext<AppContextType | null>(null);
 
 const LANG_KEY = "pride-lang";
 
-export function AppProvider({ children }: { children: React.ReactNode }) {
+export function AppProvider({
+  children,
+  edition,
+}: {
+  children: React.ReactNode;
+  edition: AppEdition;
+}) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [lang, setLangState] = useState<Lang>("de");
 
@@ -31,7 +40,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AppContext.Provider
-      value={{ sidebarCollapsed, setSidebarCollapsed, lang, setLang }}
+      value={{ sidebarCollapsed, setSidebarCollapsed, lang, setLang, edition }}
     >
       {children}
     </AppContext.Provider>

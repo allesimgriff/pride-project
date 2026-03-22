@@ -16,6 +16,7 @@ import { listWorkspacesForProjectMoveAction } from "@/app/actions/workspaces";
 import { ProjectWorkspaceMove } from "@/components/projects/ProjectWorkspaceMove";
 import { getAuthUser } from "@/lib/auth/cachedDashboardSession";
 import { SetWorkspaceHeader } from "@/components/layout/SetWorkspaceHeader";
+import { isPrideEdition } from "@/lib/appEdition";
 
 export default async function ProjectDetailPage({
   params,
@@ -108,6 +109,7 @@ export default async function ProjectDetailPage({
   const tasks = tasksRes.data;
   const updates = updatesRes.data;
   const currentUserId = user?.id;
+  const prideUi = isPrideEdition();
 
   return (
     <div className="space-y-6 print-detail-page">
@@ -118,7 +120,7 @@ export default async function ProjectDetailPage({
 
       <ProjectDetailHeader project={project} />
 
-      {canEdit ? (
+      {canEdit && prideUi ? (
         <ProjectWorkspaceMove
           projectId={id}
           currentWorkspaceId={project.workspace_id}
@@ -129,11 +131,13 @@ export default async function ProjectDetailPage({
 
       <div className="grid gap-6 lg:grid-cols-3 print-grid">
         <div className="lg:col-span-2 space-y-6 print-main-column">
-          <ProjectPhotosBlock
-            projectLabels={projectLabels}
-            workspaceId={workspaceId}
-            canEditLabels={canEditLabels}
-          />
+          {prideUi ? (
+            <ProjectPhotosBlock
+              projectLabels={projectLabels}
+              workspaceId={workspaceId}
+              canEditLabels={canEditLabels}
+            />
+          ) : null}
 
           <ProjectFiles
             projectId={id}

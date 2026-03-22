@@ -58,7 +58,7 @@ export function NewProjectForm({
   initialCanEditLabels = false,
 }: NewProjectFormProps) {
   const router = useRouter();
-  const { lang } = useApp();
+  const { lang, edition } = useApp();
   const t = getT(lang);
   const [projectLabels, setProjectLabels] = useState<ProjectLabelMap>(initialProjectLabels);
   const [loading, setLoading] = useState(false);
@@ -365,7 +365,10 @@ export function NewProjectForm({
                     </option>
                   ))}
                 </select>
-                {canManageCategories && wsCats.length > 0 && (wsCats.length === 1 || Boolean(form.category)) ? (
+                {edition === "pride" &&
+                canManageCategories &&
+                wsCats.length > 0 &&
+                (wsCats.length === 1 || Boolean(form.category)) ? (
                   <WorkspaceCategoryEditor
                     workspaceId={workspaceId}
                     categories={wsCats}

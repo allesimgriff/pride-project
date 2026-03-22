@@ -13,6 +13,8 @@ export const translations = {
       workspacesLink: "Workspaces verwalten",
     },
     nav: {
+      brandPride: "PRIDE",
+      brandHandwerker: "Handwerker",
       dashboard: "Dashboard",
       projects: "Projekte",
       settings: "Einstellungen",
@@ -400,6 +402,8 @@ export const translations = {
       workspacesLink: "Manage workspaces",
     },
     nav: {
+      brandPride: "PRIDE",
+      brandHandwerker: "Handwerker",
       dashboard: "Dashboard",
       projects: "Projects",
       settings: "Settings",

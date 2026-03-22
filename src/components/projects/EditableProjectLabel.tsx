@@ -44,7 +44,7 @@ export function EditableProjectLabel({
   multiline?: boolean;
 }) {
   const router = useRouter();
-  const { lang } = useApp();
+  const { lang, edition } = useApp();
   const t = getT(lang);
   const item = projectLabels[labelKey];
   const display =
@@ -82,6 +82,7 @@ export function EditableProjectLabel({
 
   const mayEdit =
     canEdit &&
+    edition === "pride" &&
     (editScope === "global" || (editScope === "workspace" && Boolean(workspaceId)));
 
   async function handleSave() {

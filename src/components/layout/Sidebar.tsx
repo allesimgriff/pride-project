@@ -11,7 +11,7 @@ import { primaryNavItems, isPrimaryNavActive } from "@/components/layout/navConf
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { sidebarCollapsed, setSidebarCollapsed, lang } = useApp();
+  const { sidebarCollapsed, setSidebarCollapsed, lang, edition } = useApp();
   const t = getT(lang);
 
   return (
@@ -25,10 +25,16 @@ export function Sidebar() {
       >
         {!sidebarCollapsed && (
           <Link href="/projects" className="flex items-center gap-2 font-semibold text-gray-900">
-            <span className="text-primary-600">PRIDE</span>
+            <span className="text-primary-600">
+              {edition === "handwerker" ? t("nav.brandHandwerker") : t("nav.brandPride")}
+            </span>
           </Link>
         )}
-        {sidebarCollapsed && <span className="text-sm font-semibold text-primary-600">P</span>}
+        {sidebarCollapsed && (
+          <span className="text-sm font-semibold text-primary-600">
+            {edition === "handwerker" ? "H" : "P"}
+          </span>
+        )}
       </div>
       <nav className="flex-1 space-y-1 p-2">
         {primaryNavItems.map((item) => {

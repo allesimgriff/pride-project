@@ -49,7 +49,7 @@ export function ProjectStammdaten({
   canEditLabels,
 }: ProjectStammdatenProps) {
   const router = useRouter();
-  const { lang } = useApp();
+  const { lang, edition } = useApp();
   const t = getT(lang);
   const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -232,7 +232,11 @@ export function ProjectStammdaten({
                 {getCategoryDisplay(project.category, categories)}
               </p>
             )}
-            {canEdit && workspaceId && categories.length > 0 && (categories.length === 1 || Boolean(form.category || project.category)) ? (
+            {edition === "pride" &&
+            canEdit &&
+            workspaceId &&
+            categories.length > 0 &&
+            (categories.length === 1 || Boolean(form.category || project.category)) ? (
               <WorkspaceCategoryEditor
                 workspaceId={workspaceId}
                 categories={categories}

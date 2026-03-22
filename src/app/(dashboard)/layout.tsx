@@ -4,6 +4,7 @@ import { getDashboardSession } from "@/lib/auth/cachedDashboardSession";
 import { createClient } from "@/lib/supabase/server";
 import { getWorkspaceStorageWarningsForUser } from "@/lib/workspaceStorageQuota";
 import { buildProjectLabelMap } from "@/lib/projectLabelDefaults";
+import { getAppEdition } from "@/lib/appEdition";
 
 export default async function DashboardLayout({
   children,
@@ -24,6 +25,7 @@ export default async function DashboardLayout({
   ]);
   const headerProjectLabels = buildProjectLabelMap(globalLabelsRes.data ?? []);
   const canEditGlobalLabels = profile?.role === "admin";
+  const appEdition = getAppEdition();
 
   return (
     <DashboardShell
@@ -32,6 +34,7 @@ export default async function DashboardLayout({
       storageWarnings={storageWarnings}
       headerProjectLabels={headerProjectLabels}
       canEditGlobalLabels={canEditGlobalLabels}
+      appEdition={appEdition}
     >
       {children}
     </DashboardShell>

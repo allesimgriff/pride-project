@@ -10,6 +10,7 @@ import { NavigationProgress } from "@/components/layout/NavigationProgress";
 import { WorkspaceStorageWarningBanner } from "@/components/layout/WorkspaceStorageWarningBanner";
 import type { WorkspaceStorageWarning } from "@/lib/workspaceStorageQuota";
 import type { ProjectLabelMap } from "@/lib/projectLabelDefaults";
+import type { AppEdition } from "@/lib/appEdition";
 
 interface DashboardShellProps {
   children: React.ReactNode;
@@ -18,6 +19,7 @@ interface DashboardShellProps {
   storageWarnings?: WorkspaceStorageWarning[];
   headerProjectLabels: ProjectLabelMap;
   canEditGlobalLabels: boolean;
+  appEdition: AppEdition;
 }
 
 export function DashboardShell({
@@ -27,9 +29,10 @@ export function DashboardShell({
   storageWarnings = [],
   headerProjectLabels,
   canEditGlobalLabels,
+  appEdition,
 }: DashboardShellProps) {
   return (
-    <AppProvider>
+    <AppProvider edition={appEdition}>
       <HeaderWorkspaceProvider>
       <NavigationProgress />
       <div className="flex min-h-screen bg-surface-100">
