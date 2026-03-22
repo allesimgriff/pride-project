@@ -11,6 +11,7 @@ export const translations = {
       warningLine:
         "„{{name}}“: {{percent}} % belegt ({{used}} von {{limit}}).",
       workspacesLink: "Workspaces verwalten",
+      projectsLink: "Zu den Projekten",
     },
     nav: {
       brandPride: "PRIDE",
@@ -32,6 +33,8 @@ export const translations = {
       staffDesc: "Mitarbeiter einladen und Rollen verwalten.",
       labelsDesc: "Globale Standard-Überschriften; bearbeiten nur App-Administratoren.",
       categoriesDesc: "Kategorien und Präfixe für Entwicklungsnummern.",
+      handwerkerEmpty:
+        "Hier gibt es in dieser Ansicht keine weiteren Kacheln. Kontodaten finden Sie unter",
     },
     header: {
       title: "Projektname",
@@ -421,6 +424,7 @@ export const translations = {
       staffDesc: "Invite staff and manage roles.",
       labelsDesc: "Global default headings; only app administrators can edit them.",
       categoriesDesc: "Categories and prefixes for development numbers.",
+      handwerkerEmpty: "There are no more tiles in this view. Account settings:",
     },
     header: {
       title: "Project name",

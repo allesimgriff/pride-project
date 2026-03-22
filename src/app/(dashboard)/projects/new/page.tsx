@@ -6,6 +6,7 @@ import { projectLabelRowsToMap } from "@/lib/projectLabelDefaults";
 import { listMergedProjectLabelsForWorkspaceAction } from "@/app/actions/workspaceProjectLabels";
 import { canEditWorkspaceLabels } from "@/lib/workspacePermissions";
 import { SetWorkspaceHeader } from "@/components/layout/SetWorkspaceHeader";
+import { getAppEdition } from "@/lib/appEdition";
 
 export default async function NewProjectPage({
   searchParams,
@@ -19,7 +20,9 @@ export default async function NewProjectPage({
   if (!user) redirect("/login");
 
   const { data: workspaces } = await supabase.from("workspaces").select("id, name").order("name");
-  if (!workspaces?.length) redirect("/workspaces");
+  if (!workspaces?.length) {
+    redirect(getAppEdition() === "handwerker" ? "/projects" : "/workspaces");
+  }
 
   const sp = await searchParams;
   const wsParam = typeof sp.workspace === "string" ? sp.workspace.trim() : "";

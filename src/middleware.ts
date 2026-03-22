@@ -1,7 +1,15 @@
-import { type NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
+import { isHandwerkerEdition } from "@/lib/appEdition";
 
 export async function middleware(request: NextRequest) {
+  const path = request.nextUrl.pathname;
+  if (isHandwerkerEdition()) {
+    const allowedWorkspacesPath = path.startsWith("/workspaces/join");
+    if (path === "/workspaces" || (path.startsWith("/workspaces/") && !allowedWorkspacesPath)) {
+      return NextResponse.redirect(new URL("/projects", request.url));
+    }
+  }
   return await updateSession(request);
 }
 

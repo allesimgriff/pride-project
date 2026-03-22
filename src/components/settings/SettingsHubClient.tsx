@@ -6,7 +6,7 @@ import { useApp } from "@/components/providers/AppProvider";
 import { getT } from "@/lib/i18n";
 
 export function SettingsHubClient({ isAdmin }: { isAdmin: boolean }) {
-  const { lang } = useApp();
+  const { lang, edition } = useApp();
   const t = getT(lang);
 
   const tiles: {
@@ -15,12 +15,14 @@ export function SettingsHubClient({ isAdmin }: { isAdmin: boolean }) {
     descKey: string;
     icon: typeof Building2;
     adminOnly?: boolean;
+    prideOnly?: boolean;
   }[] = [
     {
       href: "/workspaces",
       labelKey: "nav.workspaces",
       descKey: "settingsHub.workspacesDesc",
       icon: Building2,
+      prideOnly: true,
     },
     {
       href: "/settings/staff",
@@ -31,7 +33,11 @@ export function SettingsHubClient({ isAdmin }: { isAdmin: boolean }) {
     },
   ];
 
-  const visible = tiles.filter((x) => !x.adminOnly || isAdmin);
+  const visible = tiles.filter((x) => {
+    if (x.prideOnly && edition === "handwerker") return false;
+    if (x.adminOnly && !isAdmin) return false;
+    return true;
+  });
 
   return (
     <div className="space-y-6">
@@ -39,6 +45,15 @@ export function SettingsHubClient({ isAdmin }: { isAdmin: boolean }) {
         <h1 className="text-2xl font-semibold text-gray-900">{t("settingsHub.title")}</h1>
         <p className="mt-1 text-sm text-gray-500">{t("settingsHub.subtitle")}</p>
       </div>
+      {visible.length === 0 ? (
+        <p className="text-sm text-gray-600">
+          {t("settingsHub.handwerkerEmpty")}
+          {" "}
+          <Link href="/settings/profile" className="font-medium text-primary-600 hover:text-primary-800">
+            {t("nav.profile")}
+          </Link>
+        </p>
+      ) : null}
       <ul className="grid gap-3 sm:grid-cols-2">
         {visible.map((tile) => {
           const Icon = tile.icon;

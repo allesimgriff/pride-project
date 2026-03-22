@@ -10,7 +10,7 @@ export function JoinWorkspaceClient() {
   const router = useRouter();
   const params = useSearchParams();
   const token = params.get("token")?.trim() ?? "";
-  const { lang } = useApp();
+  const { lang, edition } = useApp();
   const t = getT(lang);
   const [busy, setBusy] = useState(false);
 
@@ -24,7 +24,7 @@ export function JoinWorkspaceClient() {
       return;
     }
     alert(t("workspaces.joinSuccess"));
-    router.push(`/workspaces/${result.workspaceId}`);
+    router.push(edition === "handwerker" ? "/projects" : `/workspaces/${result.workspaceId}`);
     router.refresh();
   }
 

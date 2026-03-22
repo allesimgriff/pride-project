@@ -7,7 +7,7 @@ import type { WorkspaceStorageWarning } from "@/lib/workspaceStorageQuota";
 import { formatBytes } from "@/lib/formatBytes";
 
 export function WorkspaceStorageWarningBanner({ warnings }: { warnings: WorkspaceStorageWarning[] }) {
-  const { lang } = useApp();
+  const { lang, edition } = useApp();
   const t = getT(lang);
   const locale = lang === "de" ? "de-DE" : "en-US";
 
@@ -31,8 +31,11 @@ export function WorkspaceStorageWarningBanner({ warnings }: { warnings: Workspac
         ))}
       </ul>
       <p className="mt-2 text-xs text-amber-800/95">
-        <Link href="/workspaces" className="font-medium underline hover:text-amber-950">
-          {t("storage.workspacesLink")}
+        <Link
+          href={edition === "handwerker" ? "/projects" : "/workspaces"}
+          className="font-medium underline hover:text-amber-950"
+        >
+          {edition === "handwerker" ? t("storage.projectsLink") : t("storage.workspacesLink")}
         </Link>
       </p>
     </div>
