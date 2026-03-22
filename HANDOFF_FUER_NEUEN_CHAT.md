@@ -8,7 +8,7 @@
 
 **Nicht raten:** Dieser Abschnitt ist die **maßgebliche** Stelle für „wo wir sind“. Die KI liest ihn **vor** weiteren Annahmen.
 
-**Letzte Aktualisierung:** 2026-03-21
+**Letzte Aktualisierung:** 2026-03-22
 
 ### Arbeitsmodus (Thomas – verbindlich für die KI)
 
@@ -23,6 +23,7 @@
 ### Wo wir gerade sind
 
 - **Infra:** **Supabase**, **Netlify**, **GitHub** sind eingerichtet. **Ein User / Admin:** `tb@allesimgriff.de`.
+- **Live-Repo (geprüft):** Die **veröffentlichte** PRIDE-Netlify-Site hängt an **`allesimgriff/pride-project`** (Netlify → Site → **Linked repository**). **Nicht** mit älteren Repos (`pride-project-polster`, `pride-project-app`, …) verwechseln – die sind frühere Stände.
 - **PRIDE (Hauptprodukt):** App im Repo `c:\Users\Beck\pride`; **lokal** mit **`.env.local`** an das **PRIDE-Supabase-Projekt** (`NEXT_PUBLIC_*` + `localhost:3000`). **PRIDE-`.env.local` nicht** mit Handwerker-Keys überschreiben.
 - **Handwerker-Linie:** eigenes Supabase-Projekt (z. B. **handwerker-app** / `handwerker_app`) – **DB-Migrationen erledigt** (Reihenfolge: `FRESH_DB_STEP1_001_through_010.sql` → User in Authentication anlegen → `FRESH_DB_STEP2_auth_user_and_profile.sql` → `FRESH_DB_STEP3_011_through_end.sql`). **Gleiche** Next.js-Codebasis wie PRIDE; **andere** Supabase-Keys über **Netlify Env** für die Handwerker-Site.
 - **Netlify:** zweite Site für Handwerker **eingerichtet** / **published** (Keys im Dashboard; Repo `allesimgriff/pride-project`, Branch üblich **`main`**). Details bei Bedarf im letzten Deploy-Log / Site-URL in Netlify.

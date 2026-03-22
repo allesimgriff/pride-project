@@ -5,7 +5,7 @@
 - **Zuerst** `HANDOFF_FUER_NEUEN_CHAT.md` voll lesen: **„Arbeitsmodus (Thomas)“** + **„Stand der Arbeit“** – **nicht raten**.
 - **Supabase, Netlify, GitHub** sind eingerichtet. **Ein User / Admin:** `tb@allesimgriff.de`.
 - **Zweites Supabase** (Handwerker): DB per `FRESH_DB_STEP1` → User anlegen → `STEP2` → `STEP3` durchgelaufen. **Keys:** im Browser **Supabase → Netlify** kopieren; **keine** „neue .env allein ausfüllen“-Aufgabe ohne klaren Weg (siehe `HANDOFF` → Zwei Supabase).
-- **Repo:** `c:\Users\Beck\pride`, Remote `allesimgriff/pride-project`. Branch **`company`** = Commit **`4d44967`** (Firmen-Stand); **`main`** = neuere Entwicklung.
+- **Repo:** `c:\Users\Beck\pride`, Remote **`allesimgriff/pride-project`** (= **Live**-Repo laut Netlify **Linked repository**). Branch **`company`** = Commit **`4d44967`** (Firmen-Stand); **`main`** = neuere Entwicklung.
 - **Details:** `HANDOFF_FUER_NEUEN_CHAT.md` voll lesen.
 
 ## Arbeitsweise
