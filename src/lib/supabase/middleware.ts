@@ -41,7 +41,11 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  await supabase.auth.getUser();
+  try {
+    await supabase.auth.getUser();
+  } catch {
+    /* defekte/entfernte Session-Cookies dürfen die Seite nicht mit 500 abbrechen */
+  }
 
   return supabaseResponse;
 }
