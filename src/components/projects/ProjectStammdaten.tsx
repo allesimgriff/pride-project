@@ -9,8 +9,10 @@ import { Pencil, Check, X } from "lucide-react";
 import { useApp } from "@/components/providers/AppProvider";
 import { getT } from "@/lib/i18n";
 import type { ProjectLabelMap } from "@/lib/projectLabelDefaults";
+import type { AppEdition } from "@/lib/appEdition";
 import { EditableProjectLabel } from "@/components/projects/EditableProjectLabel";
 import { WorkspaceCategoryEditor } from "@/components/projects/WorkspaceCategoryEditor";
+import { formatCategoryLabel } from "@/lib/categoryDisplay";
 
 const STATUSES: ProjectStatus[] = [
   "idee",
@@ -34,10 +36,11 @@ interface ProjectStammdatenProps {
 function getCategoryDisplay(
   category: string | null,
   categories: { name: string; prefix: string }[],
+  edition: AppEdition,
 ) {
   if (!category) return "—";
   const c = categories.find((x) => x.prefix === category);
-  return c ? c.name : category;
+  return c ? formatCategoryLabel(c.name, c.prefix, edition) : category;
 }
 
 export function ProjectStammdaten({
@@ -223,13 +226,13 @@ export function ProjectStammdaten({
                 <option value="">{t("common.select")}</option>
                 {categories.map((c) => (
                   <option key={c.id} value={c.prefix}>
-                    {c.name}
+                    {formatCategoryLabel(c.name, c.prefix, edition)}
                   </option>
                 ))}
               </select>
             ) : (
               <p className="mt-1 text-sm text-gray-900">
-                {getCategoryDisplay(project.category, categories)}
+                {getCategoryDisplay(project.category, categories, edition)}
               </p>
             )}
             {edition === "pride" &&

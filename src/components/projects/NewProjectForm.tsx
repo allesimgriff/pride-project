@@ -20,6 +20,7 @@ import {
 } from "@/app/actions/workspaceProjectLabels";
 import { EditableProjectLabel } from "@/components/projects/EditableProjectLabel";
 import { WorkspaceCategoryEditor } from "@/components/projects/WorkspaceCategoryEditor";
+import { formatCategoryLabel } from "@/lib/categoryDisplay";
 import type { ProjectLabelKey } from "@/lib/projectLabelDefaults";
 
 interface NewProjectFormProps {
@@ -361,7 +362,7 @@ export function NewProjectForm({
                   <option value="">{t("newProject.categorySelectPlaceholder")}</option>
                   {wsCats.map((c) => (
                     <option key={c.id} value={c.prefix}>
-                      {c.name}
+                      {formatCategoryLabel(c.name, c.prefix, edition)}
                     </option>
                   ))}
                 </select>

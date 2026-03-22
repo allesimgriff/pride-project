@@ -5,6 +5,7 @@ import { useCallback } from "react";
 import { Search, X } from "lucide-react";
 import { useApp } from "@/components/providers/AppProvider";
 import { getT } from "@/lib/i18n";
+import { formatCategoryLabel } from "@/lib/categoryDisplay";
 import { STATUS_LABELS } from "@/types/database";
 import type { ProjectStatus } from "@/types/database";
 
@@ -35,7 +36,7 @@ export function ProjectsFilters({
 }: ProjectsFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { lang } = useApp();
+  const { lang, edition } = useApp();
   const t = getT(lang);
 
   const setParam = useCallback(
@@ -101,7 +102,7 @@ export function ProjectsFilters({
               <option value="">{t("projects.all")}</option>
               {categories.map((c) => (
                 <option key={c.prefix} value={c.prefix}>
-                  {c.name}
+                  {formatCategoryLabel(c.name, c.prefix, edition)}
                 </option>
               ))}
             </select>

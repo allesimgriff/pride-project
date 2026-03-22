@@ -8,6 +8,8 @@ import { useApp } from "@/components/providers/AppProvider";
 import { getT } from "@/lib/i18n";
 import type { ProjectStatus } from "@/types/database";
 import { ArrowRight, FileText, ImageIcon } from "lucide-react";
+import type { AppEdition } from "@/lib/appEdition";
+import { formatCategoryLabel } from "@/lib/categoryDisplay";
 
 interface ProjectRow {
   id: string;
@@ -47,11 +49,12 @@ function getCategoryDisplay(
   category: string | null,
   workspaceId: string,
   categoriesByWorkspace: Record<string, { name: string; prefix: string }[]> | undefined,
+  edition: AppEdition,
 ) {
   if (!category) return "—";
   const list = categoriesByWorkspace?.[workspaceId];
   const found = list?.find((c) => c.prefix === category);
-  return found ? found.name : category;
+  return found ? formatCategoryLabel(found.name, found.prefix, edition) : category;
 }
 
 function ProjectCard({
@@ -61,7 +64,7 @@ function ProjectCard({
   project: ProjectRow;
   categoriesByWorkspace?: Record<string, { name: string; prefix: string }[]>;
 }) {
-  const { lang } = useApp();
+  const { lang, edition } = useApp();
   const t = getT(lang);
   const dateLocale = lang === "de" ? de : enUS;
   // Thumbnail-ID ist serverseitig vorgeladen (siehe `projects/page.tsx`)
@@ -110,7 +113,7 @@ function ProjectCard({
           ) : null}
           {/* Kategorie nur ab Tablet anzeigen */}
           <span className="hidden md:inline">
-            {getCategoryDisplay(project.category, project.workspace_id, categoriesByWorkspace)}
+            {getCategoryDisplay(project.category, project.workspace_id, categoriesByWorkspace, edition)}
           </span>
           <StatusBadge
             status={project.status}
