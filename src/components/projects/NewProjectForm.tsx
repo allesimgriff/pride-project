@@ -361,7 +361,7 @@ export function NewProjectForm({
                   <option value="">{t("newProject.categorySelectPlaceholder")}</option>
                   {wsCats.map((c) => (
                     <option key={c.id} value={c.prefix}>
-                      {c.name} ({c.prefix})
+                      {c.name}
                     </option>
                   ))}
                 </select>

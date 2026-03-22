@@ -11,6 +11,7 @@ import {
   removeWorkspaceMemberAction,
   leaveWorkspaceAction,
   updateWorkspaceNameAction,
+  deleteWorkspaceAction,
 } from "@/app/actions/workspaces";
 import { useApp } from "@/components/providers/AppProvider";
 import { getT } from "@/lib/i18n";
@@ -269,6 +270,39 @@ export function WorkspaceDetailClient({
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {initial.canManage && (
+        <div className="card border-red-100 bg-red-50/40 p-6 space-y-2">
+          <h2 className="text-lg font-semibold text-gray-900">{t("workspaces.deleteWorkspace")}</h2>
+          <p className="text-sm text-gray-600">{t("workspaces.deleteWorkspaceHint")}</p>
+          <button
+            type="button"
+            className="text-sm font-medium text-red-700 hover:text-red-900"
+            onClick={async () => {
+              const msg = t("workspaces.deleteWorkspaceConfirm").replace("{{name}}", initial.workspace.name);
+              if (!confirm(msg)) return;
+              const result = await deleteWorkspaceAction(workspaceId);
+              if (!result.ok) {
+                if (result.blockingProjectCount != null) {
+                  alert(
+                    t("workspaces.deleteWorkspaceBlocked").replace(
+                      "{{count}}",
+                      String(result.blockingProjectCount),
+                    ),
+                  );
+                } else if (result.error) {
+                  alert(result.error);
+                }
+                return;
+              }
+              router.push("/workspaces");
+              router.refresh();
+            }}
+          >
+            {t("workspaces.deleteWorkspace")}
+          </button>
         </div>
       )}
 

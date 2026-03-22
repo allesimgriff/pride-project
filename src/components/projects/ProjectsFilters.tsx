@@ -101,7 +101,7 @@ export function ProjectsFilters({
               <option value="">{t("projects.all")}</option>
               {categories.map((c) => (
                 <option key={c.prefix} value={c.prefix}>
-                  {c.name} ({c.prefix})
+                  {c.name}
                 </option>
               ))}
             </select>

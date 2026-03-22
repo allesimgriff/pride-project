@@ -235,6 +235,13 @@ export const translations = {
       removeMemberConfirm: "Mitglied wirklich aus dem Workspace entfernen?",
       leave: "Workspace verlassen",
       leaveConfirm: "Workspace wirklich verlassen?",
+      deleteWorkspace: "Workspace löschen",
+      deleteWorkspaceHint:
+        "Löschen ist nur möglich, wenn keine Projekte mehr in diesem Workspace sind. Alle Mitglieder und offenen Einladungen werden entfernt.",
+      deleteWorkspaceConfirm:
+        "Workspace „{{name}}“ unwiderruflich löschen? Alle Mitglieder und offenen Einladungen gehen verloren.",
+      deleteWorkspaceBlocked:
+        "Es gibt noch {{count}} Projekt(e) in diesem Workspace. Bitte zuerst löschen oder in einen anderen Workspace verschieben.",
       joinTitle: "Workspace-Einladung",
       joinDescription: "Mit dem Einladungslink können Sie einem Workspace beitreten.",
       joinButton: "Beitreten",
@@ -613,6 +620,13 @@ export const translations = {
       removeMemberConfirm: "Really remove this member from the workspace?",
       leave: "Leave workspace",
       leaveConfirm: "Really leave this workspace?",
+      deleteWorkspace: "Delete workspace",
+      deleteWorkspaceHint:
+        "You can only delete a workspace after all projects have been removed or moved. All members and open invitations will be removed.",
+      deleteWorkspaceConfirm:
+        "Permanently delete workspace “{{name}}”? All members and open invitations will be lost.",
+      deleteWorkspaceBlocked:
+        "There are still {{count}} project(s) in this workspace. Delete or move them first.",
       joinTitle: "Workspace invitation",
       joinDescription: "Use your invitation link to join a workspace.",
       joinButton: "Join",

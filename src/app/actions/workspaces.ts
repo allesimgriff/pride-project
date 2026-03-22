@@ -95,6 +95,35 @@ export async function updateWorkspaceNameAction(
   return { error: error?.message ?? null };
 }
 
+export async function deleteWorkspaceAction(workspaceId: string): Promise<{
+  ok: boolean;
+  error?: string;
+  blockingProjectCount?: number;
+}> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Nicht angemeldet." };
+
+  if (!(await isWorkspaceAdmin(supabase, user.id, workspaceId)) && !(await isAppAdmin(supabase, user.id))) {
+    return { ok: false, error: "Nur Workspace-Admins dürfen den Workspace löschen." };
+  }
+
+  const { count, error: countErr } = await supabase
+    .from("projects")
+    .select("id", { count: "exact", head: true })
+    .eq("workspace_id", workspaceId);
+
+  if (countErr) return { ok: false, error: countErr.message };
+  const n = count ?? 0;
+  if (n > 0) return { ok: false, blockingProjectCount: n };
+
+  const { error: delErr } = await supabase.from("workspaces").delete().eq("id", workspaceId);
+  if (delErr) return { ok: false, error: delErr.message };
+  return { ok: true };
+}
+
 export async function getWorkspaceDetailAction(workspaceId: string): Promise<{
   workspace: { id: string; name: string } | null;
   members: { user_id: string; email: string; full_name: string | null; role: WorkspaceMemberRole }[];

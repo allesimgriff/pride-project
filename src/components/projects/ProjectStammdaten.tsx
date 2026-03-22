@@ -37,7 +37,7 @@ function getCategoryDisplay(
 ) {
   if (!category) return "—";
   const c = categories.find((x) => x.prefix === category);
-  return c ? `${c.name} (${c.prefix})` : category;
+  return c ? c.name : category;
 }
 
 export function ProjectStammdaten({
@@ -223,7 +223,7 @@ export function ProjectStammdaten({
                 <option value="">{t("common.select")}</option>
                 {categories.map((c) => (
                   <option key={c.id} value={c.prefix}>
-                    {c.name} ({c.prefix})
+                    {c.name}
                   </option>
                 ))}
               </select>

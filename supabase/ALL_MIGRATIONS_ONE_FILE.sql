@@ -933,8 +933,6 @@ DROP POLICY IF EXISTS "Authenticated users can insert projects" ON public.projec
 DROP POLICY IF EXISTS "Authenticated users can update projects" ON public.projects;
 DROP POLICY IF EXISTS "Admins can delete projects" ON public.projects;
 
-DROP FUNCTION IF EXISTS public.is_project_member(uuid);
-
 CREATE POLICY "projects_select"
   ON public.projects FOR SELECT TO authenticated
   USING (
@@ -1055,6 +1053,8 @@ CREATE POLICY "project_tasks_delete"
 
 DROP POLICY IF EXISTS "Updates select for project members" ON public.project_updates;
 DROP POLICY IF EXISTS "Updates insert for project members" ON public.project_updates;
+
+DROP FUNCTION IF EXISTS public.is_project_member(uuid);
 
 CREATE POLICY "project_updates_select"
   ON public.project_updates FOR SELECT TO authenticated

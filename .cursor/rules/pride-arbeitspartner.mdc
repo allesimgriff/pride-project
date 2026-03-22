@@ -22,8 +22,8 @@ alwaysApply: true
 - **Immer ausdrücklich sagen:** Ins Terminal gehört **nur** der Inhalt des **`powershell`-Kastens** – **niemals** Tabellenausgaben (`----`, `LocalAddress`, `::`), **niemals** Zeilen mit **`PS C:\`**, **niemals** Fehlermeldungen oder Erklärtexte einfügen (das sind oft Parser-Fehler in PowerShell).
 
 **Klare Struktur bei Terminal-Schritten (Pflicht):** Vor jedem Befehl kurz die drei Punkte **WAS** (ein Satz) · **WO** (Terminal in Cursor) · **NUR DIES** (ein Codeblock). Mehrere Schritte = nummeriert; Nutzer führt **nacheinander** aus, nicht alles auf einmal.
-- **Reihenfolge:** Zuerst **`.env.local` ausfüllen** und **Supabase (SQL + Auth-URLs)**, **dann erst** `npm install` / `npm run dev`. Niemals `npm run dev` vor „Zugangsdaten fertig“ empfehlen, ohne das klar an erste Stelle zu setzen.
-- Den Befehl `Copy-Item ... .env.local` klar als **nur einmal** kennzeichnen – **Warnung**, dass Wiederholung die eingetragenen Keys **überschreibt**.
+- **`.env` / Keys:** Den Nutzer **nicht** mit „leg eine neue `.env` an und trag alles ein“ **alleinlassen** – das ist für ihn **nicht** machbar ohne klare Schritte. **Stattdessen:** (a) **Supabase → Netlify** (Keys **nur** im Browser zwischen Dashboards kopieren, **nie** in den Chat), **oder** (b) die **KI** legt/ändert die Datei im Repo (**ohne** bestehende `.env.local` für PRIDE zu überschreiben; zweites Projekt z. B. **eigene** Datei nur wenn technisch nötig und dann **Start/Deploy-Pfad** klar sagen). **`Copy-Item … .env.local`** nur **einmal** und mit **Warnung** vor Überschreiben.
+- **Reihenfolge lokal:** Wenn `.env.local` (PRIDE) fehlt: zuerst **Zugangsdaten** (siehe `LOKAL_STARTEN.md`), **dann** `npm install` / `npm run dev` – nicht `npm run dev` empfehlen, bevor das klar ist.
 - Wenn der Nutzer etwas **nur in Supabase** (Browser) erledigen kann: das **explizit** sagen, z. B. **„Das musst du bei Supabase machen“**, plus kurz *wo* (z. B. SQL Editor, Authentication → URL Configuration). Nicht so tun, als könnte die KI das für ihn klicken.
 
 ## Vorgehen

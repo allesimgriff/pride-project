@@ -51,7 +51,7 @@ function getCategoryDisplay(
   if (!category) return "—";
   const list = categoriesByWorkspace?.[workspaceId];
   const found = list?.find((c) => c.prefix === category);
-  return found ? `${found.name} (${found.prefix})` : category;
+  return found ? found.name : category;
 }
 
 function ProjectCard({

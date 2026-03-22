@@ -32,6 +32,11 @@ DROP POLICY IF EXISTS "Only admins can insert categories" ON public.project_cate
 DROP POLICY IF EXISTS "Only admins can update categories" ON public.project_categories;
 DROP POLICY IF EXISTS "Only admins can delete categories" ON public.project_categories;
 
+DROP POLICY IF EXISTS "project_categories_select" ON public.project_categories;
+DROP POLICY IF EXISTS "project_categories_insert" ON public.project_categories;
+DROP POLICY IF EXISTS "project_categories_update" ON public.project_categories;
+DROP POLICY IF EXISTS "project_categories_delete" ON public.project_categories;
+
 CREATE POLICY "project_categories_select"
   ON public.project_categories FOR SELECT TO authenticated
   USING (
