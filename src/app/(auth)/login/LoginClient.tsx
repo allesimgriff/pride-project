@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getT } from "@/lib/i18n";
 import type { Lang } from "@/lib/i18n";
@@ -18,6 +19,7 @@ export function LoginClient({ edition }: { edition: AppEdition }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") ?? "/projects";
+  const isWorkspaceJoinRedirect = redirectTo.includes("/workspaces/join");
   const prefillEmail = searchParams.get("email") ?? "";
   const authCallbackError = searchParams.get("error");
 
@@ -125,6 +127,14 @@ export function LoginClient({ edition }: { edition: AppEdition }) {
                 {error}
               </div>
             )}
+            {isWorkspaceJoinRedirect ? (
+              <div
+                className="rounded-md border border-sky-200 bg-sky-50 p-3 text-sm text-sky-950"
+                role="status"
+              >
+                {t("login.workspaceJoinBanner")}
+              </div>
+            ) : null}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 {t("login.email")}
@@ -165,6 +175,13 @@ export function LoginClient({ edition }: { edition: AppEdition }) {
           <p className="mt-6 text-center text-sm text-gray-500">
             {t("login.hint")}
           </p>
+          {isWorkspaceJoinRedirect ? (
+            <p className="mt-3 text-center text-sm">
+              <Link href="/register" className="font-medium text-primary-600 underline">
+                {lang === "de" ? "Zur Registrierung" : "Register"}
+              </Link>
+            </p>
+          ) : null}
         </div>
       </div>
     </div>

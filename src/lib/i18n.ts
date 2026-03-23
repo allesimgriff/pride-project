@@ -242,11 +242,14 @@ export const translations = {
       inviteEmail: "E-Mail-Adresse",
       inviteRole: "Rolle der Eingeladenen",
       inviteButton: "Einladung erstellen",
+      inviteSending: "Einladung wird gesendet …",
       inviteHint:
         "Wenn E-Mail auf dem Server eingerichtet ist (Resend oder SMTP in Netlify), wird automatisch eine Nachricht mit Link gesendet. Sonst erscheint nach dem Erstellen ein Link zum Kopieren. Zum Annehmen braucht die eingeladene Person einen gültigen Login (gleiche E-Mail wie die Einladung).",
       inviteMailSent: "Eine Einladungs-E-Mail wurde an {{email}} gesendet.",
       inviteMailFailed:
         "Die Einladung ist gespeichert. Automatischer E-Mail-Versand ist nicht eingerichtet oder fehlgeschlagen — bitte den Link unten kopieren und selbst senden.",
+      inviteListStaleHint:
+        "Tipp: Seite neu laden (F5), damit die offene Einladung in der Liste unten erscheint.",
       copyLink: "Einladungslink kopieren",
       linkCopied: "Link in die Zwischenablage kopiert.",
       revokeInvite: "Widerrufen",
@@ -263,6 +266,12 @@ export const translations = {
         "Es gibt noch {{count}} Projekt(e) in diesem Workspace. Bitte zuerst löschen oder in einen anderen Workspace verschieben.",
       joinTitle: "Workspace-Einladung",
       joinDescription: "Mit dem Einladungslink können Sie einem Workspace beitreten.",
+      joinNeedAuth:
+        "Sie sind noch nicht angemeldet. Hier geht es nicht um ein „neues Passwort für den Link“, sondern: Zuerst Konto anlegen oder sich mit einem bestehenden Konto anmelden – mit der E-Mail-Adresse, an die die Einladung ging.",
+      joinLogin: "Anmelden (bestehendes Passwort)",
+      joinRegister: "Registrieren (neues Konto)",
+      joinEmailMustMatch:
+        "Wichtig: Beim Anmelden oder Registrieren muss die E-Mail mit der Einladung übereinstimmen. Danach diese Seite erneut öffnen oder auf „Beitreten“ gehen.",
       joinButton: "Beitreten",
       joinInvalid: "Ungültiger oder fehlender Einladungslink.",
       joinSuccess: "Sie sind dem Workspace beigetreten.",
@@ -352,6 +361,8 @@ export const translations = {
       submit: "Anmelden",
       submitting: "Anmelden …",
       hint: "Nur für berechtigte Mitarbeiter. Bei Problemen wenden Sie sich an den Admin.",
+      workspaceJoinBanner:
+        "Workspace-Einladung: Hier das Passwort Ihres bestehenden Kontos eintragen. Noch kein Konto? Zuerst registrieren (gleiche E-Mail wie in der Einladung), danach den Einladungslink erneut öffnen.",
       errorAuthCallback:
         "Der Link aus der E-Mail war ungültig oder abgelaufen. Bitte mit E-Mail und Passwort anmelden oder den Bestätigungslink erneut anfordern.",
     },
@@ -662,11 +673,14 @@ export const translations = {
       inviteEmail: "Email address",
       inviteRole: "Invited role",
       inviteButton: "Create invitation",
+      inviteSending: "Sending invitation…",
       inviteHint:
         "If email is configured on the server (Resend or SMTP in Netlify), a message with the link is sent automatically. Otherwise copy the link below after creating. The invitee needs a valid sign-in (same email as on the invitation).",
       inviteMailSent: "An invitation email was sent to {{email}}.",
       inviteMailFailed:
         "The invitation was saved. Automatic email is not configured or failed — copy the link below and send it yourself.",
+      inviteListStaleHint:
+        "Tip: Reload the page (F5) so the open invitation appears in the list below.",
       copyLink: "Copy invite link",
       linkCopied: "Link copied to clipboard.",
       revokeInvite: "Revoke",
@@ -683,6 +697,12 @@ export const translations = {
         "There are still {{count}} project(s) in this workspace. Delete or move them first.",
       joinTitle: "Workspace invitation",
       joinDescription: "Use your invitation link to join a workspace.",
+      joinNeedAuth:
+        "You are not signed in yet. This is not a page to set a “new password for the link”. First create an account or sign in with an existing account — using the same email address the invitation was sent to.",
+      joinLogin: "Sign in (existing password)",
+      joinRegister: "Register (new account)",
+      joinEmailMustMatch:
+        "Important: The email must match the invitation. Then open this page again or tap Join.",
       joinButton: "Join",
       joinInvalid: "Invalid or missing invitation link.",
       joinSuccess: "You have joined the workspace.",
@@ -772,6 +792,8 @@ export const translations = {
       submit: "Sign in",
       submitting: "Signing in…",
       hint: "For authorised staff only. Contact your admin if you have problems.",
+      workspaceJoinBanner:
+        "Workspace invitation: enter your existing account password. No account yet? Register first (same email as the invitation), then open the invitation link again.",
       errorAuthCallback:
         "The email link was invalid or expired. Sign in again or request a new confirmation email (password reset / sign up again).",
     },

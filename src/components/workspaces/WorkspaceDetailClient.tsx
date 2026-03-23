@@ -86,8 +86,7 @@ export function WorkspaceDetailClient({
         setLastToken(res.token);
         setInviteMailFailDetail(failDetail);
       }
-      // Kurz warten, damit grün/gelb gerendert wird, bevor RSC neu lädt
-      setTimeout(() => router.refresh(), 400);
+      // Kein router.refresh() hier: sonst verschwindet die grün/gelb-Meldung sofort (RSC-Neuladen).
     } catch (err) {
       alert(err instanceof Error ? err.message : "Unbekannter Fehler.");
     } finally {
@@ -237,9 +236,14 @@ export function WorkspaceDetailClient({
               </select>
             </div>
             <button type="submit" disabled={busy || !inviteEmail.trim()} className="btn-primary shrink-0">
-              {t("workspaces.inviteButton")}
+              {busy ? t("workspaces.inviteSending") : t("workspaces.inviteButton")}
             </button>
           </form>
+          {busy ? (
+            <p className="text-sm text-gray-600" role="status" aria-live="polite">
+              {t("workspaces.inviteSending")}
+            </p>
+          ) : null}
           {inviteMailOk ? (
             <p
               className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-950"
@@ -262,6 +266,9 @@ export function WorkspaceDetailClient({
                 {t("workspaces.copyLink")}
               </button>
             </div>
+          ) : null}
+          {inviteMailOk || lastToken ? (
+            <p className="text-xs text-gray-500">{t("workspaces.inviteListStaleHint")}</p>
           ) : null}
         </div>
       )}
