@@ -18,11 +18,18 @@ function LoginPageInner() {
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") ?? "/projects";
   const prefillEmail = searchParams.get("email") ?? "";
+  const authCallbackError = searchParams.get("error");
 
   useEffect(() => {
     const stored = localStorage.getItem(LANG_KEY);
     if (stored === "en" || stored === "de") setLang(stored);
   }, []);
+
+  useEffect(() => {
+    if (authCallbackError === "auth") {
+      setError(getT(lang)("login.errorAuthCallback"));
+    }
+  }, [authCallbackError, lang]);
 
   useEffect(() => {
     if (prefillEmail && !email) {

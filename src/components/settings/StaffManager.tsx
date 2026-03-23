@@ -105,6 +105,8 @@ export function StaffManager() {
   const [lastInviteLink, setLastInviteLink] = useState<string | null>(null);
   const [lastInviteTo, setLastInviteTo] = useState<string | null>(null);
   const [lastInviteName, setLastInviteName] = useState<string | null>(null);
+  /** Ob die Einladungs-E-Mail automatisch ging – steuert die Überschrift der Link-Box. */
+  const [lastInviteMailOk, setLastInviteMailOk] = useState<boolean | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -142,7 +144,12 @@ export function StaffManager() {
       return;
     }
     setCreating(true);
-    let res: { token?: string; error: string | null };
+    let res: {
+      token?: string;
+      error: string | null;
+      mailMessageId?: string;
+      mailProvider?: "resend" | "smtp";
+    };
     try {
       const out = await createInviteAction(inviteEmail.trim(), inviteName.trim() || null);
       res = out ?? { token: undefined, error: "Keine Antwort vom Server." };
@@ -163,11 +170,16 @@ export function StaffManager() {
     setLastInviteLink(link);
     setLastInviteTo(inviteEmail.trim());
     setLastInviteName(inviteName.trim() || null);
+    setLastInviteMailOk(!res.error);
 
     if (res.error) {
       alert(res.error);
     } else {
-      alert(t("staff.inviteCreated"));
+      let successMsg = t("staff.inviteCreated");
+      if (res.mailMessageId) {
+        successMsg += `\n\n${t("staff.inviteMailRef").replace("{{id}}", res.mailMessageId)}`;
+      }
+      alert(successMsg);
     }
     setLoadNonce((n) => n + 1);
     setInviteEmail("");
@@ -278,7 +290,11 @@ export function StaffManager() {
 
       {lastInviteLink ? (
         <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
-          <div className="font-medium text-gray-900">Einladungs-Link</div>
+          <div className="font-medium text-gray-900">
+            {lastInviteMailOk
+              ? t("staff.inviteLinkBoxTitleSent")
+              : t("staff.inviteLinkFallbackTitle")}
+          </div>
           <div className="mt-1 break-all">{lastInviteLink}</div>
           <div className="mt-3 flex flex-col gap-2 sm:flex-row">
             <button

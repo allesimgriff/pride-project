@@ -337,6 +337,8 @@ export const translations = {
       submit: "Anmelden",
       submitting: "Anmelden …",
       hint: "Nur für berechtigte Mitarbeiter. Bei Problemen wenden Sie sich an den Admin.",
+      errorAuthCallback:
+        "Der Link aus der E-Mail war ungültig oder abgelaufen. Bitte mit E-Mail und Passwort anmelden oder den Bestätigungslink erneut anfordern.",
     },
     categoriesPage: {
       title: "Kategorien",
@@ -381,7 +383,12 @@ export const translations = {
       statusActive: "Aktiv",
       statusInvited: "Eingeladen",
       enterEmail: "Bitte eine E-Mail-Adresse eingeben.",
-      inviteCreated: "Einladung wurde erstellt. Link kopieren und per E-Mail versenden:",
+      inviteCreated: "Die Einladung wurde per E-Mail versendet.",
+      inviteMailRef:
+        "Versand-Referenz: {{id}}\n(Bei Resend: Dashboard → Logs; bei Problemen dort prüfen.)",
+      inviteLinkBoxTitleSent: "E-Mail versendet",
+      inviteLinkFallbackTitle:
+        "Automatischer E-Mail-Versand ist fehlgeschlagen. Bitte Link kopieren und selbst an die Person senden:",
       transferAdminTitle: "Admin wechseln",
       transferAdminButton: "Als Admin ernennen",
       transferAdminConfirm: "Als Admin ernennen?",
@@ -725,6 +732,8 @@ export const translations = {
       submit: "Sign in",
       submitting: "Signing in…",
       hint: "For authorised staff only. Contact your admin if you have problems.",
+      errorAuthCallback:
+        "The email link was invalid or expired. Sign in again or request a new confirmation email (password reset / sign up again).",
     },
     categoriesPage: {
       title: "Categories",
@@ -769,7 +778,12 @@ export const translations = {
       statusActive: "Active",
       statusInvited: "Invited",
       enterEmail: "Please enter an email address.",
-      inviteCreated: "Invitation created. Copy the link and send it by email:",
+      inviteCreated: "The invitation was sent by email.",
+      inviteMailRef:
+        "Delivery reference: {{id}}\n(Resend: Dashboard → Logs; check there if mail is missing.)",
+      inviteLinkBoxTitleSent: "Email sent",
+      inviteLinkFallbackTitle:
+        "Automatic email delivery failed. Copy the link and send it to the person yourself:",
       transferAdminTitle: "Transfer admin",
       transferAdminButton: "Appoint admin",
       transferAdminConfirm: "Appoint as admin?",

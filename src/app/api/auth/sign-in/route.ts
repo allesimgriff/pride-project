@@ -2,6 +2,21 @@ import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { describeFetchError } from "@/lib/supabase/network-error";
 
+/** Supabase nennt falsche Zugangsdaten nicht getrennt (Sicherheit). */
+function mapSignInErrorToUserMessage(message: string): string {
+  const m = (message || "").trim().toLowerCase();
+  if (m.includes("invalid login credentials")) {
+    return "E-Mail oder Passwort ist falsch. Bitte erneut prüfen.";
+  }
+  if (m.includes("email not confirmed")) {
+    return "Bitte bestätigen Sie zuerst Ihre E-Mail-Adresse (Link in der Registrierungs-Mail).";
+  }
+  if (m.includes("too many requests") || m.includes("rate limit")) {
+    return "Zu viele Versuche. Bitte kurz warten und erneut versuchen.";
+  }
+  return message.trim() || "Anmeldung fehlgeschlagen.";
+}
+
 /**
  * Login über den Server: Der Browser ruft nur /api/auth/sign-in auf.
  * Hilft, wenn direkte Requests zu *.supabase.co im Browser blockiert werden („Failed to fetch“).
@@ -67,7 +82,7 @@ export async function POST(request: Request) {
       }
 
       return NextResponse.json(
-        { error: error.message || "Anmeldung fehlgeschlagen." },
+        { error: mapSignInErrorToUserMessage(error.message) },
         { status: 401 },
       );
     }

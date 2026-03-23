@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { isRedirectAllowedForSignup } from "@/lib/authRedirect";
 import { describeFetchError } from "@/lib/supabase/network-error";
 
 /**
@@ -55,8 +56,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const origin = request.headers.get("origin");
-  if (!origin || !emailRedirectTo.startsWith(`${origin}/`)) {
+  if (!isRedirectAllowedForSignup(request, emailRedirectTo)) {
     return NextResponse.json(
       { error: "Redirect-URL passt nicht zur Anfrage." },
       { status: 400 },
@@ -65,7 +65,7 @@ export async function POST(request: Request) {
 
   try {
     const supabase = await createClient();
-    const { error } = await supabase.auth.signUp({
+    const { data: signUpData, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -106,7 +106,13 @@ export async function POST(request: Request) {
       );
     }
 
-    return NextResponse.json({ ok: true });
+    const emailConfirmationRequired =
+      signUpData.session == null && signUpData.user != null;
+
+    return NextResponse.json({
+      ok: true,
+      emailConfirmationRequired,
+    });
   } catch (e) {
     console.error("[sign-up]", describeFetchError(e));
     return NextResponse.json(

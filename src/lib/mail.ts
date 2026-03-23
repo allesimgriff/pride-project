@@ -1,10 +1,11 @@
 import nodemailer from "nodemailer";
 
-const smtpHost = process.env.SMTP_HOST;
+const smtpHost = process.env.SMTP_HOST?.trim();
 const smtpPort = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 587;
-const smtpUser = process.env.SMTP_USER;
+const smtpUser = process.env.SMTP_USER?.trim();
 const smtpPass = process.env.SMTP_PASS;
-const smtpFrom = process.env.SMTP_FROM ?? smtpUser;
+/** Leeres SMTP_FROM in Netlify würde sonst nicht auf SMTP_USER zurückfallen. */
+const smtpFrom = (process.env.SMTP_FROM?.trim() || smtpUser) ?? "";
 
 if (!smtpHost || !smtpUser || !smtpPass || !smtpFrom) {
   // eslint-disable-next-line no-console
@@ -20,15 +21,22 @@ const appUrl =
   process.env.NEXT_PUBLIC_SITE_URL ||
   "http://localhost:3001";
 
+export type SendInviteEmailResult = {
+  provider: "resend" | "smtp";
+  /** Resend: `data.id`; SMTP: Message-ID – für Logs / Resend-Dashboard. */
+  messageId?: string;
+};
+
 export async function sendInviteEmail(params: {
   to: string;
   token: string;
   fullName: string | null;
-}) {
+  /** Explizite Basis-URL (z. B. aus Server-Action). Sollte mit NEXT_PUBLIC_APP_URL der jeweiligen Site übereinstimmen. */
+  appBaseUrl?: string;
+}): Promise<SendInviteEmailResult> {
   const { to, token, fullName } = params;
-  const registerUrl = `${appUrl.replace(/\/$/, "")}/register?token=${encodeURIComponent(
-    token,
-  )}`;
+  const base = (params.appBaseUrl ?? appUrl).replace(/\/$/, "");
+  const registerUrl = `${base}/register?token=${encodeURIComponent(token)}`;
 
   const subject = "Ihre Einladung zu PRIDE";
   const text = [
@@ -86,13 +94,25 @@ export async function sendInviteEmail(params: {
       );
     }
 
-    return;
+    const rawText = await res.text().catch(() => "");
+    let messageId: string | undefined;
+    try {
+      const j = JSON.parse(rawText) as { data?: { id?: string } };
+      messageId = typeof j.data?.id === "string" ? j.data.id : undefined;
+    } catch {
+      /* ignore */
+    }
+    // eslint-disable-next-line no-console
+    console.info(
+      `[mail] resend accepted to=${to} messageId=${messageId ?? "(unbekannt)"}`,
+    );
+    return { provider: "resend", messageId };
   }
 
   // Fallback to SMTP (may be blocked by hosting).
   if (!smtpHost || !smtpUser || !smtpPass || !smtpFrom) {
     throw new Error(
-      "[mail] SMTP-Konfiguration fehlt (SMTP_HOST/SMTP_USER/SMTP_PASS/SMTP_FROM).",
+      "[mail] E-Mail-Versand nicht konfiguriert. Entweder Resend: EMAIL_PROVIDER=resend, RESEND_API_KEY, EMAIL_FROM — oder SMTP: SMTP_HOST, SMTP_USER, SMTP_PASS, SMTP_FROM (siehe .env.example). Unter Netlify: Environment variables setzen und neu deployen.",
     );
   }
 
@@ -106,13 +126,18 @@ export async function sendInviteEmail(params: {
     },
   });
 
-  await transporter.sendMail({
+  const info = await transporter.sendMail({
     from: smtpFrom,
     to,
     subject,
     text,
     html,
   });
+  const smtpId =
+    typeof info.messageId === "string" ? info.messageId : undefined;
+  // eslint-disable-next-line no-console
+  console.info(`[mail] smtp sent to=${to} messageId=${smtpId ?? "?"}`);
+  return { provider: "smtp", messageId: smtpId };
 }
 
 export async function sendRoleChangedEmail(params: {
@@ -179,7 +204,7 @@ export async function sendRoleChangedEmail(params: {
 
   if (!smtpHost || !smtpUser || !smtpPass || !smtpFrom) {
     throw new Error(
-      "[mail] SMTP-Konfiguration fehlt (SMTP_HOST/SMTP_USER/SMTP_PASS/SMTP_FROM).",
+      "[mail] SMTP-Konfiguration fehlt (SMTP_HOST, SMTP_USER, SMTP_PASS und SMTP_FROM oder SMTP_USER).",
     );
   }
 

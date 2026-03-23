@@ -1,6 +1,6 @@
 # Übergabe / Kontext für einen neuen Chat (PRIDE)
 
-**Schnellstart:** `NEUER_CHAT_START.md` öffnen → **eine Zeile** in den Chat kopieren.
+**Schnellstart:** `UEBERGABEPROTOKOLL_NEUER_CHAT.md` (kurz) + `NEUER_CHAT_START.md` → **eine Zeile** in den Chat kopieren.
 
 ---
 
@@ -8,11 +8,12 @@
 
 **Nicht raten:** Dieser Abschnitt ist die **maßgebliche** Stelle für „wo wir sind“. Die KI liest ihn **vor** weiteren Annahmen.
 
-**Letzte Aktualisierung:** 2026-03-21
+**Letzte Aktualisierung:** 2026-03-23 (PKCE / Confirm signup Referenz, Registrierung Browser)
 
 ### Arbeitsmodus (Thomas – verbindlich für die KI)
 
 - **Kurz**, nur das Nötigste; **keine** langen Erklärungen, **keine** ausführlichen Zusammenfassungen.
+- **Keine Ursachen-/Root-Cause-Vorträge** ohne ausdrücklichen Wunsch; **nur** nächste Schritte. **Nicht belehrend** (siehe `.cursor/rules/pride-arbeitspartner.mdc`).
 - **Kein Programmieren:** nur Idee und Feedback; **Ergebnis beurteilen**; Schritte **nur** als **kopierbare** Anweisungen.
 - **Eingaben:** Wenn etwas eingetragen/kopiert werden soll → **immer vollständig** (ganzer Befehl, ganze Zeile, ganzes SQL) – **keine** Code-Fragmente.
 - **Terminal (PowerShell in Cursor):** Befehle **nummeriert** (**1., 2., …**), **jeweils nur ein Befehl**, **jeweils ein eigenes** Kopierfeld; Nutzer kopiert **nur** den Kasten-Inhalt (siehe Regeln in `.cursor/rules/pride-arbeitspartner.mdc`).
@@ -23,9 +24,21 @@
 ### Wo wir gerade sind
 
 - **Infra:** **Supabase**, **Netlify**, **GitHub** sind eingerichtet. **Ein User / Admin:** `tb@allesimgriff.de`.
-- **PRIDE (Hauptprodukt):** App im Repo `c:\Users\Beck\pride`; **lokal** mit **`.env.local`** an das **PRIDE-Supabase-Projekt** (`NEXT_PUBLIC_*` + `localhost:3000`). **PRIDE-`.env.local` nicht** mit Handwerker-Keys überschreiben.
-- **Handwerker-Linie:** eigenes Supabase-Projekt (z. B. **handwerker-app** / `handwerker_app`) – **DB-Migrationen erledigt** (Reihenfolge: `FRESH_DB_STEP1_001_through_010.sql` → User in Authentication anlegen → `FRESH_DB_STEP2_auth_user_and_profile.sql` → `FRESH_DB_STEP3_011_through_end.sql`). **Gleiche** Next.js-Codebasis wie PRIDE; **andere** Supabase-Keys über **Netlify Env** für die Handwerker-Site.
-- **Netlify:** zweite Site für Handwerker **eingerichtet** / **published** (Keys im Dashboard; Repo `allesimgriff/pride-project`, Branch üblich **`main`**). Details bei Bedarf im letzten Deploy-Log / Site-URL in Netlify.
+- **Repo:** `c:\Users\Beck\pride`, Remote `allesimgriff/pride-project`, Branch üblich **`main`**.
+- **Eine Codebasis, zwei Versionen, zwei getrennte Sites:** **PRIDE** und **Handwerker** sind dieselbe App mit unterschiedlicher Oberfläche; sie können **unabhängig** betrieben werden (eigene Netlify-Site, eigene URL, eigene Env).  
+  - **PRIDE:** `https://pride-project.netlify.app`  
+  - **Handwerker:** `https://handwerker-allesimgriff.netlify.app`  
+  Trennung u. a. über **`NEXT_PUBLIC_APP_EDITION`** (`pride` vs `handwerker`) und **`NEXT_PUBLIC_APP_URL`** (jeweils die **eigene** Site-URL).
+- **Supabase:** Zielbild ist **eine gemeinsame Datenbank** (Supabase-Projekt **`pride`**): Keys in Netlify für **beide** Sites auf dieses Projekt; ggf. altes Projekt **handwerker-app** nur noch pausiert/unbenutzt. **Lokal:** `.env.local` an **dieselbe** PRIDE-DB; nicht mit fremden Keys überschreiben.
+- **Netlify ↔ Supabase:** Extension „Supabase“ kann Keys setzen; **`NEXT_PUBLIC_*`** für Next muss zur laufenden App passen (siehe Code: `src/lib/supabase/public-env.ts` – u. a. Fallback `NEXT_PUBLIC_SUPABASE_DATABASE_URL` wenn nur die Extension-Variablen gesetzt sind).
+
+### Aktuelles Problem (für den nächsten Chat – nicht wegdiskutieren)
+
+**Symptom (konkret):** Jemand wurde **über die PRIDE-App** eingeladen, ist aber bei **Handwerker** „rausgekommen“ (Handwerker-Oberfläche / falsche Site), obwohl in Netlify für **pride-project** u. a. **`NEXT_PUBLIC_APP_EDITION=pride`** (alle Kontexte) steht und deployt wurde.
+
+**Zu klären ohne Vorlesung:** (1) Steht im **Einladungslink in der E-Mail** wirklich `pride-project` oder `handwerker` in der Domain? (2) Stimmt **`NEXT_PUBLIC_APP_URL`** auf **pride-project** mit `https://pride-project.netlify.app` überein? (3) **Letzter Build** wirklich **nach** den Env-Änderungen (Next bündelt `NEXT_PUBLIC_*` beim Build)? (4) Kein Mix aus alter Mail / anderem Tab.
+
+**Code (Einladung):** `src/lib/mail.ts` (`appUrl` für Link), `src/app/actions/invites.ts`. **Edition:** `src/lib/appEdition.ts`. **DB:** RPC `get_invite_for_registration` / `mark_invite_accepted` in `supabase/migrations/025`–`027` (im Supabase-Projekt **pride** ausführen, wenn noch nicht geschehen).
 
 ### Erledigt (Referenz)
 
@@ -34,13 +47,13 @@
 
 ### Noch zu tun / offen (bis erledigt – Liste abarbeiten)
 
-1. **Live prüfen:** Handwerker-Site in Netlify öffnen; Login/Navigation testen. **`NEXT_PUBLIC_APP_URL`** in Netlify = **echte** `https://…`-URL der Site.
-2. **Supabase (Handwerker-Projekt):** **Authentication → URL Configuration** = Netlify-URL (**Site URL** + **Redirect URLs** mit `/**`), falls noch nicht gesetzt.
-3. **Optional:** E-Mail (Resend/SMTP in Netlify), wenn **Einladungen** getestet werden sollen.
+1. **Einladung + Edition:** Problem oben (**PRIDE-Einladung → Handwerker-UI**) **root-cause** (Mail-Link vs. Build vs. Env) und ggf. **Code-Fix** (z. B. feste Basis-URL nur für Einladungsmails), nur mit Thomas’ OK.
+2. **Supabase Auth:** **Authentication → URL Configuration** im Projekt **pride:** **Site URL** + **Redirect URLs** für **beide** Netlify-Domains (`/**`), falls nicht vollständig.
+3. **Optional:** E-Mail (SMTP/Resend in Netlify) je Site, wenn Versand getrennt getestet wird.
 
 ### Vom Nutzer beim nächsten Chat (ein Satz, hier eintragen)
 
-**Aktuell (Thomas):** Supabase / Netlify / GitHub stehen; nur User `tb@allesimgriff.de`. Handwerker-DB migriert; Handwerker-Site auf Netlify – nächster Fokus: Live-Test + Auth-URLs in Supabase + ggf. E-Mail-Env.
+**Aktuell (Thomas):** Zwei Netlify-Sites, eine gemeinsame Supabase-DB (pride); Einladungsflow technisch erweitert (RPC, mark accepted). **Offen:** trotz `NEXT_PUBLIC_APP_EDITION=pride` auf pride-project wirkt der Ablauf nach Einladung wie Handwerker – Ursache finden (Link/Build/Edition).
 
 ### Pflicht für die KI
 
@@ -91,7 +104,7 @@ Früher: falsche **Project URL** (Tippfehler in der Ref), **`fetch failed`**; Re
 
 | Bereich | Dateien |
 |--------|---------|
-| Auth API | `src/app/api/auth/sign-in/`, `sign-up/`, `supabase-reachability/` |
+| Auth API | `sign-in/`, `sign-up/` (Route existiert), **`RegisterClient`** nutzt **`createBrowserClient`** für Sign-up; `supabase-reachability/` |
 | Supabase | `src/lib/supabase/*`, `src/middleware.ts` |
 | Workspaces | `src/app/(dashboard)/workspaces/`, `src/app/actions/workspaces.ts`, `src/lib/workspacePermissions.ts` |
 | Navigation | `src/components/layout/navConfig.tsx`, `Sidebar`, `Header` – **Einstellungen**-Hub `/settings` |
@@ -104,7 +117,15 @@ Früher: falsche **Project URL** (Tippfehler in der Ref), **`fetch failed`**; Re
 
 ## Registrierung vs. Einladung
 
-- **`signUp`** über **`/api/auth/sign-up`**; **Einladung laden** (`invites`) kann noch Browser-Client nutzen.
+- **`signUp`** im **Browser** (`src/app/(auth)/register/RegisterClient.tsx` → `createClient` aus `src/lib/supabase/client.ts`), **nicht** über `/api/auth/sign-up` (Route bleibt im Repo für andere Aufrufer). Grund: **PKCE** (siehe nächster Abschnitt).
+- Optional **`invite_token`** bei Einladung; nach Bestätigung/Callback RPC **`mark_invite_accepted`** (Migration `027`).
+- **Einladung laden** auf `/register`: **`get_invite_for_registration`** (Migrationen `025`/`026`), nicht direkt `invites`-SELECT (RLS: anon).
+
+### Referenz: PKCE und „Confirm your signup“ (nicht erneut „raten“)
+
+- **Ursache:** Supabase nutzt **PKCE**. Beim Klick auf „Confirm your signup“ muss der **Code-Verifizierer** in **Cookies derselben Browser-Sitzung** liegen wie bei der Registrierung. **`signUp` über `/api/auth/sign-up` (Server)** setzt den Verifizierer oft **nicht zuverlässig im Browser** – dann schlägt **`exchangeCodeForSession`** in **`/auth/callback`** fehl (typisch: Weiterleitung zu **`/login?error=auth`**).
+- **Änderung im Code:** Registrierung mit **`createBrowserClient`** direkt im Browser (`RegisterClient`). So werden die PKCE-Cookies beim Signup gesetzt; der Bestätigungslink funktioniert auf **demselben Gerät/Browser**, auf dem registriert wurde.
+- **Hinweis:** Registrierung am **PC**, Link nur am **Handy** öffnen → kann **weiterhin** scheitern (kein gemeinsamer Cookie-Speicher). Dann Link im **gleichen Browser** öffnen oder Bestätigung auf dem **Zielgerät** erneut anfordern.
 
 ---
 

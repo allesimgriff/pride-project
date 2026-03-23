@@ -1,8 +1,26 @@
 "use server";
 
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import type { Invite, Profile } from "@/types/database";
+import { getPublicAppBaseUrlFromEnv } from "@/lib/appPublicUrl";
 import { sendInviteEmail } from "@/lib/mail";
+
+async function requestOriginForMail(): Promise<string | undefined> {
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host");
+  if (!host) return undefined;
+  const proto =
+    h.get("x-forwarded-proto") ?? (host.includes("localhost") ? "http" : "https");
+  return `${proto}://${host}`;
+}
+
+/** Basis-URL für Einladungslinks: zuerst NEXT_PUBLIC_APP_URL (je Netlify-Site), sonst Request-Host. */
+async function appBaseUrlForInviteMail(): Promise<string | undefined> {
+  const fromEnv = getPublicAppBaseUrlFromEnv();
+  if (fromEnv) return fromEnv;
+  return requestOriginForMail();
+}
 
 async function requireAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
   const {
@@ -70,7 +88,12 @@ export async function listStaffAction(): Promise<{ data: StaffEntry[]; error: st
 export async function createInviteAction(
   email: string,
   fullName: string | null
-): Promise<{ token?: string; error: string | null }> {
+): Promise<{
+  token?: string;
+  error: string | null;
+  mailMessageId?: string;
+  mailProvider?: "resend" | "smtp";
+}> {
   const supabase = await createClient();
   const admin = await requireAdmin(supabase);
   if (!admin) {
@@ -87,6 +110,24 @@ export async function createInviteAction(
   }
 
   const cleanFullName = fullName && fullName.trim() ? fullName.trim() : null;
+
+  const { data: existingProfile } = await supabase
+    .from("profiles")
+    .select("id")
+    .ilike("email", normalizedEmail)
+    .maybeSingle();
+  if (existingProfile) {
+    return {
+      error: "Diese E-Mail ist bereits registriert. Bitte anmelden, keine neue Einladung.",
+      token: undefined,
+    };
+  }
+
+  await supabase
+    .from("invites")
+    .delete()
+    .eq("email", normalizedEmail)
+    .is("accepted_at", null);
 
   // Einfacher Token als UUID aus der Datenbank generieren lassen
   const { data, error } = await supabase
@@ -107,17 +148,22 @@ export async function createInviteAction(
 
   // Einladungs-E-Mail verschicken (bei Fehler -> UI bekommt Fehlermeldung)
   try {
-    await sendInviteEmail({
+    const mail = await sendInviteEmail({
       to: normalizedEmail,
       token: data.token as string,
       fullName: cleanFullName,
+      appBaseUrl: await appBaseUrlForInviteMail(),
     });
+    return {
+      token: data.token,
+      error: null,
+      mailMessageId: mail.messageId,
+      mailProvider: mail.provider,
+    };
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Unbekannter Fehler beim Mailversand.";
     return { token: data.token, error: `Einladung angelegt, aber E-Mail konnte nicht gesendet werden: ${msg}` };
   }
-
-  return { token: data.token, error: null };
 }
 
 export async function revokeInviteAction(inviteId: string): Promise<{ error: string | null }> {

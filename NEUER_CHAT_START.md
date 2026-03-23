@@ -1,10 +1,13 @@
 # Neuer Chat – kurz lesen, dann eine Zeile einfügen
 
+**Übergabeprotokoll (kompakt):** `UEBERGABEPROTOKOLL_NEUER_CHAT.md` – zusammen mit `HANDOFF_FUER_NEUEN_CHAT.md` für den Einstieg.
+
 ## Was die KI wissen soll (Stand)
 
-- **Zuerst** `HANDOFF_FUER_NEUEN_CHAT.md` voll lesen: **„Arbeitsmodus (Thomas)“** + **„Stand der Arbeit“** – **nicht raten**.
+- **Zuerst** `HANDOFF_FUER_NEUEN_CHAT.md` voll lesen: **„Arbeitsmodus (Thomas)“**, **„Wo wir gerade sind“**, **„Aktuelles Problem“** – **nicht raten**.
+- **Regeln / Arbeitsweise:** `.cursor/rules/pride-arbeitspartner.mdc` und im HANDOFF Abschnitt **„Arbeitsmodus (Thomas)“** (kurz, kein Geschwätz, Schritte kopierbar, Deploy nur mit Freigabe).
 - **Supabase, Netlify, GitHub** sind eingerichtet. **Ein User / Admin:** `tb@allesimgriff.de`.
-- **Zweites Supabase** (Handwerker): DB per `FRESH_DB_STEP1` → User anlegen → `STEP2` → `STEP3` durchgelaufen. **Keys:** im Browser **Supabase → Netlify** kopieren; **keine** „neue .env allein ausfüllen“-Aufgabe ohne klaren Weg (siehe `HANDOFF` → Zwei Supabase).
+- **Zwei Netlify-Sites** (PRIDE + Handwerker), **eine** gemeinsame Supabase-DB (Projekt **pride**); Details und **offenes Problem (Einladung vs. Edition)** im HANDOFF.
 - **Repo:** `c:\Users\Beck\pride`, Remote `allesimgriff/pride-project`. Branch **`company`** = Commit **`4d44967`** (Firmen-Stand); **`main`** = neuere Entwicklung.
 - **Details:** `HANDOFF_FUER_NEUEN_CHAT.md` voll lesen.
 

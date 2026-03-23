@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { getPublicAppBaseUrlFromEnv } from "@/lib/appPublicUrl";
+import { parseInviteTokenFromQuery } from "@/lib/inviteToken";
+import { createClient as createSupabaseBrowser } from "@/lib/supabase/client";
 import { getT } from "@/lib/i18n";
 import type { Lang } from "@/lib/i18n";
 
@@ -17,7 +19,7 @@ type InviteInfo = {
 
 export default function RegisterClient() {
   const searchParams = useSearchParams();
-  const inviteToken = searchParams.get("token") || null;
+  const inviteToken = parseInviteTokenFromQuery(searchParams.get("token"));
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -36,44 +38,78 @@ export default function RegisterClient() {
 
   useEffect(() => {
     if (!inviteToken) return;
+    const token = inviteToken;
 
     async function loadInvite() {
       setInviteLoading(true);
       setError(null);
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from("invites")
-        .select("email, full_name, role")
-        .eq("token", inviteToken)
-        .maybeSingle();
 
-      setInviteLoading(false);
+      try {
+        const res = await fetch(
+          `/api/invites/validate?token=${encodeURIComponent(token)}`,
+          { cache: "no-store" },
+        );
+        const payload: unknown = await res.json().catch(() => ({}));
 
-      if (error) {
+        setInviteLoading(false);
+
+        if (typeof payload !== "object" || payload === null || !("ok" in payload)) {
+          setError(
+            lang === "de"
+              ? "Einladung konnte nicht geladen werden. Bitte Seite neu laden oder neuen Link anfordern."
+              : "Could not load invitation. Reload the page or request a new link.",
+          );
+          return;
+        }
+
+        const body = payload as { ok: boolean; error?: string; detail?: string };
+
+        if (!body.ok) {
+          if (body.error === "not_found_or_used") {
+            setError(
+              lang === "de"
+                ? "Keine offene Einladung mehr (Link schon benutzt oder unbekannt)."
+                : "No open invitation (link already used or unknown).",
+            );
+            return;
+          }
+          if (body.error === "rpc_error" && process.env.NODE_ENV === "development" && body.detail) {
+            setError(
+              lang === "de"
+                ? `Einladung konnte nicht geladen werden. (${body.detail})`
+                : `Could not load invitation. (${body.detail})`,
+            );
+            return;
+          }
+          setError(
+            lang === "de"
+              ? "Einladung konnte nicht geladen werden. Bitte Seite neu laden oder neuen Link anfordern."
+              : "Could not load invitation. Reload the page or request a new link.",
+          );
+          return;
+        }
+
+        const data = payload as {
+          ok: true;
+          email: string;
+          full_name: string | null;
+          role: string;
+        };
+        setInvite({
+          email: data.email,
+          full_name: data.full_name,
+          role: data.role,
+        });
+        setEmail(data.email);
+        if (data.full_name) setFullName(data.full_name);
+      } catch {
+        setInviteLoading(false);
         setError(
           lang === "de"
-            ? "Einladung konnte nicht geladen werden."
-            : "Could not load invitation.",
+            ? "Einladung konnte nicht geladen werden (Netzwerk)."
+            : "Could not load invitation (network).",
         );
-        return;
       }
-
-      if (!data) {
-        setError(
-          lang === "de"
-            ? "Diese Einladung ist ungültig oder wurde bereits verwendet."
-            : "This invitation is invalid or has already been used.",
-        );
-        return;
-      }
-
-      setInvite({
-        email: data.email,
-        full_name: data.full_name,
-        role: data.role,
-      });
-      setEmail(data.email);
-      if (data.full_name) setFullName(data.full_name);
     }
 
     void loadInvite();
@@ -88,35 +124,37 @@ export default function RegisterClient() {
     setError(null);
     setSuccess(null);
     const signupEmail = invite ? invite.email : email;
-    const nextPath = `/login?email=${encodeURIComponent(signupEmail)}`;
-    const emailRedirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(
+    let nextPath = `/login?email=${encodeURIComponent(signupEmail)}`;
+    if (invite && inviteToken) {
+      nextPath += `&invite_token=${encodeURIComponent(inviteToken)}`;
+    }
+    const publicBase =
+      getPublicAppBaseUrlFromEnv() ?? window.location.origin;
+    const emailRedirectTo = `${publicBase}/auth/callback?next=${encodeURIComponent(
       nextPath,
     )}`;
 
     let errMsg: string | null = null;
+    let needConfirmEmail = true;
     try {
-      const res = await fetch("/api/auth/sign-up", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: signupEmail,
-          password,
+      /** Sign-up im Browser (nicht /api/auth/sign-up): PKCE-Code-Verifizierer landet in Cookies derselben Sitzung — nötig für „Confirm signup“ /auth/callback. */
+      const supabase = createSupabaseBrowser();
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email: signupEmail,
+        password,
+        options: {
           emailRedirectTo,
-          full_name: fullName || signupEmail,
-          ...(invite ? { role: invite.role } : {}),
-        }),
-        credentials: "same-origin",
+          data: {
+            full_name: fullName || signupEmail,
+            ...(invite ? { role: invite.role } : {}),
+          },
+        },
       });
-      const data: unknown = await res.json().catch(() => ({}));
-      const msg =
-        typeof data === "object" &&
-        data !== null &&
-        "error" in data &&
-        typeof (data as { error: unknown }).error === "string"
-          ? (data as { error: string }).error
-          : null;
-      if (!res.ok) {
-        errMsg = msg ?? "Registrierung fehlgeschlagen.";
+      if (signUpError) {
+        errMsg = signUpError.message || "Registrierung fehlgeschlagen.";
+      } else {
+        needConfirmEmail =
+          signUpData.session == null && signUpData.user != null;
       }
     } catch {
       errMsg =
@@ -137,9 +175,13 @@ export default function RegisterClient() {
     }
 
     setSuccess(
-      lang === "de"
-        ? "Registrierung erfolgreich. Bitte prüfen Sie Ihre E-Mails und bestätigen Sie den Zugang über den Link. Anschließend können Sie sich über den Login anmelden."
-        : "Registration successful. Please check your email and confirm your account using the link. After that, you can log in.",
+      needConfirmEmail
+        ? lang === "de"
+          ? "Registrierung erfolgreich. Bitte prüfen Sie Ihre E-Mails und bestätigen Sie den Zugang über den Link. Anschließend können Sie sich über den Login anmelden."
+          : "Registration successful. Please check your email and confirm your account using the link. After that, you can log in."
+        : lang === "de"
+          ? "Konto ist aktiv. Sie können sich jetzt anmelden."
+          : "Your account is active. You can sign in now.",
     );
   }
 
@@ -224,7 +266,6 @@ export default function RegisterClient() {
                   {success}
                 </div>
               )}
-
               <div>
                 <label
                   htmlFor="full_name"
