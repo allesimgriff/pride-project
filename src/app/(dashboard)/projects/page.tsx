@@ -6,7 +6,7 @@ import type { ProjectStatus } from "@/types/database";
 import { getDashboardSession } from "@/lib/auth/cachedDashboardSession";
 import { mapFirstFileIdByProjectId } from "@/lib/supabase/firstFileThumbs";
 
-/** Zeile aus projects-Select inkl. workspaces-Embed */
+/** Zeile aus projects-Select (Workspace-Namen separat, kein Embed – weniger RLS/PostgREST-Kanten) */
 type ProjectListQueryRow = {
   id: string;
   workspace_id: string;
@@ -16,7 +16,6 @@ type ProjectListQueryRow = {
   status: ProjectStatus;
   updated_at: string;
   project_image_id: string | null;
-  workspaces?: { name: string } | { name: string }[] | null;
 };
 
 export default async function ProjectsPage() {
@@ -30,26 +29,47 @@ export default async function ProjectsPage() {
 
   let workspaceIds: string[] = [];
   if (user) {
-    const { data: mids, error: midsErr } = await supabase
-      .from("workspace_members")
-      .select("workspace_id")
-      .eq("user_id", user.id);
-    if (midsErr && process.env.NODE_ENV === "development") {
-      // eslint-disable-next-line no-console
-      console.error("[projects/page] workspace_members", midsErr.message);
+    const { data: rpcIds, error: rpcErr } = await supabase.rpc("current_user_workspace_ids");
+    if (!rpcErr && rpcIds != null) {
+      const arr = Array.isArray(rpcIds) ? rpcIds : [];
+      workspaceIds = [...new Set(arr.map((id) => String(id)))];
+    } else {
+      const { data: mids, error: midsErr } = await supabase
+        .from("workspace_members")
+        .select("workspace_id")
+        .eq("user_id", user.id);
+      if (midsErr && process.env.NODE_ENV === "development") {
+        // eslint-disable-next-line no-console
+        console.error("[projects/page] workspace_members", midsErr.message);
+      }
+      if (rpcErr && process.env.NODE_ENV === "development") {
+        // eslint-disable-next-line no-console
+        console.error("[projects/page] current_user_workspace_ids", rpcErr.message);
+      }
+      workspaceIds = [...new Set((mids ?? []).map((m) => m.workspace_id as string))];
     }
-    workspaceIds = [...new Set((mids ?? []).map((m) => m.workspace_id as string))];
   }
 
   const projectSelect =
-    "id, dev_number, product_name, category, status, updated_at, project_image_id, workspace_id, workspaces ( name )";
+    "id, dev_number, product_name, category, status, updated_at, project_image_id, workspace_id";
 
-  // Projekte nur über RLS filtern (user_in_workspace / App-Admin). Kein .in(workspace_id),
+  // Projekte nur über RLS filtern (siehe projects_select in DB). Kein .in(workspace_id),
   // damit die Liste nicht leer bleibt, falls workspace_members clientseitig leer zurückkommt.
   const [projectsRes, categoryRes] = await Promise.all([
     supabase.from("projects").select(projectSelect).order("updated_at", { ascending: false }),
     supabase.from("project_categories").select("workspace_id, name, prefix").order("sort_order", { ascending: true }),
   ]);
+
+  const projectRowsRaw = (projectsRes.data ?? []) as ProjectListQueryRow[];
+  const workspaceIdsForNames = [...new Set(projectRowsRaw.map((p) => p.workspace_id))];
+  const workspaceNameById: Record<string, string> = {};
+  if (workspaceIdsForNames.length > 0) {
+    const { data: wsRows } = await supabase.from("workspaces").select("id, name").in("id", workspaceIdsForNames);
+    for (const w of wsRows ?? []) {
+      const id = w.id as string;
+      workspaceNameById[id] = (w.name as string) ?? "";
+    }
+  }
 
   const projectCount = projectsRes.data?.length ?? 0;
   const inAnyWorkspace = workspaceIds.length > 0 || projectCount > 0;
@@ -60,7 +80,6 @@ export default async function ProjectsPage() {
   }
 
   const canCreateProject = isAdmin || inAnyWorkspace;
-  const projects = projectsRes.data;
   const categoryRows = categoryRes.data ?? [];
   const categoriesByWorkspace: Record<string, { name: string; prefix: string }[]> = {};
   for (const row of categoryRows) {
@@ -69,14 +88,13 @@ export default async function ProjectsPage() {
     categoriesByWorkspace[wid].push({ name: row.name, prefix: row.prefix });
   }
 
-  const projectRows = (projects ?? []) as ProjectListQueryRow[];
+  const projectRows = projectRowsRaw;
   const projectIds = projectRows.map((p) => p.id);
   const thumbByProjectId = await mapFirstFileIdByProjectId(supabase, projectIds);
 
   const projectsWithThumbs = projectRows.map((p) => {
     const raw = p;
-    const w = raw.workspaces;
-    const workspaceName = Array.isArray(w) ? w[0]?.name : w?.name;
+    const workspaceName = workspaceNameById[raw.workspace_id] ?? null;
     return {
       id: raw.id,
       workspace_id: raw.workspace_id,
@@ -86,7 +104,7 @@ export default async function ProjectsPage() {
       status: raw.status,
       updated_at: raw.updated_at,
       project_image_id: raw.project_image_id ?? thumbByProjectId[raw.id] ?? null,
-      workspace_name: workspaceName ?? null,
+      workspace_name: workspaceName?.length ? workspaceName : null,
     };
   });
 
