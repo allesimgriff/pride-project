@@ -17,6 +17,30 @@ function resolvePublicSupabaseUrl(): string | undefined {
   return undefined;
 }
 
+/**
+ * HTTPS-API-URL für Server-Routen (invite-preview, register-invite).
+ * Gleiche Logik wie fürs Client-Bundle; zusätzlich SUPABASE_URL (Netlify/Integration).
+ * Hinweis: Kein postgres:// — nur https://…supabase.co.
+ */
+export function getSupabaseHttpsApiUrlForServer(): string | null {
+  const u = resolvePublicSupabaseUrl();
+  if (u) return u;
+  const supabaseUrl = process.env.SUPABASE_URL?.trim();
+  if (
+    supabaseUrl &&
+    supabaseUrl.startsWith("https://") &&
+    supabaseUrl.includes(".supabase.co")
+  ) {
+    return supabaseUrl;
+  }
+  return null;
+}
+
+/** Service Role nur auf dem Server (Netlify: Name exakt SUPABASE_SERVICE_ROLE_KEY). */
+export function getSupabaseServiceRoleKeyForServer(): string {
+  return process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() || "";
+}
+
 export function getSupabasePublicConfig(): {
   url: string;
   anonKey: string;

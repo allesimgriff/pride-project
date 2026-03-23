@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import {
+  getSupabaseHttpsApiUrlForServer,
+  getSupabaseServiceRoleKeyForServer,
+} from "@/lib/supabase/public-env";
 
 type RegisterInviteBody = {
   email?: string;
@@ -8,26 +12,25 @@ type RegisterInviteBody = {
   inviteToken?: string;
 };
 
-function getSupabaseUrl(): string | null {
-  const url =
-    process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() ||
-    process.env.NEXT_PUBLIC_SUPABASE_DATABASE_URL?.trim() ||
-    process.env.SUPABASE_DATABASE_URL?.trim() ||
-    "";
-  return url.startsWith("https://") ? url : null;
-}
-
 export async function POST(request: Request) {
-  const supabaseUrl = getSupabaseUrl();
+  const supabaseUrl = getSupabaseHttpsApiUrlForServer();
   const anonKey =
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim() ||
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY?.trim() ||
     "";
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() || "";
+  const serviceRoleKey = getSupabaseServiceRoleKeyForServer();
 
   if (!supabaseUrl || !anonKey || !serviceRoleKey) {
     return NextResponse.json(
-      { error: "Server-Konfiguration für Einladung fehlt." },
+      {
+        error: "Server-Konfiguration für Einladung fehlt.",
+        code:
+          !supabaseUrl
+            ? "missing_supabase_url"
+            : !anonKey
+              ? "missing_anon_key"
+              : "missing_service_role",
+      },
       { status: 500 },
     );
   }

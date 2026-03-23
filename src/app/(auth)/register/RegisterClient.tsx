@@ -160,11 +160,23 @@ export default function RegisterClient({ edition }: { edition: AppEdition }) {
 
         if (!body.ok || !body.email) {
           const code = body.error ?? "";
-          if (code === "server_config") {
+          if (code === "missing_service_role") {
             setError(
               lang === "de"
-                ? "Registrierung mit Einladung ist auf dem Server nicht vollständig eingerichtet. In Netlify muss SUPABASE_SERVICE_ROLE_KEY gesetzt sein (Wert aus Supabase → API Keys → service_role)."
-                : "Server is not configured for invite registration. Set SUPABASE_SERVICE_ROLE_KEY in Netlify.",
+                ? "Auf dem Server fehlt SUPABASE_SERVICE_ROLE_KEY (geheimer service_role-Key aus Supabase → API Keys). In Netlify unter Environment variables setzen, für alle Scopes / gleicher Wert für alle Deploys, dann neu deployen."
+                : "SUPABASE_SERVICE_ROLE_KEY is missing on the server. Add it in Netlify (Supabase → API Keys → service_role secret), then redeploy.",
+            );
+          } else if (code === "missing_supabase_url") {
+            setError(
+              lang === "de"
+                ? "Die Supabase-API-URL fehlt (NEXT_PUBLIC_SUPABASE_URL muss https://…supabase.co sein). In Netlify prüfen – nicht die Datenbank-URL (postgres://…)."
+                : "Supabase API URL is missing. Set NEXT_PUBLIC_SUPABASE_URL to https://…supabase.co in Netlify.",
+            );
+          } else if (code === "server_config") {
+            setError(
+              lang === "de"
+                ? "Registrierung mit Einladung ist auf dem Server nicht vollständig eingerichtet (SUPABASE_SERVICE_ROLE_KEY und NEXT_PUBLIC_SUPABASE_URL in Netlify prüfen)."
+                : "Invite registration is not fully configured on the server.",
             );
           } else if (code === "already_used") {
             setError(

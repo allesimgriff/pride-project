@@ -1,23 +1,24 @@
 import { NextResponse } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
-
-function getSupabaseUrl(): string | null {
-  const url =
-    process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() ||
-    process.env.NEXT_PUBLIC_SUPABASE_DATABASE_URL?.trim() ||
-    process.env.SUPABASE_DATABASE_URL?.trim() ||
-    "";
-  return url.startsWith("https://") ? url : null;
-}
+import {
+  getSupabaseHttpsApiUrlForServer,
+  getSupabaseServiceRoleKeyForServer,
+} from "@/lib/supabase/public-env";
 
 /** Lädt nur die E-Mail einer offenen Workspace-Einladung (Service Role), für die Registrierungsseite. */
 export async function GET(request: Request) {
-  const supabaseUrl = getSupabaseUrl();
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() || "";
+  const supabaseUrl = getSupabaseHttpsApiUrlForServer();
+  const serviceRoleKey = getSupabaseServiceRoleKeyForServer();
 
-  if (!supabaseUrl || !serviceRoleKey) {
+  if (!supabaseUrl) {
     return NextResponse.json(
-      { ok: false, error: "server_config" },
+      { ok: false, error: "missing_supabase_url" },
+      { status: 500 },
+    );
+  }
+  if (!serviceRoleKey) {
+    return NextResponse.json(
+      { ok: false, error: "missing_service_role" },
       { status: 500 },
     );
   }
