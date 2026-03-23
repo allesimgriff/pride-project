@@ -1,6 +1,6 @@
 # Weiter nach Deploy (klare Reihenfolge)
 
-**Stand Code auf GitHub:** Branch `main`, Commit **`f2e2267`** (Auth/Einladung, Staff-UI, PKCE im Browser, Migrationen 025–027).
+**Stand Code auf GitHub:** Branch `main`, zuletzt u. a. **`b70172f`** (enthält u. a. **`f2e2267`**: Auth/Einladung, Staff-UI, PKCE, Migrationen 025–027) plus **`WEITER_NACH_DEPLOY.md`**, Cursor-Regeln, Übergabeprotokoll.
 
 ---
 
@@ -47,12 +47,6 @@
 1. **Gleicher Browser:** Einladung auslösen → **E-Mail versendet** / Box „E‑Mail versendet“ (kein alter Text „Link kopieren und …“ als alleinige Erfolgsmeldung).
 2. Registrierung **auf demselben Gerät/Browser** wie später der Klick auf **„Confirm signup“** (PKCE).
 3. Login testen.
-
----
-
-## 5. Was noch nicht im letzten Commit war (optional)
-
-Falls **lokal** noch geändert: `.cursor/rules/pride-arbeitspartner.mdc`, `UEBERGABEPROTOKOLL_NEUER_CHAT.md` – bei Bedarf separat committen und pushen.
 
 ---
 
