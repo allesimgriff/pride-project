@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createWorkspaceAction } from "@/app/actions/workspaces";
 import { useApp } from "@/components/providers/AppProvider";
 import { getT } from "@/lib/i18n";
 
@@ -18,12 +17,21 @@ export function CreateWorkspaceCard() {
     const trimmed = name.trim();
     if (!trimmed || loading) return;
     setLoading(true);
-    const { id, error } = await createWorkspaceAction(trimmed);
+    const res = await fetch("/api/workspaces/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: trimmed }),
+    });
+    const data = (await res.json().catch(() => ({}))) as {
+      id?: string | null;
+      error?: string | null;
+    };
     setLoading(false);
-    if (error) {
-      alert(error);
+    if (!res.ok || data.error) {
+      alert(data.error ?? "Fehler.");
       return;
     }
+    const id = data.id;
     setName("");
     router.refresh();
     if (id) router.push(`/workspaces/${id}`);

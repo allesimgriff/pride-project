@@ -9,8 +9,6 @@ import {
   type ProjectLabelMap,
 } from "@/lib/projectLabelDefaults";
 import { ProjectLabelNrBadge } from "@/components/projects/ProjectLabelNrBadge";
-import { saveWorkspaceProjectLabelAction, deleteWorkspaceProjectLabelOverrideAction } from "@/app/actions/workspaceProjectLabels";
-import { saveProjectLabelAction } from "@/app/actions/projectLabels";
 import { useApp } from "@/components/providers/AppProvider";
 import { getT } from "@/lib/i18n";
 type EditScope = "workspace" | "global";
@@ -85,20 +83,37 @@ export function EditableProjectLabel({
     edition === "pride" &&
     (editScope === "global" || (editScope === "workspace" && Boolean(workspaceId)));
 
+  async function postLabel(payload: Record<string, unknown>): Promise<string | null> {
+    const res = await fetch("/api/project-labels", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = (await res.json().catch(() => ({}))) as { error?: string };
+    if (!res.ok) return data.error ?? "Fehler.";
+    return null;
+  }
+
   async function handleSave() {
     setSaving(true);
     let err: string | null = null;
     if (editScope === "global") {
-      const r = await saveProjectLabelAction({ key: labelKey, label_de: de, label_en: en });
-      err = r.error;
-    } else if (workspaceId) {
-      const r = await saveWorkspaceProjectLabelAction({
-        workspaceId,
+      err = await postLabel({
+        kind: "global",
+        action: "save",
         key: labelKey,
         label_de: de,
         label_en: en,
       });
-      err = r.error;
+    } else if (workspaceId) {
+      err = await postLabel({
+        kind: "workspace",
+        workspaceId,
+        action: "save",
+        key: labelKey,
+        label_de: de,
+        label_en: en,
+      });
     }
     setSaving(false);
     if (err) {
@@ -116,10 +131,15 @@ export function EditableProjectLabel({
     if (editScope === "workspace" && workspaceId) {
       if (!confirm(t("labelsInline.resetConfirmWorkspace"))) return;
       setSaving(true);
-      const { error } = await deleteWorkspaceProjectLabelOverrideAction({ workspaceId, key: labelKey });
+      const err = await postLabel({
+        kind: "workspace",
+        workspaceId,
+        action: "deleteOverride",
+        key: labelKey,
+      });
       setSaving(false);
-      if (error) {
-        alert(error);
+      if (err) {
+        alert(err);
         return;
       }
       setDe(def.label_de);
@@ -132,14 +152,14 @@ export function EditableProjectLabel({
     if (editScope === "global") {
       if (!confirm(t("labelsInline.resetConfirmGlobal"))) return;
       setSaving(true);
-      const { error } = await saveProjectLabelAction({
+      const err = await postLabel({
+        kind: "global",
+        action: "resetToDefault",
         key: labelKey,
-        label_de: def.label_de,
-        label_en: def.label_en,
       });
       setSaving(false);
-      if (error) {
-        alert(error);
+      if (err) {
+        alert(err);
         return;
       }
       setDe(def.label_de);
