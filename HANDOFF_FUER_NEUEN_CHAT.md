@@ -8,7 +8,7 @@
 
 **Nicht raten:** Dieser Abschnitt ist die **maßgebliche** Stelle für „wo wir sind“. Die KI liest ihn **vor** weiteren Annahmen.
 
-**Letzte Aktualisierung:** 2026-03-23 (PKCE / Confirm signup Referenz, Registrierung Browser)
+**Letzte Aktualisierung:** 2026-03-23 (Workspaces, App-/Workspace-Admin, Einladungen, Übergabe neu)
 
 ### Arbeitsmodus (Thomas – verbindlich für die KI)
 
@@ -32,13 +32,21 @@
 - **Supabase:** Zielbild ist **eine gemeinsame Datenbank** (Supabase-Projekt **`pride`**): Keys in Netlify für **beide** Sites auf dieses Projekt; ggf. altes Projekt **handwerker-app** nur noch pausiert/unbenutzt. **Lokal:** `.env.local` an **dieselbe** PRIDE-DB; nicht mit fremden Keys überschreiben.
 - **Netlify ↔ Supabase:** Extension „Supabase“ kann Keys setzen; **`NEXT_PUBLIC_*`** für Next muss zur laufenden App passen (siehe Code: `src/lib/supabase/public-env.ts` – u. a. Fallback `NEXT_PUBLIC_SUPABASE_DATABASE_URL` wenn nur die Extension-Variablen gesetzt sind).
 
-### Aktuelles Problem (für den nächsten Chat – nicht wegdiskutieren)
+### Bereits erledigt – im neuen Chat **nicht** erneut erfragen oder „von vorn“ debuggen
 
-**Symptom (konkret):** Jemand wurde **über die PRIDE-App** eingeladen, ist aber bei **Handwerker** „rausgekommen“ (Handwerker-Oberfläche / falsche Site), obwohl in Netlify für **pride-project** u. a. **`NEXT_PUBLIC_APP_EDITION=pride`** (alle Kontexte) steht und deployt wurde.
+- **Edition (PRIDE vs. Handwerker):** `resolveAppEdition()` nutzt **Hostname** (`pride-project.netlify.app` / `handwerker-allesimgriff.netlify.app`) vor `NEXT_PUBLIC_APP_EDITION` — siehe `src/lib/appEdition.ts`. **Login/Register:** Server-Page mit `await resolveAppEdition()` (kein reines `getAppEdition()` auf der Login-Seite).
+- **Branding:** Handwerker = **Allesimgriff** (Sidebar, Tab-Metadaten, Projektüberschrift, Login-Texte); PRIDE bleibt PRIDE. **Register:** `register.inviteIntro` mit `{{brand}}`.
+- **Globale Mitarbeiter-Einladung (Einstellungen):** entfernt; Hinweis + Link zu Workspaces (`StaffManager.tsx`). **`createInviteAction`** existiert noch im Code, UI ruft es nicht auf.
+- **Workspace-Einladungen:** E-Mail über **`sendWorkspaceInviteEmail`** (`src/lib/mail.ts`), Link **`/workspaces/join?token=…`**; **`inviteToWorkspaceAction`** in `workspaces.ts`.
+- **Workspace beitreten:** `accept_workspace_invite` — **nur gültiger Token + eingeloggt** (E-Mail-Vergleich entfernt), Migration **`030`**; **028/029** waren Zwischenschritte; maßgeblich ist der Stand in **`030`**.
+- **Workspaces-Liste (`/workspaces`):** **App-Admin** (`profiles.role = 'admin'`) sieht **alle** Workspaces; **alle anderen** nur Mitgliedschaften (`listMyWorkspacesAction`). Untertitel: `workspaces.subtitleAppAdmin` / `subtitleMember`.
+- **App-Admin:** `tb@allesimgriff.de` per SQL **`UPDATE profiles SET role = 'admin'`** (Migration **`031`** im Repo); nur wirksam, wenn Profil existiert.
+- **Workspace-Rolle (Mitglied vs. Workspace-Admin):** getrennt vom App-Admin; in **`workspace_members.role`**. UI: Dropdown in **`WorkspaceDetailClient`** → **`setWorkspaceMemberRoleAction`**; DB braucht **UPDATE-Policy** — Migration **`032`** (`workspace_members_update`). **Ohne** SQL **`032`** in Supabase schlägt Rollenänderung fehl.
+- **Mail-Hilfsfunktion:** `resolveMailAppBaseUrl()` in `src/lib/mail.ts`; Staff-Einladung nutzt `resolveMailAppBaseUrl` statt duplizierter Header-Logik in `invites.ts`.
 
-**Zu klären ohne Vorlesung:** (1) Steht im **Einladungslink in der E-Mail** wirklich `pride-project` oder `handwerker` in der Domain? (2) Stimmt **`NEXT_PUBLIC_APP_URL`** auf **pride-project** mit `https://pride-project.netlify.app` überein? (3) **Letzter Build** wirklich **nach** den Env-Änderungen (Next bündelt `NEXT_PUBLIC_*` beim Build)? (4) Kein Mix aus alter Mail / anderem Tab.
+### Aktuelles Problem (nur wenn es wieder auftritt)
 
-**Code (Einladung):** `src/lib/mail.ts` (`appUrl` für Link), `src/app/actions/invites.ts`. **Edition:** `resolveAppEdition()` in `src/lib/appEdition.ts` — **Hostname** (`pride-project.netlify.app` vs `handwerker-allesimgriff.netlify.app`) hat Vorrang vor `NEXT_PUBLIC_APP_EDITION`, falls Netlify-Env vertauscht ist. Debug: **`GET /api/app-edition`** → `edition` (effektiv) vs. `envEdition` (nur Build-Env). **DB:** RPC `get_invite_for_registration` / `mark_invite_accepted` in `supabase/migrations/025`–`027` (im Supabase-Projekt **pride** ausführen, wenn noch nicht geschehen).
+**Falls** jemand nach **PRIDE-Einladung** auf **Handwerker-UI** landet: Link-Domain in der Mail, **`NEXT_PUBLIC_APP_URL`** je Netlify-Site, Build-Zeitpunkt, **`GET /api/app-edition`**. Sonst nicht jedes Mal neu aufrollen.
 
 ### Erledigt (Referenz)
 
@@ -47,13 +55,14 @@
 
 ### Noch zu tun / offen (bis erledigt – Liste abarbeiten)
 
-1. **Einladung + Edition:** PRIDE → Handwerker-UI: **Code** korrigiert (Host-basierte Edition). **Trotzdem** in Netlify prüfen: **`NEXT_PUBLIC_APP_EDITION`** und **`NEXT_PUBLIC_APP_URL`** je Site korrekt (nicht vertauscht).
-2. **Supabase Auth:** **Authentication → URL Configuration** im Projekt **pride:** **Site URL** + **Redirect URLs** für **beide** Netlify-Domains (`/**`), falls nicht vollständig.
-3. **Optional:** E-Mail (SMTP/Resend in Netlify) je Site, wenn Versand getrennt getestet wird.
+1. **Repo:** Letzte Änderungen (u. a. `workspaces.ts`, `WorkspaceDetailClient`, Migrationen **028–032**) **commit + push + Netlify-Deploy**, falls noch nicht live.
+2. **Supabase (SQL Editor):** Migration **`032`** ausführen (UPDATE auf `workspace_members`), falls noch nicht geschehen — **ohne** `032` funktioniert das Rollen-Dropdown nicht.
+3. **Supabase Auth:** **Authentication → URL Configuration** für beide Netlify-Domains, falls noch Lücken.
+4. **Optional:** E-Mail (Resend/SMTP) je Site testen.
 
 ### Vom Nutzer beim nächsten Chat (ein Satz, hier eintragen)
 
-**Aktuell (Thomas):** Zwei Netlify-Sites, eine gemeinsame Supabase-DB (pride); Einladungsflow technisch erweitert (RPC, mark accepted). **Offen:** trotz `NEXT_PUBLIC_APP_EDITION=pride` auf pride-project wirkt der Ablauf nach Einladung wie Handwerker – Ursache finden (Link/Build/Edition).
+**Aktuell (Thomas):** App-Admin-Modell und Workspace-Rollen sind umgesetzt; nächster Schritt ist **Deploy + SQL 032** falls noch offen; neuer Chat soll **kurz** antworten und **nicht** bereits Erledigtes wieder erfragen.
 
 ### Pflicht für die KI
 
@@ -76,7 +85,7 @@
 **Eine Zeile (reicht):**
 
 ```text
-@HANDOFF_FUER_NEUEN_CHAT.md vollständig lesen – zuerst „Arbeitsmodus (Thomas)“ und „Stand der Arbeit“. Deutsch. Pro Antwort nur EIN Schritt für mich. Kurz, nur Kopierbares.
+@HANDOFF_FUER_NEUEN_CHAT.md vollständig lesen – zuerst „Arbeitsmodus (Thomas)“, dann „Bereits erledigt“ (nicht erneut erfragen). Deutsch. Kurz, nur Kopierbares.
 ```
 
 **Weitere Doku:** `PROJECT-KONTEXT.md`, `LOKAL_STARTEN.md` (lokal + Supabase-Klicks). **Regeln:** `.cursor/rules/pride-arbeitspartner.mdc`.
@@ -106,12 +115,14 @@ Früher: falsche **Project URL** (Tippfehler in der Ref), **`fetch failed`**; Re
 |--------|---------|
 | Auth API | `sign-in/`, `sign-up/` (Route existiert), **`RegisterClient`** nutzt **`createBrowserClient`** für Sign-up; `supabase-reachability/` |
 | Supabase | `src/lib/supabase/*`, `src/middleware.ts` |
-| Workspaces | `src/app/(dashboard)/workspaces/`, `src/app/actions/workspaces.ts`, `src/lib/workspacePermissions.ts` |
+| Workspaces | `src/app/(dashboard)/workspaces/page.tsx` (App-Admin vs. nur meine), `WorkspaceDetailClient.tsx` (Rollen-Dropdown), `src/app/actions/workspaces.ts` (`setWorkspaceMemberRoleAction`, …), `src/lib/workspacePermissions.ts` |
+| Workspace-Einladung Mail | `sendWorkspaceInviteEmail` in `src/lib/mail.ts` |
+| Migrationen (Stand) | u. a. **`030`** `accept_workspace_invite` token-only; **`031`** App-Admin-E-Mail; **`032`** `workspace_members` UPDATE policy |
 | Navigation | `src/components/layout/navConfig.tsx`, `Sidebar`, `Header` – **Einstellungen**-Hub `/settings` |
 | Projekt verschieben | `ProjectWorkspaceMove.tsx`, `moveProjectToWorkspaceAction` in `projects.ts` |
 | Neues Projekt / Stammdaten | `NewProjectForm.tsx`, `ProjectStammdaten.tsx`, `EditableProjectLabel.tsx` |
 | Kategorien & Präfixe (UI) | `CategoryPrefixesModal.tsx`, `CategoryPrefixesInlinePanel.tsx` – Modal statt eingebettet in Kategorie-Überschrift |
-| Migrationen | `supabase/migrations/`, `ALL_MIGRATIONS_ONE_FILE.sql` |
+| Migrationen (Ordner) | `supabase/migrations/`, `ALL_MIGRATIONS_ONE_FILE.sql` |
 
 ---
 

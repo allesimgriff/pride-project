@@ -224,8 +224,10 @@ export const translations = {
     },
     workspaces: {
       title: "Workspaces",
-      subtitle:
-        "Teams und gemeinsame Projektbereiche. Alle Mitglieder sehen die Projekte dieses Workspace.",
+      subtitleMember:
+        "Nur Workspaces, in die Sie eingeladen sind (Mitglied oder Workspace-Admin).",
+      subtitleAppAdmin:
+        "App-Administrator: hier alle Workspaces. Andere Nutzer sehen nur ihre eigenen.",
       createTitle: "Neuen Workspace anlegen",
       nameLabel: "Name",
       createButton: "Workspace erstellen",
@@ -241,7 +243,7 @@ export const translations = {
       inviteRole: "Rolle der Eingeladenen",
       inviteButton: "Einladung erstellen",
       inviteHint:
-        "Link kopieren und per E-Mail senden. Die Person muss mit genau dieser E-Mail-Adresse angemeldet sein.",
+        "Link kopieren und per E-Mail senden. Zum Annehmen ist ein gültiger Login nötig.",
       copyLink: "Einladungslink kopieren",
       linkCopied: "Link in die Zwischenablage kopiert.",
       revokeInvite: "Widerrufen",
@@ -639,7 +641,10 @@ export const translations = {
     },
     workspaces: {
       title: "Workspaces",
-      subtitle: "Teams and shared project areas. All members see this workspace’s projects.",
+      subtitleMember:
+        "Only workspaces you were invited to (member or workspace admin).",
+      subtitleAppAdmin:
+        "App administrator: all workspaces here. Other users only see their own.",
       createTitle: "Create workspace",
       nameLabel: "Name",
       createButton: "Create workspace",
@@ -655,7 +660,7 @@ export const translations = {
       inviteRole: "Invited role",
       inviteButton: "Create invitation",
       inviteHint:
-        "Copy the link and send it by email. The person must be logged in with that exact email.",
+        "Copy the link and send it by email. The recipient needs a valid sign-in to accept.",
       copyLink: "Copy invite link",
       linkCopied: "Link copied to clipboard.",
       revokeInvite: "Revoke",

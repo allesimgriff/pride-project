@@ -283,6 +283,54 @@ export async function revokeWorkspaceInviteAction(inviteId: string): Promise<{ e
   return { error: error?.message ?? null };
 }
 
+export async function setWorkspaceMemberRoleAction(
+  workspaceId: string,
+  targetUserId: string,
+  role: WorkspaceMemberRole,
+): Promise<{ error: string | null }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Nicht angemeldet." };
+
+  if (!(await isWorkspaceAdmin(supabase, user.id, workspaceId)) && !(await isAppAdmin(supabase, user.id))) {
+    return { error: "Keine Berechtigung." };
+  }
+
+  if (role !== "admin" && role !== "member") {
+    return { error: "Ungültige Rolle." };
+  }
+
+  const { data: target } = await supabase
+    .from("workspace_members")
+    .select("role")
+    .eq("workspace_id", workspaceId)
+    .eq("user_id", targetUserId)
+    .maybeSingle();
+
+  if (!target) return { error: "Mitglied nicht gefunden." };
+
+  if (target.role === "admin" && role === "member") {
+    const { data: admins } = await supabase
+      .from("workspace_members")
+      .select("user_id")
+      .eq("workspace_id", workspaceId)
+      .eq("role", "admin");
+    if ((admins?.length ?? 0) <= 1) {
+      return { error: "Der letzte Workspace-Admin kann nicht zurückgestuft werden." };
+    }
+  }
+
+  const { error } = await supabase
+    .from("workspace_members")
+    .update({ role })
+    .eq("workspace_id", workspaceId)
+    .eq("user_id", targetUserId);
+
+  return { error: error?.message ?? null };
+}
+
 export async function removeWorkspaceMemberAction(
   workspaceId: string,
   targetUserId: string
@@ -356,9 +404,11 @@ export async function acceptWorkspaceInviteAction(token: string): Promise<{
     const msg =
       code === "invalid_or_used"
         ? "Einladung ungültig oder bereits verwendet."
-        : code === "email_mismatch"
-          ? "Diese Einladung gehört zu einer anderen E-Mail-Adresse."
-          : "Einladung konnte nicht angenommen werden.";
+        : code === "not_authenticated"
+          ? "Bitte zuerst anmelden, dann den Link erneut öffnen."
+          : code === "email_mismatch"
+            ? "Diese Einladung gehört zu einer anderen E-Mail-Adresse."
+            : "Einladung konnte nicht angenommen werden.";
     return { ok: false, workspaceId: null, error: msg };
   }
 

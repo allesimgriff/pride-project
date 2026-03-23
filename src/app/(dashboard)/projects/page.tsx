@@ -6,6 +6,19 @@ import type { ProjectStatus } from "@/types/database";
 import { getDashboardSession } from "@/lib/auth/cachedDashboardSession";
 import { mapFirstFileIdByProjectId } from "@/lib/supabase/firstFileThumbs";
 
+/** Zeile aus projects-Select inkl. workspaces-Embed */
+type ProjectListQueryRow = {
+  id: string;
+  workspace_id: string;
+  dev_number: string;
+  product_name: string;
+  category: string | null;
+  status: ProjectStatus;
+  updated_at: string;
+  project_image_id: string | null;
+  workspaces?: { name: string } | { name: string }[] | null;
+};
+
 export default async function ProjectsPage() {
   const session = await getDashboardSession();
   const user = session?.user;
@@ -13,28 +26,39 @@ export default async function ProjectsPage() {
 
   const supabase = await createClient();
 
-  const [workspaceRes, projectsRes, categoryRes] = await Promise.all([
-    user
-      ? supabase
-          .from("workspace_members")
-          .select("*", { count: "exact", head: true })
-          .eq("user_id", user.id)
-      : Promise.resolve({ count: 0 }),
-    supabase
-      .from("projects")
-      .select(
-        "id, dev_number, product_name, category, status, updated_at, project_image_id, workspace_id, workspaces ( name )",
-      )
-      .order("updated_at", { ascending: false }),
-    supabase
-      .from("project_categories")
-      .select("workspace_id, name, prefix")
-      .order("sort_order", { ascending: true }),
+  const isAdmin = profile?.role === "admin";
+
+  let workspaceIds: string[] = [];
+  if (user) {
+    const { data: mids, error: midsErr } = await supabase
+      .from("workspace_members")
+      .select("workspace_id")
+      .eq("user_id", user.id);
+    if (midsErr && process.env.NODE_ENV === "development") {
+      // eslint-disable-next-line no-console
+      console.error("[projects/page] workspace_members", midsErr.message);
+    }
+    workspaceIds = [...new Set((mids ?? []).map((m) => m.workspace_id as string))];
+  }
+
+  const projectSelect =
+    "id, dev_number, product_name, category, status, updated_at, project_image_id, workspace_id, workspaces ( name )";
+
+  // Projekte nur über RLS filtern (user_in_workspace / App-Admin). Kein .in(workspace_id),
+  // damit die Liste nicht leer bleibt, falls workspace_members clientseitig leer zurückkommt.
+  const [projectsRes, categoryRes] = await Promise.all([
+    supabase.from("projects").select(projectSelect).order("updated_at", { ascending: false }),
+    supabase.from("project_categories").select("workspace_id, name, prefix").order("sort_order", { ascending: true }),
   ]);
 
-  const isAdmin = profile?.role === "admin";
-  const workspaceMembershipCount = workspaceRes.count;
-  const inAnyWorkspace = (workspaceMembershipCount ?? 0) > 0;
+  const projectCount = projectsRes.data?.length ?? 0;
+  const inAnyWorkspace = workspaceIds.length > 0 || projectCount > 0;
+
+  if (process.env.NODE_ENV === "development" && projectsRes.error) {
+    // eslint-disable-next-line no-console
+    console.error("[projects/page]", projectsRes.error.message);
+  }
+
   const canCreateProject = isAdmin || inAnyWorkspace;
   const projects = projectsRes.data;
   const categoryRows = categoryRes.data ?? [];
@@ -45,22 +69,12 @@ export default async function ProjectsPage() {
     categoriesByWorkspace[wid].push({ name: row.name, prefix: row.prefix });
   }
 
-  const projectRows = projects || [];
+  const projectRows = (projects ?? []) as ProjectListQueryRow[];
   const projectIds = projectRows.map((p) => p.id);
   const thumbByProjectId = await mapFirstFileIdByProjectId(supabase, projectIds);
 
   const projectsWithThumbs = projectRows.map((p) => {
-    const raw = p as {
-      id: string;
-      workspace_id: string;
-      dev_number: string;
-      product_name: string;
-      category: string | null;
-      status: ProjectStatus;
-      updated_at: string;
-      project_image_id: string | null;
-      workspaces?: { name: string } | { name: string }[] | null;
-    };
+    const raw = p;
     const w = raw.workspaces;
     const workspaceName = Array.isArray(w) ? w[0]?.name : w?.name;
     return {
@@ -76,9 +90,21 @@ export default async function ProjectsPage() {
     };
   });
 
+  const loadError =
+    projectsRes.error != null
+      ? process.env.NODE_ENV === "development"
+        ? projectsRes.error.message
+        : "Projekte konnten nicht geladen werden."
+      : null;
+
   return (
     <div className="space-y-6">
       <ProjectsPageHeader canCreateProject={canCreateProject} />
+      {loadError != null && (
+        <p className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          {loadError}
+        </p>
+      )}
       {Boolean(profile) && (
         <ProjectsScopeHint isAdmin={Boolean(isAdmin)} inAnyWorkspace={inAnyWorkspace} />
       )}

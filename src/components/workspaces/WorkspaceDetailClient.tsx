@@ -12,6 +12,7 @@ import {
   leaveWorkspaceAction,
   updateWorkspaceNameAction,
   deleteWorkspaceAction,
+  setWorkspaceMemberRoleAction,
 } from "@/app/actions/workspaces";
 import { useApp } from "@/components/providers/AppProvider";
 import { getT } from "@/lib/i18n";
@@ -42,6 +43,7 @@ export function WorkspaceDetailClient({
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState(initial.workspace.name);
   const [nameBusy, setNameBusy] = useState(false);
+  const [roleSavingUserId, setRoleSavingUserId] = useState<string | null>(null);
 
   useEffect(() => {
     setNameDraft(initial.workspace.name);
@@ -80,6 +82,18 @@ export function WorkspaceDetailClient({
       return;
     }
     setEditingName(false);
+    router.refresh();
+  }
+
+  async function onMemberRoleChange(userId: string, newRole: WorkspaceMemberRole) {
+    if (roleSavingUserId) return;
+    setRoleSavingUserId(userId);
+    const { error } = await setWorkspaceMemberRoleAction(workspaceId, userId, newRole);
+    setRoleSavingUserId(null);
+    if (error) {
+      alert(error);
+      return;
+    }
     router.refresh();
   }
 
@@ -218,9 +232,24 @@ export function WorkspaceDetailClient({
               <div>
                 <span className="font-medium text-gray-900">{m.full_name || m.email}</span>
                 <span className="ml-2 text-gray-500">{m.email}</span>
-                <span className="ml-2 rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-700">
-                  {m.role === "admin" ? t("workspaces.roleAdmin") : t("workspaces.roleMember")}
-                </span>
+                {initial.canManage ? (
+                  <select
+                    className="ml-2 rounded border border-gray-200 bg-white px-2 py-0.5 text-xs text-gray-800"
+                    value={m.role}
+                    disabled={roleSavingUserId === m.user_id}
+                    onChange={(e) =>
+                      void onMemberRoleChange(m.user_id, e.target.value as WorkspaceMemberRole)
+                    }
+                    aria-label={t("workspaces.inviteRole")}
+                  >
+                    <option value="member">{t("workspaces.roleMember")}</option>
+                    <option value="admin">{t("workspaces.roleAdmin")}</option>
+                  </select>
+                ) : (
+                  <span className="ml-2 rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-700">
+                    {m.role === "admin" ? t("workspaces.roleAdmin") : t("workspaces.roleMember")}
+                  </span>
+                )}
               </div>
               {initial.canManage && m.user_id !== currentUserId && (
                 <button

@@ -6,10 +6,10 @@
 
 ## Was die KI wissen soll (Stand)
 
-- **Zuerst** `HANDOFF_FUER_NEUEN_CHAT.md` voll lesen: **„Arbeitsmodus (Thomas)“**, **„Wo wir gerade sind“**, **„Aktuelles Problem“** – **nicht raten**.
+- **Zuerst** `HANDOFF_FUER_NEUEN_CHAT.md` voll lesen: **„Arbeitsmodus (Thomas)“**, **„Wo wir gerade sind“**, **„Bereits erledigt“** – **nicht raten**, Erledigtes nicht erneut erfragen.
 - **Regeln / Arbeitsweise:** `.cursor/rules/pride-arbeitspartner.mdc` und im HANDOFF Abschnitt **„Arbeitsmodus (Thomas)“** (kurz, kein Geschwätz, Schritte kopierbar, Deploy nur mit Freigabe).
 - **Supabase, Netlify, GitHub** sind eingerichtet. **Ein User / Admin:** `tb@allesimgriff.de`.
-- **Zwei Netlify-Sites** (PRIDE + Handwerker), **eine** gemeinsame Supabase-DB (Projekt **pride**); Details und **offenes Problem (Einladung vs. Edition)** im HANDOFF.
+- **Zwei Netlify-Sites** (PRIDE + Handwerker), **eine** gemeinsame Supabase-DB (Projekt **pride**); aktueller Stand und erledigte Punkte im HANDOFF.
 - **Repo:** `c:\Users\Beck\pride`, Remote `allesimgriff/pride-project`. Branch **`company`** = Commit **`4d44967`** (Firmen-Stand); **`main`** = neuere Entwicklung.
 - **Details:** `HANDOFF_FUER_NEUEN_CHAT.md` voll lesen.
 
@@ -20,7 +20,7 @@
 ## Diese eine Zeile in den neuen Chat kopieren
 
 ```text
-@HANDOFF_FUER_NEUEN_CHAT.md vollständig lesen – zuerst „Arbeitsmodus (Thomas)“ und „Stand der Arbeit“. Deutsch. Pro Antwort nur EIN Schritt für mich. Kurz, nur Kopierbares.
+@HANDOFF_FUER_NEUEN_CHAT.md vollständig lesen – zuerst „Arbeitsmodus (Thomas)“, dann „Bereits erledigt“. Deutsch. Kurz, nur Kopierbares.
 ```
 
 (Optional zusätzlich anhängen: `@LOKAL_STARTEN.md` nur wenn es um lokales Setup geht.)
