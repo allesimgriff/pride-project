@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { Pencil, Plus } from "lucide-react";
 import type { WorkspaceMemberRole } from "@/types/database";
 import {
-  inviteToWorkspaceAction,
   revokeWorkspaceInviteAction,
   removeWorkspaceMemberAction,
   leaveWorkspaceAction,
@@ -61,7 +60,17 @@ export function WorkspaceDetailClient({
     setInviteMailOkEmail("");
     setInviteMailFailDetail(null);
     try {
-      const res = await inviteToWorkspaceAction(workspaceId, inviteEmail, inviteRole);
+      const response = await fetch("/api/workspaces/invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ workspaceId, email: inviteEmail, inviteRole }),
+      });
+      const res = (await response.json().catch(() => ({}))) as {
+        token?: string | null;
+        error?: string | null;
+        mailSent?: boolean;
+        mailError?: string | null;
+      };
       // Ohne Token: echter Fehler (z. B. doppelte Einladung)
       if (res.error && !res.token) {
         alert(res.error);
