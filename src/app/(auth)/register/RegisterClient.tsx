@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { getPublicAppBaseUrlFromEnv } from "@/lib/appPublicUrl";
 import { parseInviteTokenFromQuery } from "@/lib/inviteToken";
 import { createClient as createSupabaseBrowser } from "@/lib/supabase/client";
@@ -19,6 +19,7 @@ type InviteInfo = {
 };
 
 export default function RegisterClient({ edition }: { edition: AppEdition }) {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const inviteToken = parseInviteTokenFromQuery(searchParams.get("token"));
 
@@ -139,25 +140,49 @@ export default function RegisterClient({ edition }: { edition: AppEdition }) {
 
     let errMsg: string | null = null;
     let needConfirmEmail = true;
+    let invitedWorkspaceId: string | null = null;
     try {
-      /** Sign-up im Browser (nicht /api/auth/sign-up): PKCE-Code-Verifizierer landet in Cookies derselben Sitzung — nötig für „Confirm signup“ /auth/callback. */
-      const supabase = createSupabaseBrowser();
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-        email: signupEmail,
-        password,
-        options: {
-          emailRedirectTo,
-          data: {
-            full_name: fullName || signupEmail,
-            ...(invite ? { role: invite.role } : {}),
-          },
-        },
-      });
-      if (signUpError) {
-        errMsg = signUpError.message || "Registrierung fehlgeschlagen.";
+      if (invite && inviteToken) {
+        const regRes = await fetch("/api/auth/register-invite", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: signupEmail,
+            password,
+            fullName: fullName || signupEmail,
+            inviteToken,
+          }),
+        });
+        const regPayload = (await regRes.json().catch(() => ({}))) as {
+          error?: string;
+          workspaceId?: string;
+        };
+        if (!regRes.ok) {
+          errMsg = regPayload.error || "Registrierung fehlgeschlagen.";
+        } else {
+          invitedWorkspaceId = regPayload.workspaceId ?? null;
+          needConfirmEmail = false;
+        }
       } else {
-        needConfirmEmail =
-          signUpData.session == null && signUpData.user != null;
+        /** Sign-up im Browser (nicht /api/auth/sign-up): PKCE-Code-Verifizierer landet in Cookies derselben Sitzung — nötig für „Confirm signup“ /auth/callback. */
+        const supabase = createSupabaseBrowser();
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email: signupEmail,
+          password,
+          options: {
+            emailRedirectTo,
+            data: {
+              full_name: fullName || signupEmail,
+              ...(invite ? { role: invite.role } : {}),
+            },
+          },
+        });
+        if (signUpError) {
+          errMsg = signUpError.message || "Registrierung fehlgeschlagen.";
+        } else {
+          needConfirmEmail =
+            signUpData.session == null && signUpData.user != null;
+        }
       }
     } catch {
       errMsg =
@@ -177,14 +202,38 @@ export default function RegisterClient({ edition }: { edition: AppEdition }) {
       localStorage.setItem(LAST_EMAIL_KEY, signupEmail);
     }
 
+    if (invite && inviteToken && !needConfirmEmail) {
+      try {
+        const loginRes = await fetch("/api/auth/sign-in", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: signupEmail, password }),
+          credentials: "same-origin",
+        });
+        if (loginRes.ok) {
+          const target =
+            edition === "handwerker"
+              ? "/projects"
+              : invitedWorkspaceId
+                ? `/workspaces/${invitedWorkspaceId}`
+                : "/projects";
+          router.push(target);
+          router.refresh();
+          return;
+        }
+      } catch {
+        // Falls Auto-Login fehlschlägt, trotzdem Erfolg melden und manuellen Login erlauben.
+      }
+    }
+
     setSuccess(
       needConfirmEmail
         ? lang === "de"
           ? "Registrierung erfolgreich. Bitte prüfen Sie Ihre E-Mails und bestätigen Sie den Zugang über den Link. Anschließend können Sie sich über den Login anmelden."
           : "Registration successful. Please check your email and confirm your account using the link. After that, you can log in."
         : lang === "de"
-          ? "Konto ist aktiv. Sie können sich jetzt anmelden."
-          : "Your account is active. You can sign in now.",
+          ? "Konto ist aktiv. Sie sind eingeladen und können sofort arbeiten."
+          : "Your account is active. You can start working immediately.",
     );
   }
 
