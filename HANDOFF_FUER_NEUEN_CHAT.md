@@ -38,7 +38,7 @@
 
 **Zu klären ohne Vorlesung:** (1) Steht im **Einladungslink in der E-Mail** wirklich `pride-project` oder `handwerker` in der Domain? (2) Stimmt **`NEXT_PUBLIC_APP_URL`** auf **pride-project** mit `https://pride-project.netlify.app` überein? (3) **Letzter Build** wirklich **nach** den Env-Änderungen (Next bündelt `NEXT_PUBLIC_*` beim Build)? (4) Kein Mix aus alter Mail / anderem Tab.
 
-**Code (Einladung):** `src/lib/mail.ts` (`appUrl` für Link), `src/app/actions/invites.ts`. **Edition:** `src/lib/appEdition.ts`. **DB:** RPC `get_invite_for_registration` / `mark_invite_accepted` in `supabase/migrations/025`–`027` (im Supabase-Projekt **pride** ausführen, wenn noch nicht geschehen).
+**Code (Einladung):** `src/lib/mail.ts` (`appUrl` für Link), `src/app/actions/invites.ts`. **Edition:** `resolveAppEdition()` in `src/lib/appEdition.ts` — **Hostname** (`pride-project.netlify.app` vs `handwerker-allesimgriff.netlify.app`) hat Vorrang vor `NEXT_PUBLIC_APP_EDITION`, falls Netlify-Env vertauscht ist. Debug: **`GET /api/app-edition`** → `edition` (effektiv) vs. `envEdition` (nur Build-Env). **DB:** RPC `get_invite_for_registration` / `mark_invite_accepted` in `supabase/migrations/025`–`027` (im Supabase-Projekt **pride** ausführen, wenn noch nicht geschehen).
 
 ### Erledigt (Referenz)
 
@@ -47,7 +47,7 @@
 
 ### Noch zu tun / offen (bis erledigt – Liste abarbeiten)
 
-1. **Einladung + Edition:** Problem oben (**PRIDE-Einladung → Handwerker-UI**) **root-cause** (Mail-Link vs. Build vs. Env) und ggf. **Code-Fix** (z. B. feste Basis-URL nur für Einladungsmails), nur mit Thomas’ OK.
+1. **Einladung + Edition:** PRIDE → Handwerker-UI: **Code** korrigiert (Host-basierte Edition). **Trotzdem** in Netlify prüfen: **`NEXT_PUBLIC_APP_EDITION`** und **`NEXT_PUBLIC_APP_URL`** je Site korrekt (nicht vertauscht).
 2. **Supabase Auth:** **Authentication → URL Configuration** im Projekt **pride:** **Site URL** + **Redirect URLs** für **beide** Netlify-Domains (`/**`), falls nicht vollständig.
 3. **Optional:** E-Mail (SMTP/Resend in Netlify) je Site, wenn Versand getrennt getestet wird.
 
@@ -120,6 +120,11 @@ Früher: falsche **Project URL** (Tippfehler in der Ref), **`fetch failed`**; Re
 - **`signUp`** im **Browser** (`src/app/(auth)/register/RegisterClient.tsx` → `createClient` aus `src/lib/supabase/client.ts`), **nicht** über `/api/auth/sign-up` (Route bleibt im Repo für andere Aufrufer). Grund: **PKCE** (siehe nächster Abschnitt).
 - Optional **`invite_token`** bei Einladung; nach Bestätigung/Callback RPC **`mark_invite_accepted`** (Migration `027`).
 - **Einladung laden** auf `/register`: **`get_invite_for_registration`** (Migrationen `025`/`026`), nicht direkt `invites`-SELECT (RLS: anon).
+
+### Referenz: `/auth/callback`
+
+- **Seite** (`page.tsx` + `AuthCallbackClient.tsx`): Code-Tausch und `verifyOtp` laufen im **Browser** (`createBrowserClient`), nicht nur als Route-Handler — PKCE-Cookies liegen dort.
+- Hilfsfunktionen: `src/lib/authCallback.ts`.
 
 ### Referenz: PKCE und „Confirm your signup“ (nicht erneut „raten“)
 

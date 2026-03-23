@@ -16,7 +16,7 @@ import { listWorkspacesForProjectMoveAction } from "@/app/actions/workspaces";
 import { ProjectWorkspaceMove } from "@/components/projects/ProjectWorkspaceMove";
 import { getAuthUser } from "@/lib/auth/cachedDashboardSession";
 import { SetWorkspaceHeader } from "@/components/layout/SetWorkspaceHeader";
-import { isPrideEdition } from "@/lib/appEdition";
+import { resolveAppEdition } from "@/lib/appEdition";
 
 export default async function ProjectDetailPage({
   params,
@@ -109,7 +109,7 @@ export default async function ProjectDetailPage({
   const tasks = tasksRes.data;
   const updates = updatesRes.data;
   const currentUserId = user?.id;
-  const prideUi = isPrideEdition();
+  const prideUi = (await resolveAppEdition()) === "pride";
 
   return (
     <div className="space-y-6 print-detail-page">

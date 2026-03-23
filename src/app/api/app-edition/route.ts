@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
-import { getAppEdition } from "@/lib/appEdition";
+import { getAppEdition, resolveAppEdition } from "@/lib/appEdition";
 
-/** GET /api/app-edition — laufender Build (gleiche Logik wie getAppEdition). */
+/** GET /api/app-edition — effektive Edition (Host) + Env-Rohwert. */
 export async function GET() {
+  const resolved = await resolveAppEdition();
   return NextResponse.json({
-    edition: getAppEdition(),
+    edition: resolved,
+    envEdition: getAppEdition(),
     raw: process.env.NEXT_PUBLIC_APP_EDITION?.trim() ?? null,
   });
 }
