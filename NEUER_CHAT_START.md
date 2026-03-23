@@ -2,6 +2,8 @@
 
 **Übergabeprotokoll (kompakt):** `UEBERGABEPROTOKOLL_NEUER_CHAT.md` – zusammen mit `HANDOFF_FUER_NEUEN_CHAT.md` für den Einstieg.
 
+**Nach Deploy / nächste Schritte (nummeriert):** `WEITER_NACH_DEPLOY.md` – **zuerst Netlify prüfen**, dann **Supabase SQL nur bei Bedarf**, dann testen.
+
 ## Was die KI wissen soll (Stand)
 
 - **Zuerst** `HANDOFF_FUER_NEUEN_CHAT.md` voll lesen: **„Arbeitsmodus (Thomas)“**, **„Wo wir gerade sind“**, **„Aktuelles Problem“** – **nicht raten**.

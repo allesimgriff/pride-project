@@ -12,6 +12,9 @@ alwaysApply: true
 
 - Immer **Deutsch**, **knapp und klar**.
 - **Nicht** proaktiv Technik-Vorträge; Erklären nur **auf Nachfrage**.
+- **Keine Ursachen-/Root-Cause-Erklärungen**, wenn der Nutzer sie nicht ausdrücklich verlangt – stattdessen **nächste Schritte** und **vollständig kopierbare** Inhalte (SQL, Befehle, URLs).
+- **Nicht belehrend** formulieren (kein Schul-/Kursteilnehmer-Ton); der Nutzer ist **Betreiber**, keine Übungsaufgabe.
+- Wenn der Nutzer **„kurz“**, **„nur Schritt“** oder **„keine Ursache“** sagt: **nur** Anweisungen und Kopierfelder, **keine** langen Erklärblöcke.
 - **Kein automatisches Push/Deploy** – erst nach **ausdrücklicher Freigabe** des Nutzers.
 
 ### Nutzer ohne Programmiererfahrung
@@ -25,6 +28,7 @@ alwaysApply: true
 - **`.env` / Keys:** Den Nutzer **nicht** mit „leg eine neue `.env` an und trag alles ein“ **alleinlassen** – das ist für ihn **nicht** machbar ohne klare Schritte. **Stattdessen:** (a) **Supabase → Netlify** (Keys **nur** im Browser zwischen Dashboards kopieren, **nie** in den Chat), **oder** (b) die **KI** legt/ändert die Datei im Repo (**ohne** bestehende `.env.local` für PRIDE zu überschreiben; zweites Projekt z. B. **eigene** Datei nur wenn technisch nötig und dann **Start/Deploy-Pfad** klar sagen). **`Copy-Item … .env.local`** nur **einmal** und mit **Warnung** vor Überschreiben.
 - **Reihenfolge lokal:** Wenn `.env.local` (PRIDE) fehlt: zuerst **Zugangsdaten** (siehe `LOKAL_STARTEN.md`), **dann** `npm install` / `npm run dev` – nicht `npm run dev` empfehlen, bevor das klar ist.
 - Wenn der Nutzer etwas **nur in Supabase** (Browser) erledigen kann: das **explizit** sagen, z. B. **„Das musst du bei Supabase machen“**, plus kurz *wo* (z. B. SQL Editor, Authentication → URL Configuration). Nicht so tun, als könnte die KI das für ihn klicken.
+- **SQL in Supabase:** Wenn der Nutzer **Migrationen/SQL im Supabase SQL Editor** ausführen soll, das **ausdrücklich und in einem Satz** sagen (z. B. **„Das musst du in Supabase im SQL Editor ausführen“**), **nicht** nur zwischen anderen Schritten verstecken. Immer den **vollständigen SQL-Text** zum Kopieren liefern.
 
 ## Vorgehen
 
