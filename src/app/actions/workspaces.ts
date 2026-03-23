@@ -201,6 +201,10 @@ export async function inviteToWorkspaceAction(
 ): Promise<{
   token: string | null;
   error: string | null;
+  /** true, wenn sendWorkspaceInviteEmail gelaufen ist */
+  mailSent: boolean;
+  /** Kurzgrund, wenn mailSent false aber token gesetzt (Einladung in DB) */
+  mailError: string | null;
   mailMessageId?: string;
   mailProvider?: "resend" | "smtp";
 }> {
@@ -208,15 +212,15 @@ export async function inviteToWorkspaceAction(
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { token: null, error: "Nicht angemeldet." };
+  if (!user) return { token: null, error: "Nicht angemeldet.", mailSent: false, mailError: null };
 
   if (!(await isWorkspaceAdmin(supabase, user.id, workspaceId)) && !(await isAppAdmin(supabase, user.id))) {
-    return { token: null, error: "Nur Workspace-Admins dürfen einladen." };
+    return { token: null, error: "Nur Workspace-Admins dürfen einladen.", mailSent: false, mailError: null };
   }
 
   const normalized = email.trim().toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) {
-    return { token: null, error: "Ungültige E-Mail." };
+    return { token: null, error: "Ungültige E-Mail.", mailSent: false, mailError: null };
   }
 
   const token = randomUUID();
@@ -231,9 +235,14 @@ export async function inviteToWorkspaceAction(
 
   if (error) {
     if (error.code === "23505") {
-      return { token: null, error: "Für diese E-Mail gibt es bereits eine offene Einladung." };
+      return {
+        token: null,
+        error: "Für diese E-Mail gibt es bereits eine offene Einladung.",
+        mailSent: false,
+        mailError: null,
+      };
     }
-    return { token: null, error: error.message };
+    return { token: null, error: error.message, mailSent: false, mailError: null };
   }
 
   const { data: wsRow } = await supabase
@@ -253,6 +262,8 @@ export async function inviteToWorkspaceAction(
     return {
       token,
       error: null,
+      mailSent: true,
+      mailError: null,
       mailMessageId: mail.messageId,
       mailProvider: mail.provider,
     };
@@ -260,7 +271,9 @@ export async function inviteToWorkspaceAction(
     const msg = e instanceof Error ? e.message : "Unbekannter Fehler beim Mailversand.";
     return {
       token,
-      error: `Einladung angelegt, aber E-Mail konnte nicht gesendet werden: ${msg}`,
+      error: null,
+      mailSent: false,
+      mailError: msg,
     };
   }
 }

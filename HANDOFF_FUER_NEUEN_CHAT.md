@@ -8,7 +8,7 @@
 
 **Nicht raten:** Dieser Abschnitt ist die **maßgebliche** Stelle für „wo wir sind“. Die KI liest ihn **vor** weiteren Annahmen.
 
-**Letzte Aktualisierung:** 2026-03-23 (Workspaces, App-/Workspace-Admin, Einladungen, Übergabe neu)
+**Letzte Aktualisierung:** 2026-03-23 (Projektliste/Mitgliedschaft, Migration 033, Übergabe neu)
 
 ### Arbeitsmodus (Thomas – verbindlich für die KI)
 
@@ -42,6 +42,8 @@
 - **Workspaces-Liste (`/workspaces`):** **App-Admin** (`profiles.role = 'admin'`) sieht **alle** Workspaces; **alle anderen** nur Mitgliedschaften (`listMyWorkspacesAction`). Untertitel: `workspaces.subtitleAppAdmin` / `subtitleMember`.
 - **App-Admin:** `tb@allesimgriff.de` per SQL **`UPDATE profiles SET role = 'admin'`** (Migration **`031`** im Repo); nur wirksam, wenn Profil existiert.
 - **Workspace-Rolle (Mitglied vs. Workspace-Admin):** getrennt vom App-Admin; in **`workspace_members.role`**. UI: Dropdown in **`WorkspaceDetailClient`** → **`setWorkspaceMemberRoleAction`**; DB braucht **UPDATE-Policy** — Migration **`032`** (`workspace_members_update`). **Ohne** SQL **`032`** in Supabase schlägt Rollenänderung fehl.
+- **Projektübersicht (`/projects`) – Mitglieder sehen Projekte:** **`src/app/(dashboard)/projects/page.tsx`** lädt Projekte **nur noch über RLS** (kein Filter `.in('workspace_id', …)`, kein früher Abbruch bei leerem `workspace_members`). Sonst blieb die Liste leer, obwohl in der DB Projekte da sind. **`inAnyWorkspace`** für Hinweise: Mitgliedschaften **oder** mindestens ein sichtbares Projekt.
+- **Supabase RLS `workspace_members` SELECT:** Migration **`033`** — Policy **`workspace_members_select`** mit **`user_id = auth.uid()`** zuerst (eigene Zeilen), damit keine leeren Mitgliedslisten durch RLS/Funktion **`user_in_workspace`**. In Supabase **SQL Editor** ausführen, wenn noch nicht live (Datei im Repo: **`supabase/migrations/033_workspace_members_select_own_row.sql`**).
 - **Mail-Hilfsfunktion:** `resolveMailAppBaseUrl()` in `src/lib/mail.ts`; Staff-Einladung nutzt `resolveMailAppBaseUrl` statt duplizierter Header-Logik in `invites.ts`.
 
 ### Aktuelles Problem (nur wenn es wieder auftritt)
@@ -55,14 +57,14 @@
 
 ### Noch zu tun / offen (bis erledigt – Liste abarbeiten)
 
-1. **Repo:** Letzte Änderungen (u. a. `workspaces.ts`, `WorkspaceDetailClient`, Migrationen **028–032**) **commit + push + Netlify-Deploy**, falls noch nicht live.
-2. **Supabase (SQL Editor):** Migration **`032`** ausführen (UPDATE auf `workspace_members`), falls noch nicht geschehen — **ohne** `032` funktioniert das Rollen-Dropdown nicht.
+1. **Repo:** Letzte Änderungen (u. a. **`projects/page.tsx`**, Migration **`033`**, ggf. **028–032**) **commit + push**; **Netlify** grün abwarten — **online testen**, ob **Mitglieder** Projekte auf **`/projects`** sehen.
+2. **Supabase (SQL Editor):** **`032`** (Rollen-Dropdown) und **`033`** (`workspace_members_select`), falls noch nicht ausgeführt.
 3. **Supabase Auth:** **Authentication → URL Configuration** für beide Netlify-Domains, falls noch Lücken.
 4. **Optional:** E-Mail (Resend/SMTP) je Site testen.
 
 ### Vom Nutzer beim nächsten Chat (ein Satz, hier eintragen)
 
-**Aktuell (Thomas):** App-Admin-Modell und Workspace-Rollen sind umgesetzt; nächster Schritt ist **Deploy + SQL 032** falls noch offen; neuer Chat soll **kurz** antworten und **nicht** bereits Erledigtes wieder erfragen.
+**Aktuell (Thomas):** Projektliste für **Mitglieder** (nicht nur Admins) – Code-Fix **`page.tsx`** + **SQL 033**; **Deploy** nach **push**; **online** prüfen. Neuer Chat: **kurz**, **nicht** Erledigtes wieder erfragen.
 
 ### Pflicht für die KI
 
@@ -117,7 +119,8 @@ Früher: falsche **Project URL** (Tippfehler in der Ref), **`fetch failed`**; Re
 | Supabase | `src/lib/supabase/*`, `src/middleware.ts` |
 | Workspaces | `src/app/(dashboard)/workspaces/page.tsx` (App-Admin vs. nur meine), `WorkspaceDetailClient.tsx` (Rollen-Dropdown), `src/app/actions/workspaces.ts` (`setWorkspaceMemberRoleAction`, …), `src/lib/workspacePermissions.ts` |
 | Workspace-Einladung Mail | `sendWorkspaceInviteEmail` in `src/lib/mail.ts` |
-| Migrationen (Stand) | u. a. **`030`** `accept_workspace_invite` token-only; **`031`** App-Admin-E-Mail; **`032`** `workspace_members` UPDATE policy |
+| Migrationen (Stand) | u. a. **`030`** `accept_workspace_invite` token-only; **`031`** App-Admin-E-Mail; **`032`** `workspace_members` UPDATE policy; **`033`** `workspace_members` SELECT (eigene Zeile) |
+| Projektübersicht | `src/app/(dashboard)/projects/page.tsx` – RLS-only, keine `.in(workspace_id)`-Abhängigkeit von `workspace_members` |
 | Navigation | `src/components/layout/navConfig.tsx`, `Sidebar`, `Header` – **Einstellungen**-Hub `/settings` |
 | Projekt verschieben | `ProjectWorkspaceMove.tsx`, `moveProjectToWorkspaceAction` in `projects.ts` |
 | Neues Projekt / Stammdaten | `NewProjectForm.tsx`, `ProjectStammdaten.tsx`, `EditableProjectLabel.tsx` |

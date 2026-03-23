@@ -35,13 +35,15 @@
 - **Einladungen:** keine globale Staff-Einladung; Workspace-Einladung inkl. E-Mail; `accept_workspace_invite` = Token + Login (**030**).
 - **Workspaces-Liste:** App-Admin (`profiles.role = admin`) = alle; sonst nur Mitgliedschaften. App-Admin-SQL **031** (`tb@allesimgriff.de`).
 - **Workspace-Rolle:** Dropdown + `setWorkspaceMemberRoleAction`; Supabase-Policy **032** nötig.
+- **Projektübersicht (`/projects`):** Code nur noch **RLS** (kein `.in(workspace_id)` von `workspace_members`); sonst leere Liste trotz Daten. **SQL 033** = `workspace_members_select` mit `user_id = auth.uid()`.
 - **Registrierung / RPC:** **025–027**, PKCE – siehe HANDOFF.
 
 ---
 
 ## 4. Offen (nur falls noch nicht erledigt)
 
-- Push/Deploy letzter Commits; SQL **032** in Supabase ausführen.
+- **Push + Netlify-Deploy** der letzten Commits; online **`/projects`** als **Mitglied** testen.
+- Supabase **032** / **033** nur falls noch nicht ausgeführt.
 
 ---
 

@@ -16,7 +16,9 @@
 
 **Wo:** Supabase-Projekt **pride** → **SQL Editor**.
 
-**Reihenfolge:** nacheinander **drei** ausführen (jeweils „Run“), **nicht** alles auf einmal mischen:
+**Aktuell wichtig (Workspace / Projekte):** Falls noch nicht geschehen: **`032`** (Rollen-Dropdown) und **`033`** (`workspace_members_select` – Datei **`033_workspace_members_select_own_row.sql`**) aus dem Repo ausführen.
+
+**Reihenfolge (ältere Einladungs-RPCs):** nacheinander **drei** ausführen (jeweils „Run“), **nicht** alles auf einmal mischen:
 
 | Schritt | Datei im Repo (Inhalt kopieren) |
 |--------|----------------------------------|
@@ -44,9 +46,10 @@
 
 ## 4. Testen (nach 1. grün)
 
-1. **Gleicher Browser:** Einladung auslösen → **E-Mail versendet** / Box „E‑Mail versendet“ (kein alter Text „Link kopieren und …“ als alleinige Erfolgsmeldung).
-2. Registrierung **auf demselben Gerät/Browser** wie später der Klick auf **„Confirm signup“** (PKCE).
-3. Login testen.
+1. **`/projects`:** Als **Workspace-Mitglied** (nicht App-Admin) einloggen → Projekte sichtbar, wenn RLS sie erlaubt (Code + ggf. **033** in Supabase).
+2. **Gleicher Browser:** Einladung auslösen → **E-Mail versendet** / Box „E‑Mail versendet“ (kein alter Text „Link kopieren und …“ als alleinige Erfolgsmeldung).
+3. Registrierung **auf demselben Gerät/Browser** wie später der Klick auf **„Confirm signup“** (PKCE).
+4. Login testen.
 
 ---
 

@@ -40,6 +40,9 @@ export function WorkspaceDetailClient({
   const [inviteRole, setInviteRole] = useState<WorkspaceMemberRole>("member");
   const [busy, setBusy] = useState(false);
   const [lastToken, setLastToken] = useState<string | null>(null);
+  const [inviteMailOk, setInviteMailOk] = useState(false);
+  const [inviteMailOkEmail, setInviteMailOkEmail] = useState("");
+  const [inviteMailFailDetail, setInviteMailFailDetail] = useState<string | null>(null);
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState(initial.workspace.name);
   const [nameBusy, setNameBusy] = useState(false);
@@ -52,16 +55,43 @@ export function WorkspaceDetailClient({
   async function onInvite(e: React.FormEvent) {
     e.preventDefault();
     if (!inviteEmail.trim() || busy) return;
+    const emailForMsg = inviteEmail.trim();
     setBusy(true);
-    const { token, error } = await inviteToWorkspaceAction(workspaceId, inviteEmail, inviteRole);
-    setBusy(false);
-    if (error) {
-      alert(error);
-    }
-    if (token) {
-      setLastToken(token);
+    setInviteMailOk(false);
+    setInviteMailOkEmail("");
+    setInviteMailFailDetail(null);
+    try {
+      const res = await inviteToWorkspaceAction(workspaceId, inviteEmail, inviteRole);
+      // Ohne Token: echter Fehler (z. B. doppelte Einladung)
+      if (res.error && !res.token) {
+        alert(res.error);
+        return;
+      }
+      if (!res.token) return;
+
       setInviteEmail("");
-      router.refresh();
+      // Mail wirklich raus: explizit true ODER alte API ohne Fehlertext
+      const mailed =
+        res.mailSent === true ||
+        (res.mailSent !== false && !res.error);
+      const failDetail =
+        res.mailError ?? (res.error && res.token ? res.error : null);
+
+      if (mailed) {
+        setLastToken(null);
+        setInviteMailOk(true);
+        setInviteMailOkEmail(emailForMsg);
+        setInviteMailFailDetail(null);
+      } else {
+        setLastToken(res.token);
+        setInviteMailFailDetail(failDetail);
+      }
+      // Kurz warten, damit grün/gelb gerendert wird, bevor RSC neu lädt
+      setTimeout(() => router.refresh(), 400);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Unbekannter Fehler.");
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -210,8 +240,20 @@ export function WorkspaceDetailClient({
               {t("workspaces.inviteButton")}
             </button>
           </form>
-          {lastToken && (
-            <div className="rounded-md bg-gray-50 p-3 text-sm">
+          {inviteMailOk ? (
+            <p
+              className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-950"
+              role="status"
+            >
+              {t("workspaces.inviteMailSent").replace("{{email}}", inviteMailOkEmail)}
+            </p>
+          ) : null}
+          {lastToken ? (
+            <div className="space-y-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
+              <p>{t("workspaces.inviteMailFailed")}</p>
+              {inviteMailFailDetail ? (
+                <p className="font-mono text-xs text-amber-900/80 break-all">{inviteMailFailDetail}</p>
+              ) : null}
               <button
                 type="button"
                 className="btn-secondary text-xs"
@@ -220,7 +262,7 @@ export function WorkspaceDetailClient({
                 {t("workspaces.copyLink")}
               </button>
             </div>
-          )}
+          ) : null}
         </div>
       )}
 

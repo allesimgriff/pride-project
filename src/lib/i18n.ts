@@ -243,7 +243,10 @@ export const translations = {
       inviteRole: "Rolle der Eingeladenen",
       inviteButton: "Einladung erstellen",
       inviteHint:
-        "Link kopieren und per E-Mail senden. Zum Annehmen ist ein gültiger Login nötig.",
+        "Wenn E-Mail auf dem Server eingerichtet ist (Resend oder SMTP in Netlify), wird automatisch eine Nachricht mit Link gesendet. Sonst erscheint nach dem Erstellen ein Link zum Kopieren. Zum Annehmen braucht die eingeladene Person einen gültigen Login (gleiche E-Mail wie die Einladung).",
+      inviteMailSent: "Eine Einladungs-E-Mail wurde an {{email}} gesendet.",
+      inviteMailFailed:
+        "Die Einladung ist gespeichert. Automatischer E-Mail-Versand ist nicht eingerichtet oder fehlgeschlagen — bitte den Link unten kopieren und selbst senden.",
       copyLink: "Einladungslink kopieren",
       linkCopied: "Link in die Zwischenablage kopiert.",
       revokeInvite: "Widerrufen",
@@ -660,7 +663,10 @@ export const translations = {
       inviteRole: "Invited role",
       inviteButton: "Create invitation",
       inviteHint:
-        "Copy the link and send it by email. The recipient needs a valid sign-in to accept.",
+        "If email is configured on the server (Resend or SMTP in Netlify), a message with the link is sent automatically. Otherwise copy the link below after creating. The invitee needs a valid sign-in (same email as on the invitation).",
+      inviteMailSent: "An invitation email was sent to {{email}}.",
+      inviteMailFailed:
+        "The invitation was saved. Automatic email is not configured or failed — copy the link below and send it yourself.",
       copyLink: "Copy invite link",
       linkCopied: "Link copied to clipboard.",
       revokeInvite: "Revoke",

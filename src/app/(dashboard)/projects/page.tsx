@@ -108,12 +108,7 @@ export default async function ProjectsPage() {
     };
   });
 
-  const loadError =
-    projectsRes.error != null
-      ? process.env.NODE_ENV === "development"
-        ? projectsRes.error.message
-        : "Projekte konnten nicht geladen werden."
-      : null;
+  const loadError = projectsRes.error != null ? projectsRes.error.message : null;
 
   return (
     <div className="space-y-6">
