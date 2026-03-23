@@ -47,7 +47,10 @@ export function JoinWorkspaceClient({ isLoggedIn }: { isLoggedIn: boolean }) {
             >
               {t("workspaces.joinLogin")}
             </Link>
-            <Link href="/register" className="btn-secondary inline-flex justify-center text-center">
+            <Link
+              href={`/register?workspace_token=${encodeURIComponent(token)}`}
+              className="btn-secondary inline-flex justify-center text-center"
+            >
               {t("workspaces.joinRegister")}
             </Link>
           </div>

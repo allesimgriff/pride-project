@@ -65,44 +65,108 @@ export async function POST(request: Request) {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
-  // Einladung für Registrierung validieren (RLS-sicher über vorhandene RPC).
-  const { data: inviteRows, error: inviteErr } = await anon.rpc(
+  // --- 1) Mitarbeiter-Einladung (public.invites, Token = UUID) ---
+  const { data: staffRows, error: staffRpcErr } = await anon.rpc(
     "get_invite_for_registration",
     { p_token: inviteToken },
   );
 
-  if (inviteErr || !Array.isArray(inviteRows) || inviteRows.length === 0) {
+  if (staffRpcErr) {
+    return NextResponse.json(
+      { error: "Einladung konnte nicht geprüft werden." },
+      { status: 500 },
+    );
+  }
+
+  if (Array.isArray(staffRows) && staffRows.length > 0) {
+    const inviteInfo = staffRows[0] as {
+      email?: string;
+      full_name?: string | null;
+      role?: string;
+    };
+    const inviteEmail = (inviteInfo.email ?? "").trim().toLowerCase();
+    if (!inviteEmail || inviteEmail !== email) {
+      return NextResponse.json(
+        { error: "E-Mail passt nicht zur Einladung." },
+        { status: 400 },
+      );
+    }
+
+    const created = await admin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: { full_name: fullName || inviteInfo.full_name || email },
+    });
+
+    if (created.error || !created.data.user) {
+      const msg = created.error?.message?.toLowerCase() ?? "";
+      if (msg.includes("already") || msg.includes("exists")) {
+        return NextResponse.json(
+          {
+            error:
+              "Für diese E-Mail existiert bereits ein Konto. Bitte anmelden und den Einladungslink erneut öffnen.",
+          },
+          { status: 409 },
+        );
+      }
+      return NextResponse.json(
+        { error: created.error?.message || "Konto konnte nicht erstellt werden." },
+        { status: 400 },
+      );
+    }
+
+    const userId = created.data.user.id;
+    const profileRole = (inviteInfo.role ?? "entwicklung").trim() || "entwicklung";
+
+    await admin.from("profiles").upsert(
+      {
+        id: userId,
+        email,
+        full_name: fullName || inviteInfo.full_name || email,
+        role: profileRole,
+      },
+      { onConflict: "id" },
+    );
+
+    const { error: markErr } = await admin.rpc("mark_invite_accepted", {
+      p_token: inviteToken,
+      p_email: email,
+    });
+
+    if (markErr) {
+      return NextResponse.json(
+        { error: "Konto erstellt, Einladung konnte nicht abgeschlossen werden." },
+        { status: 500 },
+      );
+    }
+
+    return NextResponse.json({ ok: true });
+  }
+
+  // --- 2) Workspace-Einladung (workspace_invites, Token = Text/UUID-String) ---
+  const { data: invRow, error: invRowErr } = await admin
+    .from("workspace_invites")
+    .select("id, email, workspace_id, role, accepted_at")
+    .eq("token", inviteToken)
+    .maybeSingle();
+
+  if (invRowErr || !invRow || invRow.accepted_at != null) {
     return NextResponse.json(
       { error: "Einladung ungültig oder bereits verwendet." },
       { status: 400 },
     );
   }
 
-  const inviteInfo = inviteRows[0] as {
-    email?: string;
-    full_name?: string | null;
-  };
-  const inviteEmail = (inviteInfo.email ?? "").trim().toLowerCase();
-  if (!inviteEmail || inviteEmail !== email) {
+  const wsEmail = (invRow.email ?? "").trim().toLowerCase();
+  if (!wsEmail || wsEmail !== email) {
     return NextResponse.json(
       { error: "E-Mail passt nicht zur Einladung." },
       { status: 400 },
     );
   }
 
-  const { data: invRow, error: invRowErr } = await admin
-    .from("workspace_invites")
-    .select("id, workspace_id, role, accepted_at")
-    .eq("token", inviteToken)
-    .maybeSingle();
-
-  if (
-    invRowErr ||
-    !invRow ||
-    !invRow.workspace_id ||
-    !invRow.role ||
-    invRow.accepted_at != null
-  ) {
+  if (!invRow.workspace_id || !invRow.role) {
     return NextResponse.json(
       { error: "Einladung ungültig oder bereits verwendet." },
       { status: 400 },
@@ -113,7 +177,7 @@ export async function POST(request: Request) {
     email,
     password,
     email_confirm: true,
-    user_metadata: { full_name: fullName || inviteInfo.full_name || email },
+    user_metadata: { full_name: fullName || email },
   });
 
   if (created.error || !created.data.user) {
@@ -139,7 +203,7 @@ export async function POST(request: Request) {
     {
       id: userId,
       email,
-      full_name: fullName || inviteInfo.full_name || email,
+      full_name: fullName || email,
       role: "entwicklung",
     },
     { onConflict: "id" },

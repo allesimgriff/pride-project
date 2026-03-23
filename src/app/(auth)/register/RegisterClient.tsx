@@ -22,13 +22,21 @@ export default function RegisterClient({ edition }: { edition: AppEdition }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const inviteToken = parseInviteTokenFromQuery(searchParams.get("token"));
+  const workspaceInviteToken = parseInviteTokenFromQuery(
+    searchParams.get("workspace_token"),
+  );
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
-  const [inviteLoading, setInviteLoading] = useState<boolean>(!!inviteToken);
+  const [inviteLoading, setInviteLoading] = useState<boolean>(
+    !!(inviteToken || workspaceInviteToken),
+  );
   const [invite, setInvite] = useState<InviteInfo | null>(null);
+  const [workspaceInviteEmail, setWorkspaceInviteEmail] = useState<
+    string | null
+  >(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [lang, setLang] = useState<Lang>("de");
@@ -118,19 +126,95 @@ export default function RegisterClient({ edition }: { edition: AppEdition }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [inviteToken]);
 
+  useEffect(() => {
+    if (inviteToken || !workspaceInviteToken) return;
+    const token = workspaceInviteToken;
+
+    async function loadWorkspaceInvite() {
+      setInviteLoading(true);
+      setError(null);
+
+      try {
+        const res = await fetch(
+          `/api/workspaces/invite-preview?token=${encodeURIComponent(token)}`,
+          { cache: "no-store" },
+        );
+        const payload: unknown = await res.json().catch(() => ({}));
+
+        setInviteLoading(false);
+
+        if (typeof payload !== "object" || payload === null || !("ok" in payload)) {
+          setError(
+            lang === "de"
+              ? "Workspace-Einladung konnte nicht geladen werden. Bitte Seite neu laden oder neuen Link anfordern."
+              : "Could not load workspace invitation. Reload the page or request a new link.",
+          );
+          return;
+        }
+
+        const body = payload as { ok: boolean; email?: string };
+
+        if (!body.ok || !body.email) {
+          setError(
+            lang === "de"
+              ? "Keine offene Workspace-Einladung (Link schon benutzt oder unbekannt)."
+              : "No open workspace invitation (link already used or unknown).",
+          );
+          return;
+        }
+
+        setWorkspaceInviteEmail(body.email.trim());
+        setEmail(body.email.trim());
+      } catch {
+        setInviteLoading(false);
+        setError(
+          lang === "de"
+            ? "Workspace-Einladung konnte nicht geladen werden (Netzwerk)."
+            : "Could not load workspace invitation (network).",
+        );
+      }
+    }
+
+    void loadWorkspaceInvite();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inviteToken, workspaceInviteToken]);
+
   const t = getT(lang);
   const brandName =
     edition === "handwerker" ? t("nav.brandHandwerker") : t("nav.brandPride");
 
+  const invitationLocked =
+    !!invite || (workspaceInviteEmail !== null && workspaceInviteEmail !== "");
+  const useRegisterInviteApi =
+    (invite !== null && inviteToken !== null) ||
+    (workspaceInviteEmail !== null && workspaceInviteToken !== null);
+  const tokenForRegister = inviteToken ?? workspaceInviteToken;
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (
+      workspaceInviteToken &&
+      !inviteToken &&
+      !workspaceInviteEmail
+    ) {
+      setError(
+        lang === "de"
+          ? "Workspace-Einladung fehlt oder ist ungültig. Bitte den Link aus der E-Mail erneut öffnen."
+          : "Workspace invitation is missing or invalid. Please open the link from the email again.",
+      );
+      return;
+    }
     setLoading(true);
     setError(null);
     setSuccess(null);
-    const signupEmail = invite ? invite.email : email;
+    const signupEmail =
+      invite?.email ?? workspaceInviteEmail ?? email;
     let nextPath = `/login?email=${encodeURIComponent(signupEmail)}`;
     if (invite && inviteToken) {
       nextPath += `&invite_token=${encodeURIComponent(inviteToken)}`;
+    }
+    if (workspaceInviteEmail && workspaceInviteToken) {
+      nextPath += `&workspace_token=${encodeURIComponent(workspaceInviteToken)}`;
     }
     const publicBase =
       getPublicAppBaseUrlFromEnv() ?? window.location.origin;
@@ -142,7 +226,7 @@ export default function RegisterClient({ edition }: { edition: AppEdition }) {
     let needConfirmEmail = true;
     let invitedWorkspaceId: string | null = null;
     try {
-      if (invite && inviteToken) {
+      if (useRegisterInviteApi && tokenForRegister) {
         const regRes = await fetch("/api/auth/register-invite", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -150,7 +234,7 @@ export default function RegisterClient({ edition }: { edition: AppEdition }) {
             email: signupEmail,
             password,
             fullName: fullName || signupEmail,
-            inviteToken,
+            inviteToken: tokenForRegister,
           }),
         });
         const regPayload = (await regRes.json().catch(() => ({}))) as {
@@ -202,7 +286,7 @@ export default function RegisterClient({ edition }: { edition: AppEdition }) {
       localStorage.setItem(LAST_EMAIL_KEY, signupEmail);
     }
 
-    if (invite && inviteToken && !needConfirmEmail) {
+    if (useRegisterInviteApi && tokenForRegister && !needConfirmEmail) {
       try {
         const loginRes = await fetch("/api/auth/sign-in", {
           method: "POST",
@@ -244,7 +328,7 @@ export default function RegisterClient({ edition }: { edition: AppEdition }) {
           <div className="mb-6 flex items-center justify-between gap-4">
             <div className="flex-1 text-center sm:text-left">
               <h1 className="text-2xl font-semibold text-gray-900">
-                {invite
+                {invite || workspaceInviteEmail
                   ? lang === "de"
                     ? "Einladung annehmen"
                     : "Accept invitation"
@@ -253,7 +337,7 @@ export default function RegisterClient({ edition }: { edition: AppEdition }) {
                     : "Register account"}
               </h1>
               <p className="mt-1 text-sm text-gray-500">
-                {invite
+                {invite || workspaceInviteEmail
                   ? t("register.inviteIntro").replace("{{brand}}", brandName)
                   : lang === "de"
                     ? "Geben Sie Ihre Daten ein, um einen Zugang zum Projektmanagement zu erhalten."
@@ -347,16 +431,16 @@ export default function RegisterClient({ edition }: { edition: AppEdition }) {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  required={!invite}
+                  required={!invitationLocked}
                   className={`input-base mt-1 ${
-                    invite ? "bg-gray-50 text-gray-600" : ""
+                    invitationLocked ? "bg-gray-50 text-gray-600" : ""
                   }`}
                   placeholder={t("login.emailPlaceholder")}
                   autoComplete="email"
-                  readOnly={!!invite}
-                  disabled={!!invite}
+                  readOnly={invitationLocked}
+                  disabled={invitationLocked}
                 />
-                {invite && (
+                {invitationLocked && (
                   <p className="mt-1 text-xs text-gray-500">
                     {lang === "de"
                       ? "Die E-Mail-Adresse stammt aus der Einladung und kann nicht geändert werden."
@@ -390,7 +474,13 @@ export default function RegisterClient({ edition }: { edition: AppEdition }) {
 
               <button
                 type="submit"
-                disabled={loading || inviteLoading}
+                disabled={
+                  loading ||
+                  inviteLoading ||
+                  (!!workspaceInviteToken &&
+                    !inviteToken &&
+                    !workspaceInviteEmail)
+                }
                 className="btn-primary w-full"
               >
                 {loading
@@ -404,7 +494,7 @@ export default function RegisterClient({ edition }: { edition: AppEdition }) {
             </form>
           )}
 
-          {!invite && (
+          {!invite && !workspaceInviteEmail && (
             <p className="mt-6 text-center text-sm text-gray-500">
               {lang === "de"
                 ? "Sie haben bereits einen Zugang? Melden Sie sich über den Login an."

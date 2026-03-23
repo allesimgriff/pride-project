@@ -16,6 +16,19 @@
 
 **Nie** echte Keys in diese Datei schreiben – nur Platzhalter. Keys nur in Netlify / `.env.local`.
 
+### Netlify: bereits gesetzte Variablen (Stand: Betreiber-Bestätigung)
+
+Die folgenden Namen sind im Netlify-Dashboard **für die Site** bereits angelegt (Werte nicht hier dokumentiert):
+
+- `NEXT_PUBLIC_APP_EDITION`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `NEXT_PUBLIC_SUPABASE_DATABASE_URL` (teilweise durch Supabase-Integration angelegt)
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `SMTP_FROM`, `SMTP_HOST`, `SMTP_PASS`, `SMTP_PORT`, `SMTP_USER`
+- `SUPABASE_ANON_KEY`, `SUPABASE_DATABASE_URL`, `SUPABASE_JWT_SECRET`, `SUPABASE_SERVICE_ROLE_KEY` (teilweise durch Supabase-Integration angelegt)
+
+**Hinweis:** `NEXT_PUBLIC_APP_URL` (öffentliche URL der jeweiligen Netlify-Site) erscheint in dieser Liste nicht – falls Links/Einladungen falsch zeigen, explizit setzen und neu deployen.
+
 ## Netlify
 
 - Site-Name: z. B. pride-project / handwerker-allesimgriff (wie im Dashboard)
