@@ -32,22 +32,40 @@ export async function GET(request: Request) {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
-  const { data, error } = await admin
+  const { data: row, error: qErr } = await admin
     .from("workspace_invites")
-    .select("email")
+    .select("email, accepted_at")
     .eq("token", token)
-    .is("accepted_at", null)
     .maybeSingle();
 
-  if (error || !data?.email) {
+  if (qErr) {
+    return NextResponse.json({ ok: false, error: "db_error" }, { status: 500 });
+  }
+
+  if (!row) {
     return NextResponse.json(
-      { ok: false, error: "not_found_or_used" },
+      { ok: false, error: "not_found" },
+      { status: 404 },
+    );
+  }
+
+  if (row.accepted_at != null) {
+    return NextResponse.json(
+      { ok: false, error: "already_used" },
+      { status: 410 },
+    );
+  }
+
+  const em = (row.email as string)?.trim();
+  if (!em) {
+    return NextResponse.json(
+      { ok: false, error: "not_found" },
       { status: 404 },
     );
   }
 
   return NextResponse.json({
     ok: true,
-    email: (data.email as string).trim(),
+    email: em,
   });
 }

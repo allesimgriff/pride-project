@@ -152,14 +152,45 @@ export default function RegisterClient({ edition }: { edition: AppEdition }) {
           return;
         }
 
-        const body = payload as { ok: boolean; email?: string };
+        const body = payload as {
+          ok: boolean;
+          email?: string;
+          error?: string;
+        };
 
         if (!body.ok || !body.email) {
-          setError(
-            lang === "de"
-              ? "Keine offene Workspace-Einladung (Link schon benutzt oder unbekannt)."
-              : "No open workspace invitation (link already used or unknown).",
-          );
+          const code = body.error ?? "";
+          if (code === "server_config") {
+            setError(
+              lang === "de"
+                ? "Registrierung mit Einladung ist auf dem Server nicht vollständig eingerichtet. In Netlify muss SUPABASE_SERVICE_ROLE_KEY gesetzt sein (Wert aus Supabase → API Keys → service_role)."
+                : "Server is not configured for invite registration. Set SUPABASE_SERVICE_ROLE_KEY in Netlify.",
+            );
+          } else if (code === "already_used") {
+            setError(
+              lang === "de"
+                ? "Diese Einladung wurde bereits verwendet. Bitte mit dieser E-Mail anmelden. Wenn noch kein Konto besteht, eine neue Einladung anfordern."
+                : "This invitation was already used. Please sign in. If you have no account yet, request a new invitation.",
+            );
+          } else if (code === "not_found" || code === "missing_token") {
+            setError(
+              lang === "de"
+                ? "Unbekannter oder ungültiger Link. Bitte den Link aus der neuesten Einladungs-E-Mail verwenden oder eine neue Einladung senden lassen."
+                : "Unknown or invalid link. Use the link from the latest invitation email or request a new invitation.",
+            );
+          } else if (code === "db_error") {
+            setError(
+              lang === "de"
+                ? "Datenbankfehler beim Laden der Einladung. Bitte später erneut versuchen oder Support informieren."
+                : "Database error while loading the invitation. Please try again later.",
+            );
+          } else {
+            setError(
+              lang === "de"
+                ? "Workspace-Einladung konnte nicht geladen werden. Bitte den Link aus der E-Mail erneut öffnen oder eine neue Einladung anfordern."
+                : "Could not load workspace invitation. Open the email link again or request a new invitation.",
+            );
+          }
           return;
         }
 
