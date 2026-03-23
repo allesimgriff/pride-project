@@ -172,12 +172,6 @@ export default function RegisterClient({ edition }: { edition: AppEdition }) {
                 ? "Die Supabase-API-URL fehlt (NEXT_PUBLIC_SUPABASE_URL muss https://…supabase.co sein). In Netlify prüfen – nicht die Datenbank-URL (postgres://…)."
                 : "Supabase API URL is missing. Set NEXT_PUBLIC_SUPABASE_URL to https://…supabase.co in Netlify.",
             );
-          } else if (code === "server_config") {
-            setError(
-              lang === "de"
-                ? "Registrierung mit Einladung ist auf dem Server nicht vollständig eingerichtet (SUPABASE_SERVICE_ROLE_KEY und NEXT_PUBLIC_SUPABASE_URL in Netlify prüfen)."
-                : "Invite registration is not fully configured on the server.",
-            );
           } else if (code === "already_used") {
             setError(
               lang === "de"

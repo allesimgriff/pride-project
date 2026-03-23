@@ -2,9 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { DEFAULT_WORKSPACE_FIRST_CATEGORY } from "@/lib/projectCategoryDefaults";
-import { randomUUID } from "crypto";
 import { isAppAdmin, isWorkspaceAdmin } from "@/lib/workspacePermissions";
-import { resolveMailAppBaseUrl, sendWorkspaceInviteEmail } from "@/lib/mail";
 import type { WorkspaceMemberRole } from "@/types/database";
 
 export async function listMyWorkspacesAction(): Promise<{
@@ -192,90 +190,6 @@ export async function getWorkspaceDetailAction(workspaceId: string): Promise<{
     canManage,
     error: null,
   };
-}
-
-export async function inviteToWorkspaceAction(
-  workspaceId: string,
-  email: string,
-  inviteRole: WorkspaceMemberRole = "member"
-): Promise<{
-  token: string | null;
-  error: string | null;
-  /** true, wenn sendWorkspaceInviteEmail gelaufen ist */
-  mailSent: boolean;
-  /** Kurzgrund, wenn mailSent false aber token gesetzt (Einladung in DB) */
-  mailError: string | null;
-  mailMessageId?: string;
-  mailProvider?: "resend" | "smtp";
-}> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { token: null, error: "Nicht angemeldet.", mailSent: false, mailError: null };
-
-  if (!(await isWorkspaceAdmin(supabase, user.id, workspaceId)) && !(await isAppAdmin(supabase, user.id))) {
-    return { token: null, error: "Nur Workspace-Admins dürfen einladen.", mailSent: false, mailError: null };
-  }
-
-  const normalized = email.trim().toLowerCase();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) {
-    return { token: null, error: "Ungültige E-Mail.", mailSent: false, mailError: null };
-  }
-
-  const token = randomUUID();
-
-  const { error } = await supabase.from("workspace_invites").insert({
-    workspace_id: workspaceId,
-    email: normalized,
-    token,
-    role: inviteRole,
-    invited_by: user.id,
-  });
-
-  if (error) {
-    if (error.code === "23505") {
-      return {
-        token: null,
-        error: "Für diese E-Mail gibt es bereits eine offene Einladung.",
-        mailSent: false,
-        mailError: null,
-      };
-    }
-    return { token: null, error: error.message, mailSent: false, mailError: null };
-  }
-
-  const { data: wsRow } = await supabase
-    .from("workspaces")
-    .select("name")
-    .eq("id", workspaceId)
-    .single();
-  const workspaceName = wsRow?.name?.trim() ?? "";
-
-  try {
-    const mail = await sendWorkspaceInviteEmail({
-      to: normalized,
-      token,
-      workspaceName,
-      appBaseUrl: await resolveMailAppBaseUrl(),
-    });
-    return {
-      token,
-      error: null,
-      mailSent: true,
-      mailError: null,
-      mailMessageId: mail.messageId,
-      mailProvider: mail.provider,
-    };
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : "Unbekannter Fehler beim Mailversand.";
-    return {
-      token,
-      error: null,
-      mailSent: false,
-      mailError: msg,
-    };
-  }
 }
 
 export async function revokeWorkspaceInviteAction(inviteId: string): Promise<{ error: string | null }> {
