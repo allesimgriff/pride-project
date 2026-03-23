@@ -81,8 +81,17 @@ export const translations = {
       resetFilters: "Filter zurücksetzen",
       noProjects: "Keine Projekte gefunden",
       noProjectsHint: "Passen Sie die Filter an oder legen Sie ein neues Projekt an.",
+      noProjectsAdminEmpty:
+        "Es sind noch keine Projekte in der Datenbank. Legen Sie das erste Projekt an.",
+      noProjectsNoWorkspace:
+        "Sie sind keinem Workspace zugewiesen. Ohne Workspace-Mitgliedschaft sind für Sie keine Projekte sichtbar (außer Sie sind App-Administrator).",
+      noProjectsMemberEmpty:
+        "In den Workspaces, in denen Sie Mitglied sind, gibt es noch keine Projekte – oder es wurden keine passenden Einträge gefunden.",
       scopeHint:
         "Sie sehen alle Projekte der Workspaces, in denen Sie Mitglied sind. App-Administratoren sehen alle Projekte.",
+      scopeHintAdmin: "Als App-Administrator sehen Sie alle Projekte.",
+      scopeHintNoWorkspace:
+        "Sie sind in keinem Workspace als Mitglied eingetragen. Bitte einen Administrator bitten, Sie einem Workspace hinzuzufügen, oder einer Einladung folgen.",
       open: "Öffnen",
       image: "Bild",
       action: "Aktion",
@@ -478,8 +487,17 @@ export const translations = {
       resetFilters: "Reset filters",
       noProjects: "No projects found",
       noProjectsHint: "Adjust filters or create a new project.",
+      noProjectsAdminEmpty:
+        "There are no projects yet. Create the first one.",
+      noProjectsNoWorkspace:
+        "You are not assigned to any workspace. Without workspace membership you cannot see projects (unless you are an app administrator).",
+      noProjectsMemberEmpty:
+        "There are no projects in your workspaces yet—or nothing matched your filters.",
       scopeHint:
         "You see all projects in workspaces you belong to. App administrators see all projects.",
+      scopeHintAdmin: "As an app administrator you see all projects.",
+      scopeHintNoWorkspace:
+        "You are not a member of any workspace. Ask an administrator to add you, or accept a workspace invitation.",
       open: "Open",
       image: "Image",
       action: "Action",

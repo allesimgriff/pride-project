@@ -34,7 +34,8 @@ export default async function ProjectsPage() {
 
   const isAdmin = profile?.role === "admin";
   const workspaceMembershipCount = workspaceRes.count;
-  const canCreateProject = isAdmin || (workspaceMembershipCount ?? 0) > 0;
+  const inAnyWorkspace = (workspaceMembershipCount ?? 0) > 0;
+  const canCreateProject = isAdmin || inAnyWorkspace;
   const projects = projectsRes.data;
   const categoryRows = categoryRes.data ?? [];
   const categoriesByWorkspace: Record<string, { name: string; prefix: string }[]> = {};
@@ -78,8 +79,16 @@ export default async function ProjectsPage() {
   return (
     <div className="space-y-6">
       <ProjectsPageHeader canCreateProject={canCreateProject} />
-      {Boolean(profile) && <ProjectsScopeHint />}
-      <ProjectsList projects={projectsWithThumbs} categoriesByWorkspace={categoriesByWorkspace} />
+      {Boolean(profile) && (
+        <ProjectsScopeHint isAdmin={Boolean(isAdmin)} inAnyWorkspace={inAnyWorkspace} />
+      )}
+      <ProjectsList
+        projects={projectsWithThumbs}
+        categoriesByWorkspace={categoriesByWorkspace}
+        isAdmin={Boolean(isAdmin)}
+        inAnyWorkspace={inAnyWorkspace}
+        canCreateProject={canCreateProject}
+      />
     </div>
   );
 }

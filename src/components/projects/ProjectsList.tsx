@@ -26,6 +26,9 @@ interface ProjectRow {
 interface ProjectsListProps {
   projects: ProjectRow[];
   categoriesByWorkspace?: Record<string, { name: string; prefix: string }[]>;
+  isAdmin?: boolean;
+  inAnyWorkspace?: boolean;
+  canCreateProject?: boolean;
 }
 
 function StatusBadge({ status, label }: { status: ProjectStatus; label: string }) {
@@ -129,20 +132,41 @@ function ProjectCard({
   );
 }
 
-export function ProjectsList({ projects, categoriesByWorkspace }: ProjectsListProps) {
+export function ProjectsList({
+  projects,
+  categoriesByWorkspace,
+  isAdmin = false,
+  inAnyWorkspace = false,
+  canCreateProject = false,
+}: ProjectsListProps) {
   const { lang } = useApp();
   const t = getT(lang);
 
   if (projects.length === 0) {
+    let title = t("projects.noProjects");
+    let hint: string | null = t("projects.noProjectsHint");
+    if (isAdmin) {
+      title = t("projects.noProjectsAdminEmpty");
+      hint = null;
+    } else if (!inAnyWorkspace) {
+      title = t("projects.noProjectsNoWorkspace");
+      hint = null;
+    } else {
+      title = t("projects.noProjectsMemberEmpty");
+    }
     return (
       <div className="card flex flex-col items-center justify-center py-16">
         <FileText className="h-12 w-12 text-gray-300" />
-        <p className="mt-4 text-sm font-medium text-gray-500">
-          {t("projects.noProjects")}
-        </p>
-        <p className="mt-1 text-sm text-gray-400">
-          {t("projects.noProjectsHint")}
-        </p>
+        <p className="mt-4 text-center text-sm font-medium text-gray-700">{title}</p>
+        {hint ? <p className="mt-1 text-center text-sm text-gray-400">{hint}</p> : null}
+        {canCreateProject && isAdmin ? (
+          <Link
+            href="/projects/new"
+            className="btn-primary mt-6 inline-flex items-center justify-center"
+          >
+            {t("projects.newProject")}
+          </Link>
+        ) : null}
       </div>
     );
   }
