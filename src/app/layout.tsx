@@ -6,7 +6,7 @@ const isHandwerkerBuild =
   process.env.NEXT_PUBLIC_APP_EDITION?.trim().toLowerCase() === "hw";
 
 export const metadata: Metadata = {
-  title: isHandwerkerBuild ? "Handwerker" : "PRIDE – Projektname",
+  title: isHandwerkerBuild ? "Allesimgriff" : "PRIDE – Projektname",
   description: "Interne Plattform für die Produktentwicklung von Polstermöbeln",
   icons: {
     icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],

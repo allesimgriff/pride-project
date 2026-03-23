@@ -1,4 +1,6 @@
+import { headers } from "next/headers";
 import nodemailer from "nodemailer";
+import { getPublicAppBaseUrlFromEnv } from "@/lib/appPublicUrl";
 
 const smtpHost = process.env.SMTP_HOST?.trim();
 const smtpPort = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 587;
@@ -21,46 +23,37 @@ const appUrl =
   process.env.NEXT_PUBLIC_SITE_URL ||
   "http://localhost:3001";
 
+/** NEXT_PUBLIC_APP_URL oder Request-Host – für Links in Server Actions (Einladungen). */
+export async function resolveMailAppBaseUrl(): Promise<string | undefined> {
+  const fromEnv = getPublicAppBaseUrlFromEnv();
+  if (fromEnv) return fromEnv;
+  try {
+    const h = await headers();
+    const host =
+      h.get("x-forwarded-host")?.split(",")[0]?.trim() ?? h.get("host") ?? "";
+    if (!host) return undefined;
+    const proto =
+      h.get("x-forwarded-proto") ?? (host.includes("localhost") ? "http" : "https");
+    return `${proto}://${host}`;
+  } catch {
+    return undefined;
+  }
+}
+
 export type SendInviteEmailResult = {
   provider: "resend" | "smtp";
   /** Resend: `data.id`; SMTP: Message-ID – für Logs / Resend-Dashboard. */
   messageId?: string;
 };
 
-export async function sendInviteEmail(params: {
+async function sendTransactionalEmail(opts: {
   to: string;
-  token: string;
-  fullName: string | null;
-  /** Explizite Basis-URL (z. B. aus Server-Action). Sollte mit NEXT_PUBLIC_APP_URL der jeweiligen Site übereinstimmen. */
-  appBaseUrl?: string;
+  subject: string;
+  text: string;
+  html: string;
 }): Promise<SendInviteEmailResult> {
-  const { to, token, fullName } = params;
-  const base = (params.appBaseUrl ?? appUrl).replace(/\/$/, "");
-  const registerUrl = `${base}/register?token=${encodeURIComponent(token)}`;
+  const { to, subject, text, html } = opts;
 
-  const subject = "Ihre Einladung zu PRIDE";
-  const text = [
-    fullName ? `Hallo ${fullName},` : "Hallo,",
-    "",
-    "Sie wurden eingeladen, die PRIDE-Projektplattform zu nutzen.",
-    "Bitte klicken Sie auf den folgenden Link, um Ihren Zugang anzulegen:",
-    "",
-    registerUrl,
-    "",
-    "Wenn Sie diese E-Mail nicht erwarten, können Sie sie ignorieren.",
-  ].join("\n");
-
-  const html = `
-    <p>${fullName ? `Hallo ${fullName},` : "Hallo,"}</p>
-    <p>Sie wurden eingeladen, die <strong>PRIDE</strong>-Projektplattform zu nutzen.</p>
-    <p>
-      Bitte klicken Sie auf den folgenden Link, um Ihren Zugang anzulegen:<br />
-      <a href="${registerUrl}">${registerUrl}</a>
-    </p>
-    <p>Wenn Sie diese E-Mail nicht erwarten, können Sie sie ignorieren.</p>
-  `;
-
-  // Prefer a provider that works reliably in serverless environments.
   const useResend =
     emailProvider === "resend" || (!!resendApiKey && emailProvider !== "smtp");
 
@@ -109,7 +102,6 @@ export async function sendInviteEmail(params: {
     return { provider: "resend", messageId };
   }
 
-  // Fallback to SMTP (may be blocked by hosting).
   if (!smtpHost || !smtpUser || !smtpPass || !smtpFrom) {
     throw new Error(
       "[mail] E-Mail-Versand nicht konfiguriert. Entweder Resend: EMAIL_PROVIDER=resend, RESEND_API_KEY, EMAIL_FROM — oder SMTP: SMTP_HOST, SMTP_USER, SMTP_PASS, SMTP_FROM (siehe .env.example). Unter Netlify: Environment variables setzen und neu deployen.",
@@ -138,6 +130,85 @@ export async function sendInviteEmail(params: {
   // eslint-disable-next-line no-console
   console.info(`[mail] smtp sent to=${to} messageId=${smtpId ?? "?"}`);
   return { provider: "smtp", messageId: smtpId };
+}
+
+export async function sendInviteEmail(params: {
+  to: string;
+  token: string;
+  fullName: string | null;
+  /** Explizite Basis-URL (z. B. aus Server-Action). Sollte mit NEXT_PUBLIC_APP_URL der jeweiligen Site übereinstimmen. */
+  appBaseUrl?: string;
+}): Promise<SendInviteEmailResult> {
+  const { to, token, fullName } = params;
+  const base = (params.appBaseUrl ?? appUrl).replace(/\/$/, "");
+  const registerUrl = `${base}/register?token=${encodeURIComponent(token)}`;
+
+  const subject = "Ihre Einladung zu PRIDE";
+  const text = [
+    fullName ? `Hallo ${fullName},` : "Hallo,",
+    "",
+    "Sie wurden eingeladen, die PRIDE-Projektplattform zu nutzen.",
+    "Bitte klicken Sie auf den folgenden Link, um Ihren Zugang anzulegen:",
+    "",
+    registerUrl,
+    "",
+    "Wenn Sie diese E-Mail nicht erwarten, können Sie sie ignorieren.",
+  ].join("\n");
+
+  const html = `
+    <p>${fullName ? `Hallo ${fullName},` : "Hallo,"}</p>
+    <p>Sie wurden eingeladen, die <strong>PRIDE</strong>-Projektplattform zu nutzen.</p>
+    <p>
+      Bitte klicken Sie auf den folgenden Link, um Ihren Zugang anzulegen:<br />
+      <a href="${registerUrl}">${registerUrl}</a>
+    </p>
+    <p>Wenn Sie diese E-Mail nicht erwarten, können Sie sie ignorieren.</p>
+  `;
+
+  return sendTransactionalEmail({ to, subject, text, html });
+}
+
+/** Einladung in einen Workspace – Link geht auf /workspaces/join (nicht /register). */
+export async function sendWorkspaceInviteEmail(params: {
+  to: string;
+  token: string;
+  workspaceName: string;
+  appBaseUrl?: string;
+}): Promise<SendInviteEmailResult> {
+  const { to, token, workspaceName } = params;
+  const base = (params.appBaseUrl ?? appUrl).replace(/\/$/, "");
+  const joinUrl = `${base}/workspaces/join?token=${encodeURIComponent(token)}`;
+  const safeName = workspaceName.trim() || "Workspace";
+  const esc = (s: string) =>
+    s
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+
+  const subject = `Einladung zu Workspace „${safeName}“ (PRIDE)`;
+  const text = [
+    "Hallo,",
+    "",
+    `Sie wurden eingeladen, dem Workspace „${safeName}“ in der PRIDE-Projektplattform beizutreten.`,
+    "Bitte klicken Sie auf den folgenden Link:",
+    "",
+    joinUrl,
+    "",
+    "Wenn Sie diese E-Mail nicht erwarten, können Sie sie ignorieren.",
+  ].join("\n");
+
+  const html = `
+    <p>Hallo,</p>
+    <p>Sie wurden eingeladen, dem Workspace <strong>${esc(safeName)}</strong> in der <strong>PRIDE</strong>-Projektplattform beizutreten.</p>
+    <p>
+      Bitte klicken Sie auf den folgenden Link:<br />
+      <a href="${joinUrl}">${joinUrl}</a>
+    </p>
+    <p>Wenn Sie diese E-Mail nicht erwarten, können Sie sie ignorieren.</p>
+  `;
+
+  return sendTransactionalEmail({ to, subject, text, html });
 }
 
 export async function sendRoleChangedEmail(params: {

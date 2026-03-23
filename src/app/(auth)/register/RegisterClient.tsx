@@ -7,6 +7,7 @@ import { parseInviteTokenFromQuery } from "@/lib/inviteToken";
 import { createClient as createSupabaseBrowser } from "@/lib/supabase/client";
 import { getT } from "@/lib/i18n";
 import type { Lang } from "@/lib/i18n";
+import type { AppEdition } from "@/lib/appEdition";
 
 const LANG_KEY = "pride-lang";
 const LAST_EMAIL_KEY = "pride-last-email";
@@ -17,7 +18,7 @@ type InviteInfo = {
   role: string;
 };
 
-export default function RegisterClient() {
+export default function RegisterClient({ edition }: { edition: AppEdition }) {
   const searchParams = useSearchParams();
   const inviteToken = parseInviteTokenFromQuery(searchParams.get("token"));
 
@@ -117,6 +118,8 @@ export default function RegisterClient() {
   }, [inviteToken]);
 
   const t = getT(lang);
+  const brandName =
+    edition === "handwerker" ? t("nav.brandHandwerker") : t("nav.brandPride");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -202,9 +205,7 @@ export default function RegisterClient() {
               </h1>
               <p className="mt-1 text-sm text-gray-500">
                 {invite
-                  ? lang === "de"
-                    ? "Sie wurden eingeladen, PRIDE zu nutzen. Bitte vervollständigen Sie Ihre Daten."
-                    : "You have been invited to use PRIDE. Please complete your details."
+                  ? t("register.inviteIntro").replace("{{brand}}", brandName)
                   : lang === "de"
                     ? "Geben Sie Ihre Daten ein, um einen Zugang zum Projektmanagement zu erhalten."
                     : "Enter your details to get access to the project management."}

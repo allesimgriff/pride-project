@@ -32,7 +32,7 @@ export function Sidebar() {
         )}
         {sidebarCollapsed && (
           <span className="text-sm font-semibold text-primary-600">
-            {edition === "handwerker" ? "H" : "P"}
+            {edition === "handwerker" ? "A" : "P"}
           </span>
         )}
       </div>

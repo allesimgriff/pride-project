@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { DEFAULT_WORKSPACE_FIRST_CATEGORY } from "@/lib/projectCategoryDefaults";
 import { randomUUID } from "crypto";
 import { isAppAdmin, isWorkspaceAdmin } from "@/lib/workspacePermissions";
+import { resolveMailAppBaseUrl, sendWorkspaceInviteEmail } from "@/lib/mail";
 import type { WorkspaceMemberRole } from "@/types/database";
 
 export async function listMyWorkspacesAction(): Promise<{
@@ -197,7 +198,12 @@ export async function inviteToWorkspaceAction(
   workspaceId: string,
   email: string,
   inviteRole: WorkspaceMemberRole = "member"
-): Promise<{ token: string | null; error: string | null }> {
+): Promise<{
+  token: string | null;
+  error: string | null;
+  mailMessageId?: string;
+  mailProvider?: "resend" | "smtp";
+}> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -230,7 +236,33 @@ export async function inviteToWorkspaceAction(
     return { token: null, error: error.message };
   }
 
-  return { token, error: null };
+  const { data: wsRow } = await supabase
+    .from("workspaces")
+    .select("name")
+    .eq("id", workspaceId)
+    .single();
+  const workspaceName = wsRow?.name?.trim() ?? "";
+
+  try {
+    const mail = await sendWorkspaceInviteEmail({
+      to: normalized,
+      token,
+      workspaceName,
+      appBaseUrl: await resolveMailAppBaseUrl(),
+    });
+    return {
+      token,
+      error: null,
+      mailMessageId: mail.messageId,
+      mailProvider: mail.provider,
+    };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Unbekannter Fehler beim Mailversand.";
+    return {
+      token,
+      error: `Einladung angelegt, aber E-Mail konnte nicht gesendet werden: ${msg}`,
+    };
+  }
 }
 
 export async function revokeWorkspaceInviteAction(inviteId: string): Promise<{ error: string | null }> {

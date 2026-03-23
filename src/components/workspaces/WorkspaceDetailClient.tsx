@@ -55,11 +55,12 @@ export function WorkspaceDetailClient({
     setBusy(false);
     if (error) {
       alert(error);
-      return;
     }
-    setLastToken(token);
-    setInviteEmail("");
-    router.refresh();
+    if (token) {
+      setLastToken(token);
+      setInviteEmail("");
+      router.refresh();
+    }
   }
 
   function inviteUrl(token: string) {

@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus } from "lucide-react";
+import Link from "next/link";
 import type { Invite, Profile } from "@/types/database";
 import type { StaffEntry } from "@/app/actions/invites";
-import { listStaffAction, createInviteAction, revokeInviteAction } from "@/app/actions/invites";
+import { listStaffAction, revokeInviteAction } from "@/app/actions/invites";
 import { transferAdminAction, demoteAdminAction } from "@/app/actions/staff";
 import { useApp } from "@/components/providers/AppProvider";
 import { getT } from "@/lib/i18n";
@@ -29,30 +29,6 @@ type StaffRow =
       token: string;
       created_at: string;
     };
-
-function buildInviteLink(token: string) {
-  return `${window.location.origin}/register?token=${encodeURIComponent(token)}`;
-}
-
-function openInviteMailClient(params: { to: string; link: string; fullName: string | null }) {
-  const subject = "Einladung zu PRIDE";
-  const greeting = params.fullName?.trim() ? `Hallo ${params.fullName.trim()},` : "Hallo,";
-  const body = [
-    greeting,
-    "",
-    "ich lade dich zu PRIDE ein.",
-    "Bitte nutze diesen Link zur Registrierung:",
-    "",
-    params.link,
-    "",
-    "Viele Grüße",
-  ].join("\n");
-
-  const mailto = `mailto:${encodeURIComponent(params.to)}?subject=${encodeURIComponent(
-    subject,
-  )}&body=${encodeURIComponent(body)}`;
-  window.location.href = mailto;
-}
 
 function mapEntriesToRows(entries: StaffEntry[]): StaffRow[] {
   const rows: StaffRow[] = [];
@@ -99,14 +75,6 @@ export function StaffManager() {
   const [demotingId, setDemotingId] = useState<string | null>(null);
   const [revokingId, setRevokingId] = useState<string | null>(null);
   const [loadNonce, setLoadNonce] = useState(0);
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteName, setInviteName] = useState("");
-  const [creating, setCreating] = useState(false);
-  const [lastInviteLink, setLastInviteLink] = useState<string | null>(null);
-  const [lastInviteTo, setLastInviteTo] = useState<string | null>(null);
-  const [lastInviteName, setLastInviteName] = useState<string | null>(null);
-  /** Ob die Einladungs-E-Mail automatisch ging – steuert die Überschrift der Link-Box. */
-  const [lastInviteMailOk, setLastInviteMailOk] = useState<boolean | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -137,55 +105,6 @@ export function StaffManager() {
       cancelled = true;
     };
   }, [loadNonce]);
-
-  async function handleInvite() {
-    if (!inviteEmail.trim()) {
-      alert(t("staff.enterEmail"));
-      return;
-    }
-    setCreating(true);
-    let res: {
-      token?: string;
-      error: string | null;
-      mailMessageId?: string;
-      mailProvider?: "resend" | "smtp";
-    };
-    try {
-      const out = await createInviteAction(inviteEmail.trim(), inviteName.trim() || null);
-      res = out ?? { token: undefined, error: "Keine Antwort vom Server." };
-    } catch (err) {
-      res = {
-        token: undefined,
-        error: err instanceof Error ? err.message : String(err),
-      };
-    }
-    setCreating(false);
-
-    if (!res?.token) {
-      alert(res?.error ?? "Einladung konnte nicht erstellt werden.");
-      return;
-    }
-
-    const link = buildInviteLink(res.token);
-    setLastInviteLink(link);
-    setLastInviteTo(inviteEmail.trim());
-    setLastInviteName(inviteName.trim() || null);
-    setLastInviteMailOk(!res.error);
-
-    if (res.error) {
-      alert(res.error);
-    } else {
-      let successMsg = t("staff.inviteCreated");
-      if (res.mailMessageId) {
-        successMsg += `\n\n${t("staff.inviteMailRef").replace("{{id}}", res.mailMessageId)}`;
-      }
-      alert(successMsg);
-    }
-    setLoadNonce((n) => n + 1);
-    setInviteEmail("");
-    setInviteName("");
-    router.refresh();
-  }
 
   async function handleTransferAdmin(targetId: string) {
     if (!window.confirm(t("staff.transferAdminConfirm"))) return;
@@ -242,85 +161,27 @@ export function StaffManager() {
 
   return (
     <div className="card p-6 space-y-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h2 className="text-lg font-semibold text-gray-900">
-            {t("staff.title")}
-          </h2>
-          <p className="mt-1 text-sm text-gray-500">
-            {t("staff.subtitle")}
-          </p>
-        </div>
-        <div className="flex flex-col gap-2 md:flex-row md:items-end">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              {t("staff.inviteEmail")}
-            </label>
-            <input
-              type="email"
-              value={inviteEmail}
-              onChange={(e) => setInviteEmail(e.target.value)}
-              className="input-base mt-1 w-64"
-              placeholder="name@beispiel.de"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              {t("staff.inviteName")}
-            </label>
-            <input
-              type="text"
-              value={inviteName}
-              onChange={(e) => setInviteName(e.target.value)}
-              className="input-base mt-1 w-64"
-              placeholder={t("staff.inviteNamePlaceholder")}
-            />
-          </div>
-          <button
-            type="button"
-            onClick={handleInvite}
-            disabled={creating}
-            className="btn-primary mt-2 inline-flex items-center gap-2 md:mt-0"
-          >
-            <Plus className="h-4 w-4" />
-            {creating ? t("staff.inviting") : t("staff.inviteButton")}
-          </button>
-        </div>
+      <div>
+        <h2 className="text-lg font-semibold text-gray-900">
+          {t("staff.title")}
+        </h2>
+        <p className="mt-1 text-sm text-gray-500">{t("staff.subtitle")}</p>
       </div>
 
-      {lastInviteLink ? (
-        <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
-          <div className="font-medium text-gray-900">
-            {lastInviteMailOk
-              ? t("staff.inviteLinkBoxTitleSent")
-              : t("staff.inviteLinkFallbackTitle")}
-          </div>
-          <div className="mt-1 break-all">{lastInviteLink}</div>
-          <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-            <button
-              type="button"
-              className="btn-secondary"
-              onClick={() => navigator.clipboard.writeText(lastInviteLink)}
-            >
-              Link kopieren
-            </button>
-            <button
-              type="button"
-              className="btn-secondary"
-              onClick={() =>
-                openInviteMailClient({
-                  to: lastInviteTo ?? "",
-                  link: lastInviteLink,
-                  fullName: lastInviteName ?? null,
-                })
-              }
-              disabled={!lastInviteTo}
-            >
-              E‑Mail‑Programm öffnen
-            </button>
-          </div>
-        </div>
-      ) : null}
+      <div className="rounded-lg border border-primary-100 bg-primary-50/60 p-4 text-sm text-gray-800">
+        <p className="font-medium text-gray-900">
+          {t("staff.inviteOnlyViaWorkspacesTitle")}
+        </p>
+        <p className="mt-2 text-gray-700">
+          {t("staff.inviteOnlyViaWorkspacesBody")}
+        </p>
+        <Link
+          href="/workspaces"
+          className="mt-3 inline-block text-sm font-medium text-primary-700 underline hover:text-primary-900"
+        >
+          {t("staff.inviteGoToWorkspaces")}
+        </Link>
+      </div>
 
       {loading ? (
         <p className="text-sm text-gray-500">{t("staff.loading")}</p>

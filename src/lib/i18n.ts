@@ -15,7 +15,7 @@ export const translations = {
     },
     nav: {
       brandPride: "PRIDE",
-      brandHandwerker: "Handwerker",
+      brandHandwerker: "Allesimgriff",
       dashboard: "Dashboard",
       projects: "Projekte",
       settings: "Einstellungen",
@@ -340,6 +340,7 @@ export const translations = {
     login: {
       title: "PRIDE",
       subtitle: "Projektname",
+      subtitleHandwerker: "Alle Projekte im Griff",
       email: "E-Mail",
       emailPlaceholder: "name@firma.de",
       password: "Passwort",
@@ -348,6 +349,10 @@ export const translations = {
       hint: "Nur für berechtigte Mitarbeiter. Bei Problemen wenden Sie sich an den Admin.",
       errorAuthCallback:
         "Der Link aus der E-Mail war ungültig oder abgelaufen. Bitte mit E-Mail und Passwort anmelden oder den Bestätigungslink erneut anfordern.",
+    },
+    register: {
+      inviteIntro:
+        "Sie wurden eingeladen, {{brand}} zu nutzen. Bitte vervollständigen Sie Ihre Daten.",
     },
     categoriesPage: {
       title: "Kategorien",
@@ -363,7 +368,8 @@ export const translations = {
     },
     staffPage: {
       title: "Mitarbeiter",
-      subtitle: "Übersicht der Zugänge und Einladungen. Nur Admins können Mitarbeiter einladen.",
+      subtitle:
+        "Übersicht der Zugänge und offener Einladungen. Neue Personen laden Sie in einem Workspace ein.",
     },
     profile: {
       title: "Profil",
@@ -379,6 +385,10 @@ export const translations = {
     staff: {
       title: "Mitarbeiter",
       subtitle: "Bestehende Zugänge und offene Einladungen verwalten.",
+      inviteOnlyViaWorkspacesTitle: "Einladung nur über Workspaces",
+      inviteOnlyViaWorkspacesBody:
+        "Neue Personen laden Sie in einem Workspace ein – dort werden sie den Projekten zugeordnet. App-weite Einladungen ohne Workspace gibt es hier nicht.",
+      inviteGoToWorkspaces: "Zu den Workspaces",
       inviteEmail: "E-Mail einladen",
       inviteName: "Name (optional)",
       inviteNamePlaceholder: "Name des Mitarbeiters",
@@ -422,7 +432,7 @@ export const translations = {
     },
     nav: {
       brandPride: "PRIDE",
-      brandHandwerker: "Handwerker",
+      brandHandwerker: "Allesimgriff",
       dashboard: "Dashboard",
       projects: "Projects",
       settings: "Settings",
@@ -744,6 +754,7 @@ export const translations = {
     login: {
       title: "PRIDE",
       subtitle: "Project name",
+      subtitleHandwerker: "All projects under control",
       email: "Email",
       emailPlaceholder: "name@company.com",
       password: "Password",
@@ -752,6 +763,10 @@ export const translations = {
       hint: "For authorised staff only. Contact your admin if you have problems.",
       errorAuthCallback:
         "The email link was invalid or expired. Sign in again or request a new confirmation email (password reset / sign up again).",
+    },
+    register: {
+      inviteIntro:
+        "You have been invited to use {{brand}}. Please complete your details.",
     },
     categoriesPage: {
       title: "Categories",
@@ -767,7 +782,8 @@ export const translations = {
     },
     staffPage: {
       title: "Staff",
-      subtitle: "Overview of accounts and invitations. Only admins can invite staff.",
+      subtitle:
+        "Overview of accounts and open invitations. Invite new people from a workspace.",
     },
     profile: {
       title: "Profile",
@@ -783,6 +799,10 @@ export const translations = {
     staff: {
       title: "Staff",
       subtitle: "Manage existing accounts and open invitations.",
+      inviteOnlyViaWorkspacesTitle: "Invitations only via workspaces",
+      inviteOnlyViaWorkspacesBody:
+        "Invite new people from a workspace—they are assigned to projects there. There is no app-wide invite without a workspace here.",
+      inviteGoToWorkspaces: "Go to workspaces",
       inviteEmail: "Invite email",
       inviteName: "Name (optional)",
       inviteNamePlaceholder: "Staff member's name",

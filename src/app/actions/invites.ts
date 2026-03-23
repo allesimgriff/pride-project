@@ -1,26 +1,8 @@
 "use server";
 
-import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import type { Invite, Profile } from "@/types/database";
-import { getPublicAppBaseUrlFromEnv } from "@/lib/appPublicUrl";
-import { sendInviteEmail } from "@/lib/mail";
-
-async function requestOriginForMail(): Promise<string | undefined> {
-  const h = await headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host");
-  if (!host) return undefined;
-  const proto =
-    h.get("x-forwarded-proto") ?? (host.includes("localhost") ? "http" : "https");
-  return `${proto}://${host}`;
-}
-
-/** Basis-URL für Einladungslinks: zuerst NEXT_PUBLIC_APP_URL (je Netlify-Site), sonst Request-Host. */
-async function appBaseUrlForInviteMail(): Promise<string | undefined> {
-  const fromEnv = getPublicAppBaseUrlFromEnv();
-  if (fromEnv) return fromEnv;
-  return requestOriginForMail();
-}
+import { sendInviteEmail, resolveMailAppBaseUrl } from "@/lib/mail";
 
 async function requireAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
   const {
@@ -152,7 +134,7 @@ export async function createInviteAction(
       to: normalizedEmail,
       token: data.token as string,
       fullName: cleanFullName,
-      appBaseUrl: await appBaseUrlForInviteMail(),
+      appBaseUrl: await resolveMailAppBaseUrl(),
     });
     return {
       token: data.token,
