@@ -282,10 +282,29 @@ export default function RegisterClient({ edition }: { edition: AppEdition }) {
         });
         const regPayload = (await regRes.json().catch(() => ({}))) as {
           error?: string;
+          code?: string;
           workspaceId?: string;
         };
         if (!regRes.ok) {
-          errMsg = regPayload.error || "Registrierung fehlgeschlagen.";
+          const c = regPayload.code ?? "";
+          if (c === "missing_service_role") {
+            errMsg =
+              lang === "de"
+                ? "Auf dem Server fehlt SUPABASE_SERVICE_ROLE_KEY (geheimer service_role-Key aus Supabase → API Keys). In Netlify unter Environment variables setzen, für alle Scopes / gleicher Wert für alle Deploys, dann neu deployen."
+                : "SUPABASE_SERVICE_ROLE_KEY is missing on the server. Add it in Netlify (Supabase → API Keys → service_role secret), then redeploy.";
+          } else if (c === "missing_supabase_url") {
+            errMsg =
+              lang === "de"
+                ? "Die Supabase-API-URL fehlt (NEXT_PUBLIC_SUPABASE_URL muss https://…supabase.co sein). In Netlify prüfen."
+                : "Supabase API URL is missing. Set NEXT_PUBLIC_SUPABASE_URL in Netlify.";
+          } else if (c === "missing_anon_key") {
+            errMsg =
+              lang === "de"
+                ? "Der öffentliche Supabase-Key fehlt (NEXT_PUBLIC_SUPABASE_ANON_KEY bzw. PUBLISHABLE in Netlify)."
+                : "Public Supabase key is missing in Netlify (NEXT_PUBLIC_SUPABASE_ANON_KEY or publishable).";
+          } else {
+            errMsg = regPayload.error || "Registrierung fehlgeschlagen.";
+          }
         } else {
           invitedWorkspaceId = regPayload.workspaceId ?? null;
           needConfirmEmail = false;
