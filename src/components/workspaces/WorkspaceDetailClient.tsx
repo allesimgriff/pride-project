@@ -5,14 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Pencil, Plus } from "lucide-react";
 import type { WorkspaceMemberRole } from "@/types/database";
-import {
-  revokeWorkspaceInviteAction,
-  removeWorkspaceMemberAction,
-  leaveWorkspaceAction,
-  updateWorkspaceNameAction,
-  deleteWorkspaceAction,
-  setWorkspaceMemberRoleAction,
-} from "@/app/actions/workspaces";
 import { useApp } from "@/components/providers/AppProvider";
 import { getT } from "@/lib/i18n";
 
@@ -113,26 +105,45 @@ export function WorkspaceDetailClient({
   async function onSaveWorkspaceName() {
     if (nameBusy) return;
     setNameBusy(true);
-    const { error } = await updateWorkspaceNameAction(workspaceId, nameDraft);
-    setNameBusy(false);
-    if (error) {
-      alert(error);
-      return;
+    try {
+      const res = await fetch(`/api/workspaces/${encodeURIComponent(workspaceId)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: nameDraft }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        alert(data.error ?? "Fehler.");
+        return;
+      }
+      setEditingName(false);
+      router.refresh();
+    } finally {
+      setNameBusy(false);
     }
-    setEditingName(false);
-    router.refresh();
   }
 
   async function onMemberRoleChange(userId: string, newRole: WorkspaceMemberRole) {
     if (roleSavingUserId) return;
     setRoleSavingUserId(userId);
-    const { error } = await setWorkspaceMemberRoleAction(workspaceId, userId, newRole);
-    setRoleSavingUserId(null);
-    if (error) {
-      alert(error);
-      return;
+    try {
+      const res = await fetch(
+        `/api/workspaces/${encodeURIComponent(workspaceId)}/members/${encodeURIComponent(userId)}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ role: newRole }),
+        },
+      );
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        alert(data.error ?? "Fehler.");
+        return;
+      }
+      router.refresh();
+    } finally {
+      setRoleSavingUserId(null);
     }
-    router.refresh();
   }
 
   async function copyInviteLink(token: string) {
@@ -313,10 +324,14 @@ export function WorkspaceDetailClient({
                 <button
                   type="button"
                   className="text-xs text-red-600 hover:text-red-800"
-                  onClick={async () => {
+                    onClick={async () => {
                     if (!confirm(t("workspaces.removeMemberConfirm"))) return;
-                    const { error } = await removeWorkspaceMemberAction(workspaceId, m.user_id);
-                    if (error) alert(error);
+                    const res = await fetch(
+                      `/api/workspaces/${encodeURIComponent(workspaceId)}/members/${encodeURIComponent(m.user_id)}`,
+                      { method: "DELETE" },
+                    );
+                    const data = (await res.json().catch(() => ({}))) as { error?: string };
+                    if (!res.ok) alert(data.error ?? "Fehler.");
                     else router.refresh();
                   }}
                 >
@@ -347,8 +362,12 @@ export function WorkspaceDetailClient({
                     type="button"
                     className="text-xs text-red-600 hover:text-red-800"
                     onClick={async () => {
-                      const { error } = await revokeWorkspaceInviteAction(inv.id);
-                      if (error) alert(error);
+                      const res = await fetch(
+                        `/api/workspaces/invites/${encodeURIComponent(inv.id)}`,
+                        { method: "DELETE" },
+                      );
+                      const data = (await res.json().catch(() => ({}))) as { error?: string };
+                      if (!res.ok) alert(data.error ?? "Fehler.");
                       else router.refresh();
                     }}
                   >
@@ -371,8 +390,15 @@ export function WorkspaceDetailClient({
             onClick={async () => {
               const msg = t("workspaces.deleteWorkspaceConfirm").replace("{{name}}", initial.workspace.name);
               if (!confirm(msg)) return;
-              const result = await deleteWorkspaceAction(workspaceId);
-              if (!result.ok) {
+              const res = await fetch(`/api/workspaces/${encodeURIComponent(workspaceId)}`, {
+                method: "DELETE",
+              });
+              const result = (await res.json().catch(() => ({}))) as {
+                ok?: boolean;
+                blockingProjectCount?: number;
+                error?: string;
+              };
+              if (!res.ok || !result.ok) {
                 if (result.blockingProjectCount != null) {
                   alert(
                     t("workspaces.deleteWorkspaceBlocked").replace(
@@ -401,8 +427,12 @@ export function WorkspaceDetailClient({
             className="text-sm font-medium text-red-700 hover:text-red-900"
             onClick={async () => {
               if (!confirm(t("workspaces.leaveConfirm"))) return;
-              const { error } = await leaveWorkspaceAction(workspaceId);
-              if (error) alert(error);
+              const res = await fetch(
+                `/api/workspaces/${encodeURIComponent(workspaceId)}/leave`,
+                { method: "POST" },
+              );
+              const data = (await res.json().catch(() => ({}))) as { error?: string };
+              if (!res.ok) alert(data.error ?? "Fehler.");
               else {
                 router.push("/workspaces");
                 router.refresh();

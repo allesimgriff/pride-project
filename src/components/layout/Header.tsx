@@ -15,10 +15,7 @@ import type { ProjectLabelMap } from "@/lib/projectLabelDefaults";
 import { projectLabelRowsToMap } from "@/lib/projectLabelDefaults";
 import { EditableProjectLabel } from "@/components/projects/EditableProjectLabel";
 import { useHeaderWorkspace } from "@/components/layout/HeaderWorkspaceContext";
-import {
-  canEditWorkspaceLabelsForWorkspaceAction,
-  listMergedProjectLabelsForWorkspaceAction,
-} from "@/app/actions/workspaceProjectLabels";
+import type { ProjectLabelRow } from "@/lib/projectLabelDefaults";
 
 interface HeaderProps {
   user: User;
@@ -57,13 +54,20 @@ export function Header({ user, profile, headerProjectLabels, canEditGlobalLabels
     }
     let cancelled = false;
     (async () => {
-      const [{ data, error }, { canEdit }] = await Promise.all([
-        listMergedProjectLabelsForWorkspaceAction(workspaceId),
-        canEditWorkspaceLabelsForWorkspaceAction(workspaceId),
-      ]);
+      const res = await fetch(
+        `/api/workspaces/${encodeURIComponent(workspaceId)}/merged-labels`,
+        { cache: "no-store" },
+      );
+      const payload = (await res.json().catch(() => ({}))) as {
+        data?: ProjectLabelRow[];
+        error?: string | null;
+        canEdit?: boolean;
+      };
       if (cancelled) return;
-      if (!error && data) setDisplayLabels(projectLabelRowsToMap(data));
-      setCanEditWorkspaceHeader(canEdit);
+      if (res.ok && payload.data && !payload.error) {
+        setDisplayLabels(projectLabelRowsToMap(payload.data));
+      }
+      setCanEditWorkspaceHeader(Boolean(payload.canEdit));
     })();
     return () => {
       cancelled = true;

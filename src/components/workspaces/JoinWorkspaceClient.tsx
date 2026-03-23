@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { acceptWorkspaceInviteAction } from "@/app/actions/workspaces";
 import { useApp } from "@/components/providers/AppProvider";
 import { getT } from "@/lib/i18n";
 
@@ -21,9 +20,18 @@ export function JoinWorkspaceClient({ isLoggedIn }: { isLoggedIn: boolean }) {
   async function onJoin() {
     if (!token || busy) return;
     setBusy(true);
-    const result = await acceptWorkspaceInviteAction(token);
+    const res = await fetch("/api/workspaces/accept-invite", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token }),
+    });
+    const result = (await res.json().catch(() => ({}))) as {
+      ok?: boolean;
+      workspaceId?: string | null;
+      error?: string | null;
+    };
     setBusy(false);
-    if (!result.ok || !result.workspaceId) {
+    if (!res.ok || !result.ok || !result.workspaceId) {
       alert(result.error || t("workspaces.joinError"));
       return;
     }
