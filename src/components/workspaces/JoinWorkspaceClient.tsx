@@ -10,10 +10,18 @@ import { parseInviteTokenFromQuery } from "@/lib/inviteToken";
 export function JoinWorkspaceClient({ isLoggedIn }: { isLoggedIn: boolean }) {
   const router = useRouter();
   const params = useSearchParams();
-  const token =
-    parseInviteTokenFromQuery(params.get("token")) ??
-    parseInviteTokenFromQuery(params.get("workspace_token")) ??
-    "";
+  const token = (() => {
+    const direct =
+      parseInviteTokenFromQuery(params.get("token")) ??
+      parseInviteTokenFromQuery(params.get("workspace_token"));
+    if (direct) return direct;
+    // Fallback für Security-/Safe-Link-Wrapper: Token kann in anderen Query-Werten stecken.
+    for (const [, value] of params.entries()) {
+      const parsed = parseInviteTokenFromQuery(value);
+      if (parsed) return parsed;
+    }
+    return "";
+  })();
   const { lang, setLang } = useApp();
   const t = getT(lang);
   const [busy, setBusy] = useState(false);
