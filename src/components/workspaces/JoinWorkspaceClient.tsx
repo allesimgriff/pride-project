@@ -14,7 +14,7 @@ export function JoinWorkspaceClient({ isLoggedIn }: { isLoggedIn: boolean }) {
     parseInviteTokenFromQuery(params.get("token")) ??
     parseInviteTokenFromQuery(params.get("workspace_token")) ??
     "";
-  const { lang, setLang, edition } = useApp();
+  const { lang, setLang } = useApp();
   const t = getT(lang);
   const [busy, setBusy] = useState(false);
   const [inviteEmail, setInviteEmail] = useState<string>("");
@@ -60,7 +60,7 @@ export function JoinWorkspaceClient({ isLoggedIn }: { isLoggedIn: boolean }) {
         setInviteLoading(false);
       }
     })();
-  }, [isLoggedIn, token, lang]);
+  }, [isLoggedIn, token, lang, t]);
 
   async function onJoin() {
     if (!token || busy) return;
