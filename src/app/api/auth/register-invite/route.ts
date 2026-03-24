@@ -84,9 +84,14 @@ export async function POST(request: Request) {
 
   if (invRow) {
     if (invRow.accepted_at != null) {
+      const redirectTo = `/workspaces/join?token=${encodeURIComponent(inviteToken)}`;
       return NextResponse.json(
-        { error: "Einladung ungültig oder bereits verwendet." },
-        { status: 400 },
+        {
+          error: "Einladung wurde bereits angenommen. Bitte anmelden.",
+          code: "already_used",
+          loginRedirect: `/login?email=${encodeURIComponent(email)}&redirectTo=${encodeURIComponent(redirectTo)}`,
+        },
+        { status: 409 },
       );
     }
 
@@ -100,7 +105,7 @@ export async function POST(request: Request) {
 
     if (!invRow.workspace_id || !invRow.role) {
       return NextResponse.json(
-        { error: "Einladung ungültig oder bereits verwendet." },
+        { error: "Einladung ungültig oder bereits verwendet.", code: "invalid_or_used" },
         { status: 400 },
       );
     }
@@ -115,10 +120,13 @@ export async function POST(request: Request) {
     if (created.error || !created.data.user) {
       const msg = created.error?.message?.toLowerCase() ?? "";
       if (msg.includes("already") || msg.includes("exists")) {
+        const redirectTo = `/workspaces/join?token=${encodeURIComponent(inviteToken)}`;
         return NextResponse.json(
           {
             error:
-              "Für diese E-Mail existiert bereits ein Konto. Bitte anmelden und den Einladungslink erneut öffnen.",
+              "Für diese E-Mail existiert bereits ein Konto. Bitte anmelden und dann dem Workspace beitreten.",
+            code: "account_exists_login_required",
+            loginRedirect: `/login?email=${encodeURIComponent(email)}&redirectTo=${encodeURIComponent(redirectTo)}`,
           },
           { status: 409 },
         );
@@ -183,7 +191,7 @@ export async function POST(request: Request) {
 
   if (!Array.isArray(staffRows) || staffRows.length === 0) {
     return NextResponse.json(
-      { error: "Einladung ungültig oder bereits verwendet." },
+      { error: "Einladung ungültig oder bereits verwendet.", code: "invalid_or_used" },
       { status: 400 },
     );
   }

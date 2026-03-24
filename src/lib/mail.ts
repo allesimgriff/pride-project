@@ -18,6 +18,19 @@ const resendApiKey = process.env.RESEND_API_KEY;
 const emailProvider = (process.env.EMAIL_PROVIDER ?? "").toLowerCase(); // "resend" | "smtp" | ""
 const emailFrom = process.env.EMAIL_FROM ?? smtpFrom;
 
+function mailConfigStateForError(): string {
+  const mark = (v: string | undefined) => (v && v.trim() ? "SET" : "MISSING");
+  return [
+    `provider=${emailProvider || "(leer)"}`,
+    `RESEND_API_KEY=${mark(resendApiKey)}`,
+    `EMAIL_FROM=${mark(emailFrom)}`,
+    `SMTP_HOST=${mark(smtpHost)}`,
+    `SMTP_USER=${mark(smtpUser)}`,
+    `SMTP_PASS=${smtpPass ? "SET" : "MISSING"}`,
+    `SMTP_FROM=${mark(smtpFrom)}`,
+  ].join(", ");
+}
+
 const appUrl =
   process.env.NEXT_PUBLIC_APP_URL ||
   process.env.NEXT_PUBLIC_SITE_URL ||
@@ -104,7 +117,7 @@ async function sendTransactionalEmail(opts: {
 
   if (!smtpHost || !smtpUser || !smtpPass || !smtpFrom) {
     throw new Error(
-      "[mail] E-Mail-Versand nicht konfiguriert. Entweder Resend: EMAIL_PROVIDER=resend, RESEND_API_KEY, EMAIL_FROM — oder SMTP: SMTP_HOST, SMTP_USER, SMTP_PASS, SMTP_FROM (siehe .env.example). Unter Netlify: Environment variables setzen und neu deployen.",
+      `[mail] E-Mail-Versand nicht konfiguriert. Entweder Resend: EMAIL_PROVIDER=resend, RESEND_API_KEY, EMAIL_FROM — oder SMTP: SMTP_HOST, SMTP_USER, SMTP_PASS, SMTP_FROM (siehe .env.example). Unter Netlify: Environment variables setzen und neu deployen. [state: ${mailConfigStateForError()}]`,
     );
   }
 
@@ -186,26 +199,36 @@ export async function sendWorkspaceInviteEmail(params: {
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;");
 
-  const subject = `Einladung zu Workspace „${safeName}“ (PRIDE)`;
+  const subject = `Einladung / Invitation – Pride-Mobility Development (${safeName})`;
   const text = [
-    "Hallo,",
+    `WORKSPACE / ARBEITSBEREICH: ${safeName}`,
     "",
-    `Sie wurden eingeladen, dem Workspace „${safeName}“ in der PRIDE-Projektplattform beizutreten.`,
-    "Bitte klicken Sie auf den folgenden Link:",
+    "DE",
+    "Sie werden hiermit zu Pride-Mobility Development eingeladen.",
+    "Bitte klicken Sie auf den beiliegenden Link, setzen Sie Ihr persönliches Passwort und treten Sie dem Workspace bei, in den Sie eingeladen wurden.",
+    "",
+    "EN",
+    "You are hereby invited to Pride-Mobility Development.",
+    "Please click the link below, set your personal password, and join the workspace you were invited to.",
+    "",
+    `Workspace: ${safeName}`,
+    "Link:",
     "",
     joinUrl,
-    "",
-    "Wenn Sie diese E-Mail nicht erwarten, können Sie sie ignorieren.",
   ].join("\n");
 
   const html = `
-    <p>Hallo,</p>
-    <p>Sie wurden eingeladen, dem Workspace <strong>${esc(safeName)}</strong> in der <strong>PRIDE</strong>-Projektplattform beizutreten.</p>
+    <p style="margin:0 0 10px 0;"><strong>Workspace / Arbeitsbereich:</strong> ${esc(safeName)}</p>
+    <p><strong>DE</strong></p>
+    <p>Sie werden hiermit zu <strong>Pride-Mobility Development</strong> eingeladen.</p>
+    <p>Bitte klicken Sie auf den beiliegenden Link, setzen Sie Ihr persönliches Passwort und treten Sie dem Workspace bei, in den Sie eingeladen wurden.</p>
+    <p><strong>EN</strong></p>
+    <p>You are hereby invited to <strong>Pride-Mobility Development</strong>.</p>
+    <p>Please click the link below, set your personal password, and join the workspace you were invited to.</p>
     <p>
-      Bitte klicken Sie auf den folgenden Link:<br />
+      Workspace: <strong>${esc(safeName)}</strong><br />
       <a href="${joinUrl}">${joinUrl}</a>
     </p>
-    <p>Wenn Sie diese E-Mail nicht erwarten, können Sie sie ignorieren.</p>
   `;
 
   return sendTransactionalEmail({ to, subject, text, html });

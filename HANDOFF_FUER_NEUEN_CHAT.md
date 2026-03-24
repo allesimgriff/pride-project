@@ -8,7 +8,7 @@
 
 **Nicht raten:** Dieser Abschnitt ist die **maßgebliche** Stelle für „wo wir sind“. Die KI liest ihn **vor** weiteren Annahmen.
 
-**Letzte Aktualisierung:** 2026-03-23 (Projektliste/Mitgliedschaft, Migration 033, Übergabe neu)
+**Letzte Aktualisierung:** 2026-03-23 (Netlify Site-Trennung PRIDE/Handwerker, Service-Role, Übergabe)
 
 ### Arbeitsmodus (Thomas – verbindlich für die KI)
 
@@ -32,12 +32,20 @@
 - **Supabase:** Zielbild ist **eine gemeinsame Datenbank** (Supabase-Projekt **`pride`**): Keys in Netlify für **beide** Sites auf dieses Projekt; ggf. altes Projekt **handwerker-app** nur noch pausiert/unbenutzt. **Lokal:** `.env.local` an **dieselbe** PRIDE-DB; nicht mit fremden Keys überschreiben.
 - **Netlify ↔ Supabase:** Extension „Supabase“ kann Keys setzen; **`NEXT_PUBLIC_*`** für Next muss zur laufenden App passen (siehe Code: `src/lib/supabase/public-env.ts` – u. a. Fallback `NEXT_PUBLIC_SUPABASE_DATABASE_URL` wenn nur die Extension-Variablen gesetzt sind).
 
+### Stolperfallen (verbindlich – nicht erneut „in die Falle laufen“)
+
+1. **Netlify: immer die richtige Site.** **PRIDE** und **Handwerker** sind **zwei getrennte Sites** mit **eigenen** Environment Variables. Wer Keys nur unter **Handwerker** setzt, sieht **PRIDE** davon nichts – und umgekehrt. Vor jeder Env-Änderung: **Site-Name** in der linken Leiste = die URL, die du testest (`pride-project` vs. `handwerker-…`).
+2. **`SUPABASE_SERVICE_ROLE_KEY`:** Gehört zum **gleichen** Supabase-Projekt wie `NEXT_PUBLIC_SUPABASE_URL` / Anon-Key. Nach Änderung in Netlify: **neu deployen** (Production-Runtime).
+3. **Passwortschutz:** Wenn die Site **password protected** ist, schlagen **externe** `curl`/API-Tests mit **401 HTML** fehl – das ist **kein** fehlender Service-Role-Key in der App, sondern Netlify davor.
+4. **Lokal:** `invite-preview` / `register-invite` brauchen **`SUPABASE_SERVICE_ROLE_KEY`** in **`.env.local`** – sonst `missing_service_role` lokal, unabhängig von Netlify.
+5. **Diagnose-URL (gleiche Origin wie die App, nach Site-Passwort ggf.):** `GET /api/workspaces/invite-preview` ohne `token` → bei korrekter Server-Config **400** `missing_token`, nicht **500** `missing_service_role`. **`GET /api/app-edition`** für PRIDE vs. Handwerker.
+
 ### Bereits erledigt – im neuen Chat **nicht** erneut erfragen oder „von vorn“ debuggen
 
 - **Edition (PRIDE vs. Handwerker):** `resolveAppEdition()` nutzt **Hostname** (`pride-project.netlify.app` / `handwerker-allesimgriff.netlify.app`) vor `NEXT_PUBLIC_APP_EDITION` — siehe `src/lib/appEdition.ts`. **Login/Register:** Server-Page mit `await resolveAppEdition()` (kein reines `getAppEdition()` auf der Login-Seite).
 - **Branding:** Handwerker = **Allesimgriff** (Sidebar, Tab-Metadaten, Projektüberschrift, Login-Texte); PRIDE bleibt PRIDE. **Register:** `register.inviteIntro` mit `{{brand}}`.
 - **Globale Mitarbeiter-Einladung (Einstellungen):** entfernt; Hinweis + Link zu Workspaces (`StaffManager.tsx`). **`createInviteAction`** existiert noch im Code, UI ruft es nicht auf.
-- **Workspace-Einladungen:** E-Mail über **`sendWorkspaceInviteEmail`** (`src/lib/mail.ts`), Link **`/workspaces/join?token=…`**; **`inviteToWorkspaceAction`** in `workspaces.ts`.
+- **Workspace-Einladungen:** E-Mail über **`sendWorkspaceInviteEmail`** (`src/lib/mail.ts`), Link **`/workspaces/join?token=…`**; Versand/Anlage über **`POST /api/workspaces/invite`** (`WorkspaceDetailClient` → fetch). Registrierung mit Token: **`/register?workspace_token=…`**, Server: **`/api/workspaces/invite-preview`**, **`/api/auth/register-invite`**, **`/api/workspaces/accept-invite`** — **`SUPABASE_SERVICE_ROLE_KEY`** auf der **PRIDE-Netlify-Site** nötig. Duplikat **`/api/debug/app-edition`** entfernt; Diagnose: **`/api/app-edition`**.
 - **Workspace beitreten:** `accept_workspace_invite` — **nur gültiger Token + eingeloggt** (E-Mail-Vergleich entfernt), Migration **`030`**; **028/029** waren Zwischenschritte; maßgeblich ist der Stand in **`030`**.
 - **Workspaces-Liste (`/workspaces`):** **App-Admin** (`profiles.role = 'admin'`) sieht **alle** Workspaces; **alle anderen** nur Mitgliedschaften (`listMyWorkspacesAction`). Untertitel: `workspaces.subtitleAppAdmin` / `subtitleMember`.
 - **App-Admin:** `tb@allesimgriff.de` per SQL **`UPDATE profiles SET role = 'admin'`** (Migration **`031`** im Repo); nur wirksam, wenn Profil existiert.
@@ -64,7 +72,7 @@
 
 ### Vom Nutzer beim nächsten Chat (ein Satz, hier eintragen)
 
-**Aktuell (Thomas):** Projektliste für **Mitglieder** (nicht nur Admins) – Code-Fix **`page.tsx`** + **SQL 033**; **Deploy** nach **push**; **online** prüfen. Neuer Chat: **kurz**, **nicht** Erledigtes wieder erfragen.
+**Aktuell (Thomas):** _(morgen ergänzen – z. B. Thema + ob PRIDE- oder Handwerker-Site)._ **Immer dazu:** welche **Netlify-Site** (Name) und welche **URL** gerade gemeint sind, wenn es um Env/Deploy geht.
 
 ### Pflicht für die KI
 
@@ -87,7 +95,7 @@
 **Eine Zeile (reicht):**
 
 ```text
-@HANDOFF_FUER_NEUEN_CHAT.md vollständig lesen – zuerst „Arbeitsmodus (Thomas)“, dann „Bereits erledigt“ (nicht erneut erfragen). Deutsch. Kurz, nur Kopierbares.
+@HANDOFF_FUER_NEUEN_CHAT.md vollständig lesen – zuerst „Arbeitsmodus (Thomas)“, dann „Stolperfallen“, dann „Bereits erledigt“ (nicht erneut erfragen). Deutsch. Kurz, nur Kopierbares.
 ```
 
 **Weitere Doku:** `PROJECT-KONTEXT.md`, `LOKAL_STARTEN.md` (lokal + Supabase-Klicks). **Regeln:** `.cursor/rules/pride-arbeitspartner.mdc`.

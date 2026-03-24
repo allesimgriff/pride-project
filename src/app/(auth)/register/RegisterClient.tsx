@@ -175,8 +175,8 @@ export default function RegisterClient({ edition }: { edition: AppEdition }) {
           } else if (code === "already_used") {
             setError(
               lang === "de"
-                ? "Diese Einladung wurde bereits verwendet. Bitte mit dieser E-Mail anmelden. Wenn noch kein Konto besteht, eine neue Einladung anfordern."
-                : "This invitation was already used. Please sign in. If you have no account yet, request a new invitation.",
+                ? "Diese Einladung wurde bereits angenommen. Bitte mit dieser E-Mail anmelden."
+                : "This invitation was already accepted. Please sign in with this email.",
             );
           } else if (code === "not_found" || code === "missing_token") {
             setError(
@@ -277,6 +277,7 @@ export default function RegisterClient({ edition }: { edition: AppEdition }) {
         const regPayload = (await regRes.json().catch(() => ({}))) as {
           error?: string;
           code?: string;
+          loginRedirect?: string;
           workspaceId?: string;
         };
         if (!regRes.ok) {
@@ -296,6 +297,26 @@ export default function RegisterClient({ edition }: { edition: AppEdition }) {
               lang === "de"
                 ? "Der öffentliche Supabase-Key fehlt (NEXT_PUBLIC_SUPABASE_ANON_KEY bzw. PUBLISHABLE in Netlify)."
                 : "Public Supabase key is missing in Netlify (NEXT_PUBLIC_SUPABASE_ANON_KEY or publishable).";
+          } else if (c === "account_exists_login_required") {
+            if (regPayload.loginRedirect) {
+              router.push(regPayload.loginRedirect);
+              router.refresh();
+              return;
+            }
+            errMsg =
+              lang === "de"
+                ? "Für diese E-Mail existiert bereits ein Konto. Bitte anmelden und dem Workspace beitreten."
+                : "An account already exists for this email. Please sign in and join the workspace.";
+          } else if (c === "already_used") {
+            if (regPayload.loginRedirect) {
+              router.push(regPayload.loginRedirect);
+              router.refresh();
+              return;
+            }
+            errMsg =
+              lang === "de"
+                ? "Diese Einladung wurde bereits angenommen. Bitte anmelden."
+                : "This invitation was already accepted. Please sign in.";
           } else {
             errMsg = regPayload.error || "Registrierung fehlgeschlagen.";
           }

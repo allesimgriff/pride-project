@@ -14,7 +14,7 @@ export const translations = {
       projectsLink: "Zu den Projekten",
     },
     nav: {
-      brandPride: "PRIDE",
+      brandPride: "Pride Development",
       brandHandwerker: "Allesimgriff",
       dashboard: "Dashboard",
       projects: "Projekte",
@@ -266,6 +266,19 @@ export const translations = {
         "Es gibt noch {{count}} Projekt(e) in diesem Workspace. Bitte zuerst löschen oder in einen anderen Workspace verschieben.",
       joinTitle: "Workspace-Einladung",
       joinDescription: "Mit dem Einladungslink können Sie einem Workspace beitreten.",
+      joinFormEmail: "E-Mail aus Einladung",
+      joinFormPassword: "Passwort",
+      joinFormPasswordConfirm: "Passwort bestätigen",
+      joinFormSubmit: "Konto aktivieren und beitreten",
+      joinFormSubmitting: "Wird verarbeitet …",
+      joinLoading: "Lade Einladung...",
+      joinButtonBusy: "Beitreten …",
+      joinFormHint:
+        "Geben Sie ein Passwort ein und bestätigen Sie es. Wenn bereits ein Konto mit dieser E-Mail existiert, wird mit diesem Passwort angemeldet und dem Workspace beigetreten.",
+      joinPasswordMin: "Das Passwort muss mindestens 8 Zeichen haben.",
+      joinPasswordMismatch: "Passwort und Bestätigung stimmen nicht überein.",
+      joinLoginFailed:
+        "Anmeldung fehlgeschlagen. Bitte Passwort prüfen. Falls noch kein Konto existiert, ein neues Passwort vergeben.",
       joinNeedAuth:
         "Sie sind noch nicht angemeldet. Hier geht es nicht um ein „neues Passwort für den Link“, sondern: Zuerst Konto anlegen oder sich mit einem bestehenden Konto anmelden – mit der E-Mail-Adresse, an die die Einladung ging.",
       joinLogin: "Anmelden (bestehendes Passwort)",
@@ -274,6 +287,12 @@ export const translations = {
         "Wichtig: Beim Anmelden oder Registrieren muss die E-Mail mit der Einladung übereinstimmen. Danach diese Seite erneut öffnen oder auf „Beitreten“ gehen.",
       joinButton: "Beitreten",
       joinInvalid: "Ungültiger oder fehlender Einladungslink.",
+      joinAlreadyUsed: "Diese Einladung wurde bereits angenommen. Bitte mit dieser E-Mail anmelden.",
+      joinConfigMissingServiceRole:
+        "Server-Konfiguration fehlt: SUPABASE_SERVICE_ROLE_KEY. Bitte in Netlify/Umgebung setzen.",
+      joinConfigMissingSupabaseUrl:
+        "Server-Konfiguration fehlt: Supabase-URL (https://...supabase.co).",
+      joinDbError: "Einladungsdaten konnten nicht geladen werden. Bitte später erneut versuchen.",
       joinSuccess: "Sie sind dem Workspace beigetreten.",
       newProjectHere: "Neues Projekt in diesem Workspace",
       newProjectHereHint:
@@ -352,7 +371,7 @@ export const translations = {
       backToList: "Zurück zur Liste",
     },
     login: {
-      title: "PRIDE",
+      title: "Pride Development",
       subtitle: "Projektname",
       subtitleHandwerker: "Alle Projekte im Griff",
       email: "E-Mail",
@@ -447,7 +466,7 @@ export const translations = {
       workspacesLink: "Manage workspaces",
     },
     nav: {
-      brandPride: "PRIDE",
+      brandPride: "Pride Development",
       brandHandwerker: "Allesimgriff",
       dashboard: "Dashboard",
       projects: "Projects",
@@ -697,6 +716,19 @@ export const translations = {
         "There are still {{count}} project(s) in this workspace. Delete or move them first.",
       joinTitle: "Workspace invitation",
       joinDescription: "Use your invitation link to join a workspace.",
+      joinFormEmail: "Invitation email",
+      joinFormPassword: "Password",
+      joinFormPasswordConfirm: "Confirm password",
+      joinFormSubmit: "Activate account and join",
+      joinFormSubmitting: "Processing…",
+      joinLoading: "Loading invitation...",
+      joinButtonBusy: "Joining…",
+      joinFormHint:
+        "Enter a password and confirm it. If an account with this email already exists, we sign in with that password and join the workspace.",
+      joinPasswordMin: "Password must be at least 8 characters.",
+      joinPasswordMismatch: "Password and confirmation do not match.",
+      joinLoginFailed:
+        "Sign-in failed. Please check the password. If no account exists yet, set a new password.",
       joinNeedAuth:
         "You are not signed in yet. This is not a page to set a “new password for the link”. First create an account or sign in with an existing account — using the same email address the invitation was sent to.",
       joinLogin: "Sign in (existing password)",
@@ -705,6 +737,12 @@ export const translations = {
         "Important: The email must match the invitation. Then open this page again or tap Join.",
       joinButton: "Join",
       joinInvalid: "Invalid or missing invitation link.",
+      joinAlreadyUsed: "This invitation was already accepted. Please sign in with this email.",
+      joinConfigMissingServiceRole:
+        "Server configuration missing: SUPABASE_SERVICE_ROLE_KEY. Please set it in Netlify/environment.",
+      joinConfigMissingSupabaseUrl:
+        "Server configuration missing: Supabase URL (https://...supabase.co).",
+      joinDbError: "Could not load invitation data. Please try again later.",
       joinSuccess: "You have joined the workspace.",
       newProjectHere: "New project in this workspace",
       newProjectHereHint:
@@ -783,7 +821,7 @@ export const translations = {
       backToList: "Back to list",
     },
     login: {
-      title: "PRIDE",
+      title: "Pride Development",
       subtitle: "Project name",
       subtitleHandwerker: "All projects under control",
       email: "Email",

@@ -70,6 +70,7 @@ Interne Plattform **PRIDE** (Kopfzeile standardmäßig „Projektname“ / anpas
 ## Nützliche Dateien
 
 - `DEPLOYMENT-NOTIZEN.md` – Repo/Deploy-Hinweise (URLs ggf. aktualisieren).  
+- **`REPO-STRUKTUR.md`** – Ordner-/API-Landkarte (für neue Chats oder andere KIs per `@` einbinden).  
 - Diese Datei **`PROJECT-KONTEXT.md`** – beim Start eines neuen Chats kurz lesen oder per `@` einbinden.
 
 *Zuletzt ergänzt: Handoff-Dateien `HANDOFF_FUER_NEUEN_CHAT.md`, `NEUER_CHAT_START.md` (März 2026) auf aktuellen Stand – siehe dort „Stand dieser Datei“.*
