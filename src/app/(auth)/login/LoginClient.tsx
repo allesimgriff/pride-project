@@ -35,6 +35,16 @@ export function LoginClient({ edition }: { edition: AppEdition }) {
   }, [authCallbackError, lang]);
 
   useEffect(() => {
+    return () => {
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("app-busy-manual", { detail: { active: false } }),
+        );
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     if (prefillEmail && !email) {
       setEmail(prefillEmail);
       return;
@@ -58,6 +68,12 @@ export function LoginClient({ edition }: { edition: AppEdition }) {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("app-busy-manual", { detail: { active: true } }),
+      );
+    }
+    let keepBusyForNavigation = false;
     try {
       const res = await fetch("/api/auth/sign-in", {
         method: "POST",
@@ -75,16 +91,29 @@ export function LoginClient({ edition }: { edition: AppEdition }) {
           : null;
       if (!res.ok) {
         setError(msg ?? "Anmeldung fehlgeschlagen.");
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(
+            new CustomEvent("app-busy-manual", { detail: { active: false } }),
+          );
+        }
         return;
       }
+      keepBusyForNavigation = true;
       router.push(redirectTo);
       router.refresh();
     } catch {
       setError(
         "Netzwerkfehler. Bitte Verbindung prüfen oder Seite neu laden.",
       );
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("app-busy-manual", { detail: { active: false } }),
+        );
+      }
     } finally {
-      setLoading(false);
+      if (!keepBusyForNavigation) {
+        setLoading(false);
+      }
     }
   }
 

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { GlobalBusyIndicator } from "@/components/layout/GlobalBusyIndicator";
 
 const isHandwerkerBuild =
   process.env.NEXT_PUBLIC_APP_EDITION?.trim().toLowerCase() === "handwerker" ||
@@ -21,6 +22,7 @@ export default function RootLayout({
   return (
     <html lang="de">
       <body className="min-h-screen bg-surface-100 font-sans text-gray-900 antialiased">
+        <GlobalBusyIndicator />
         {children}
       </body>
     </html>

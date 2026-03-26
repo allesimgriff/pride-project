@@ -173,6 +173,7 @@ export function ProjectTasks({
   const [loading, setLoading] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [savingTaskId, setSavingTaskId] = useState<string | null>(null);
+  const [processingTaskId, setProcessingTaskId] = useState<string | null>(null);
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -213,13 +214,17 @@ export function ProjectTasks({
   }
 
   async function handleToggle(taskId: string, completed: boolean) {
+    setProcessingTaskId(taskId);
     await toggleTaskAction(taskId, completed);
+    setProcessingTaskId(null);
     router.refresh();
   }
 
   async function handleDelete(taskId: string) {
     if (!confirm(t("tasks.deleteConfirm"))) return;
+    setProcessingTaskId(taskId);
     await deleteTaskAction(taskId);
+    setProcessingTaskId(null);
     router.refresh();
   }
 
@@ -284,10 +289,11 @@ export function ProjectTasks({
         <button
           type="button"
           onClick={() => setShowForm(!showForm)}
-          className="inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium text-primary-600 hover:bg-primary-50"
+          disabled={loading}
+          className="inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium text-primary-600 hover:bg-primary-50 disabled:cursor-wait disabled:opacity-60"
         >
           <Plus className="h-4 w-4" />
-          {showForm ? t("common.cancel") : t("tasks.addTask")}
+          {loading ? "⏳" : showForm ? t("common.cancel") : t("tasks.addTask")}
         </button>
       </div>
 
@@ -335,7 +341,7 @@ export function ProjectTasks({
               className="input-base w-auto"
             />
             <button type="submit" disabled={loading} className="btn-primary">
-              {loading ? t("tasks.adding") : t("tasks.add")}
+              {loading ? `⏳ ${t("tasks.adding")}` : t("tasks.add")}
             </button>
           </div>
         </form>
@@ -350,7 +356,8 @@ export function ProjectTasks({
             <button
               type="button"
               onClick={() => handleToggle(task.id, true)}
-              className="mt-0.5 text-gray-400 hover:text-primary-600"
+              disabled={processingTaskId === task.id}
+              className="mt-0.5 text-gray-400 hover:text-primary-600 disabled:cursor-wait disabled:opacity-60"
             >
               <Square className="h-5 w-5" />
             </button>
@@ -460,16 +467,18 @@ export function ProjectTasks({
             <button
               type="button"
               onClick={() => startEdit(task)}
-              className="text-gray-400 hover:text-primary-700"
+              disabled={processingTaskId === task.id}
+              className="text-gray-400 hover:text-primary-700 disabled:cursor-wait disabled:opacity-60"
             >
               <Pencil className="h-4 w-4" />
             </button>
             <button
               type="button"
               onClick={() => handleDelete(task.id)}
-              className="text-gray-400 hover:text-red-600"
+              disabled={processingTaskId === task.id}
+              className="text-gray-400 hover:text-red-600 disabled:cursor-wait disabled:opacity-60"
             >
-              <Trash2 className="h-4 w-4" />
+              {processingTaskId === task.id ? "⏳" : <Trash2 className="h-4 w-4" />}
             </button>
           </li>
         ))}
@@ -488,7 +497,8 @@ export function ProjectTasks({
                 if (!confirm(confirmText)) return;
                 void handleToggle(task.id, false);
               }}
-              className="mt-0.5 text-primary-600"
+              disabled={processingTaskId === task.id}
+              className="mt-0.5 text-primary-600 disabled:cursor-wait disabled:opacity-60"
             >
               <CheckSquare className="h-5 w-5" />
             </button>
@@ -586,16 +596,18 @@ export function ProjectTasks({
             <button
               type="button"
               onClick={() => startEdit(task)}
-              className="text-gray-400 hover:text-primary-700"
+              disabled={processingTaskId === task.id}
+              className="text-gray-400 hover:text-primary-700 disabled:cursor-wait disabled:opacity-60"
             >
               <Pencil className="h-4 w-4" />
             </button>
             <button
               type="button"
               onClick={() => handleDelete(task.id)}
-              className="text-gray-400 hover:text-red-600"
+              disabled={processingTaskId === task.id}
+              className="text-gray-400 hover:text-red-600 disabled:cursor-wait disabled:opacity-60"
             >
-              <Trash2 className="h-4 w-4" />
+              {processingTaskId === task.id ? "⏳" : <Trash2 className="h-4 w-4" />}
             </button>
           </li>
         ))}

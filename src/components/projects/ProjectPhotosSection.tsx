@@ -32,6 +32,7 @@ export function ProjectPhotosSection({ projectId }: { projectId: string }) {
   const [galleryExpanded, setGalleryExpanded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [failedPhotoIds, setFailedPhotoIds] = useState<Set<string>>(new Set());
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -104,7 +105,9 @@ export function ProjectPhotosSection({ projectId }: { projectId: string }) {
   async function handleDeletePhoto(photoId: string) {
     const ok = confirm("Bild wirklich löschen?");
     if (!ok) return;
+    setDeletingId(`legacy:${photoId}`);
     const res = await deleteLegacyProjectPhotoAction(projectId, photoId);
+    setDeletingId(null);
     if (res?.error) {
       alert(res.error);
       return;
@@ -115,7 +118,9 @@ export function ProjectPhotosSection({ projectId }: { projectId: string }) {
   async function handleDeleteFileImage(fileId: string) {
     const ok = confirm("Bild wirklich löschen?");
     if (!ok) return;
+    setDeletingId(`file:${fileId}`);
     const res = await deleteProjectFileAction(fileId);
+    setDeletingId(null);
     if (res?.error) {
       alert(res.error);
       return;
@@ -201,14 +206,15 @@ export function ProjectPhotosSection({ projectId }: { projectId: string }) {
                 />
                 <button
                   type="button"
-                  className="absolute right-1 top-1 rounded bg-white/90 px-2 py-1 text-xs font-medium text-red-700 shadow hover:bg-white"
+                  disabled={deletingId === `${p.source}:${p.id}`}
+                  className="absolute right-1 top-1 rounded bg-white/90 px-2 py-1 text-xs font-medium text-red-700 shadow hover:bg-white disabled:cursor-wait disabled:opacity-70"
                   onClick={() =>
                     p.source === "legacy"
                       ? handleDeletePhoto(p.id)
                       : handleDeleteFileImage(p.id)
                   }
                 >
-                  Löschen
+                  {deletingId === `${p.source}:${p.id}` ? "⏳ Lösche..." : "Löschen"}
                 </button>
               </div>
             ))}
