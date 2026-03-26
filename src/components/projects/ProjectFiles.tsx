@@ -7,7 +7,7 @@ import { formatDistanceToNow } from "date-fns";
 import { de, enUS } from "date-fns/locale";
 import { Paperclip, Upload, FileText, Image as ImageIcon, File, Trash2, Star } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { setProjectImageAction } from "@/app/actions/projects";
+import { deleteProjectFileAction, setProjectImageAction } from "@/app/actions/projects";
 import { useApp } from "@/components/providers/AppProvider";
 import { getT } from "@/lib/i18n";
 import type { ProjectLabelMap } from "@/lib/projectLabelDefaults";
@@ -51,6 +51,7 @@ export function ProjectFiles({
       : "Matches the “Nr.” column under headings for this workspace";
   const dateLocale = lang === "de" ? de : enUS;
   const [uploading, setUploading] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [settingImage, setSettingImage] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [previewFile, setPreviewFile] = useState<FileRecord | null>(null);
@@ -110,11 +111,13 @@ export function ProjectFiles({
     router.refresh();
   }
 
-  async function handleDelete(fileId: string, filePath: string) {
+  async function handleDelete(fileId: string) {
     if (!confirm(t("files.deleteConfirm"))) return;
-    const supabase = createClient();
-    await supabase.storage.from("project-files").remove([filePath]);
-    await supabase.from("project_files").delete().eq("id", fileId);
+    const res = await deleteProjectFileAction(fileId);
+    if (res?.error) {
+      alert(res.error);
+      return;
+    }
     router.refresh();
   }
 
@@ -140,39 +143,57 @@ export function ProjectFiles({
           textClassName="text-lg font-semibold text-gray-900"
         />
       </h2>
-      <p className="mt-1 text-sm text-gray-500">
-        {t("files.hint")}
-      </p>
-
-      <div className="mt-4">
-        <input
-          ref={inputRef}
-          type="file"
-          accept={ACCEPT}
-          multiple
-          onChange={handleUpload}
-          className="hidden"
-        />
+      <div className="mt-2">
         <button
           type="button"
-          onClick={() => inputRef.current?.click()}
-          disabled={uploading}
-          className="btn-secondary flex w-full items-center justify-center gap-2"
+          onClick={() => setExpanded((v) => !v)}
+          className="text-sm font-medium text-primary-700 hover:underline"
         >
-          <Upload className="h-4 w-4" />
-          {uploading ? t("files.uploading") : t("files.upload")}
+          {expanded
+            ? lang === "de"
+              ? "Files zuklappen"
+              : "Collapse files"
+            : lang === "de"
+              ? `Files aufklappen (${files.length})`
+              : `Expand files (${files.length})`}
         </button>
       </div>
 
-      <ul className="mt-4 space-y-2">
-        {files.map((file) => {
-          const isImage = file.mime_type?.startsWith("image/") ?? false;
-          const isProjectImage = projectImageId === file.id;
-          return (
-            <li
-              key={file.id}
-              className={`flex items-center gap-3 rounded-lg border px-3 py-2 ${isProjectImage ? "border-primary-300 bg-primary-50" : "border-gray-100 bg-surface-50"}`}
+      {expanded ? (
+        <>
+          <p className="mt-1 text-sm text-gray-500">
+            {t("files.hint")}
+          </p>
+
+          <div className="mt-4">
+            <input
+              ref={inputRef}
+              type="file"
+              accept={ACCEPT}
+              multiple
+              onChange={handleUpload}
+              className="hidden"
+            />
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              disabled={uploading}
+              className="btn-secondary flex w-full items-center justify-center gap-2"
             >
+              <Upload className="h-4 w-4" />
+              {uploading ? t("files.uploading") : t("files.upload")}
+            </button>
+          </div>
+
+          <ul className="mt-4 space-y-2">
+            {files.map((file) => {
+              const isImage = file.mime_type?.startsWith("image/") ?? false;
+              const isProjectImage = projectImageId === file.id;
+              return (
+                <li
+                  key={file.id}
+                  className={`flex items-center gap-3 rounded-lg border px-3 py-2 ${isProjectImage ? "border-primary-300 bg-primary-50" : "border-gray-100 bg-surface-50"}`}
+                >
               {/* Bildvorschau etwas größer */}
               <div className="h-20 w-28 shrink-0 overflow-hidden rounded border border-gray-200 bg-gray-50 flex items-center justify-center">
                 {file.mime_type?.startsWith("image/") ? (
@@ -233,20 +254,22 @@ export function ProjectFiles({
               )}
               <button
                 type="button"
-                onClick={() => handleDelete(file.id, file.file_path)}
+                onClick={() => handleDelete(file.id)}
                 className="text-gray-400 hover:text-red-600"
               >
                 <Trash2 className="h-4 w-4" />
               </button>
-            </li>
-          );
-        })}
-      </ul>
-      {files.length === 0 && (
-        <p className="mt-4 text-center text-sm text-gray-500">
-          {t("files.noFiles")}
-        </p>
-      )}
+                </li>
+              );
+            })}
+          </ul>
+          {files.length === 0 && (
+            <p className="mt-4 text-center text-sm text-gray-500">
+              {t("files.noFiles")}
+            </p>
+          )}
+        </>
+      ) : null}
 
       {/* Vollbild-Vorschau für ein Bild */}
       {previewFile && previewFile.mime_type?.startsWith("image/") && (

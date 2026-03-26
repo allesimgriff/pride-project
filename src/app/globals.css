@@ -28,6 +28,12 @@ body {
   font-feature-settings: "rlig" 1, "calt" 1;
 }
 
+@layer base {
+  a {
+    @apply text-primary-700 underline decoration-2 underline-offset-2 transition-colors hover:text-primary-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2;
+  }
+}
+
 @layer components {
   .card {
     @apply rounded-lg border border-gray-200 bg-white shadow-sm;

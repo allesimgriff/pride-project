@@ -2,15 +2,18 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useApp } from "@/components/providers/AppProvider";
 import { getT } from "@/lib/i18n";
 import { parseInviteTokenFromQuery } from "@/lib/inviteToken";
 
 export function JoinWorkspaceClient({ isLoggedIn }: { isLoggedIn: boolean }) {
   const router = useRouter();
+  const routeParams = useParams<{ token?: string }>();
   const params = useSearchParams();
   const token = (() => {
+    const fromPath = parseInviteTokenFromQuery(routeParams?.token ?? null);
+    if (fromPath) return fromPath;
     const direct =
       parseInviteTokenFromQuery(params.get("token")) ??
       parseInviteTokenFromQuery(params.get("workspace_token"));
@@ -32,7 +35,7 @@ export function JoinWorkspaceClient({ isLoggedIn }: { isLoggedIn: boolean }) {
   const [error, setError] = useState<string | null>(null);
 
   const joinReturnPath =
-    token !== "" ? `/workspaces/join?token=${encodeURIComponent(token)}` : "/workspaces/join";
+    token !== "" ? `/workspaces/join/${encodeURIComponent(token)}` : "/workspaces/join";
 
   useEffect(() => {
     if (!token) return;

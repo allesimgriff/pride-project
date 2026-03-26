@@ -6,7 +6,6 @@ import { ProjectStammdaten } from "@/components/projects/ProjectStammdaten";
 import { ProjectFiles } from "@/components/projects/ProjectFiles";
 import { ProjectComments } from "@/components/projects/ProjectComments";
 import { ProjectTasks } from "@/components/projects/ProjectTasks";
-import { ProjectChecklist } from "@/components/projects/ProjectChecklist";
 import { ProjectTimeline } from "@/components/projects/ProjectTimeline";
 import { ProjectHistory } from "@/components/projects/ProjectHistory";
 import { ProjectPhotosBlock } from "@/components/projects/ProjectPhotosBlock";
@@ -58,6 +57,9 @@ export default async function ProjectDetailPage({
     canEditLabels = await canEditWorkspaceLabels(supabase, user.id, project.workspace_id);
   }
   const workspaceId = project.workspace_id ?? null;
+  const legacyPhotosPromise = user
+    ? supabase.from("photos").select("id, created_at").eq("user_id", user.id).order("created_at", { ascending: false })
+    : Promise.resolve({ data: [], error: null });
 
   const detailBundle = Promise.all([
     supabase
@@ -81,6 +83,7 @@ export default async function ProjectDetailPage({
       .select("*, profiles:author_id (id, full_name)")
       .eq("project_id", id)
       .order("created_at", { ascending: false }),
+    legacyPhotosPromise,
   ]);
 
   let moveTargets: { id: string; name: string }[] = [];
@@ -90,6 +93,7 @@ export default async function ProjectDetailPage({
   let filesRes: Awaited<typeof detailBundle>[1];
   let tasksRes: Awaited<typeof detailBundle>[2];
   let updatesRes: Awaited<typeof detailBundle>[3];
+  let legacyPhotosRes: Awaited<typeof detailBundle>[4];
 
   if (canEdit && project.workspace_id) {
     const [detail, moveList, wsRes] = await Promise.all([
@@ -99,15 +103,16 @@ export default async function ProjectDetailPage({
     ]);
     moveTargets = moveList.error ? [] : moveList.data;
     currentWorkspaceName = wsRes.data?.name ?? "—";
-    [commentsRes, filesRes, tasksRes, updatesRes] = detail;
+    [commentsRes, filesRes, tasksRes, updatesRes, legacyPhotosRes] = detail;
   } else {
-    [commentsRes, filesRes, tasksRes, updatesRes] = await detailBundle;
+    [commentsRes, filesRes, tasksRes, updatesRes, legacyPhotosRes] = await detailBundle;
   }
 
   const comments = commentsRes.data;
   const files = filesRes.data;
   const tasks = tasksRes.data;
   const updates = updatesRes.data;
+  const legacyPhotos = legacyPhotosRes.data || [];
   const currentUserId = user?.id;
   const prideUi = (await resolveAppEdition()) === "pride";
 
@@ -133,6 +138,7 @@ export default async function ProjectDetailPage({
         <div className="lg:col-span-2 space-y-6 print-main-column">
           {prideUi ? (
             <ProjectPhotosBlock
+              projectId={id}
               projectLabels={projectLabels}
               workspaceId={workspaceId}
               canEditLabels={canEditLabels}
@@ -163,20 +169,11 @@ export default async function ProjectDetailPage({
             workspaceId={workspaceId}
             canEditLabels={canEditLabels}
           />
-          <ProjectChecklist
-            projectId={id}
-            tasks={(tasks || []).map((t) => ({
-              id: t.id,
-              title: t.title,
-              completed: t.completed,
-            }))}
-            projectLabels={projectLabels}
-            workspaceId={workspaceId}
-            canEditLabels={canEditLabels}
-          />
           <ProjectTasks
             projectId={id}
             tasks={tasks || []}
+            projectImages={(files || []).filter((f) => (f.mime_type || "").startsWith("image/"))}
+            legacyPhotos={legacyPhotos}
             currentUserId={currentUserId}
             projectLabels={projectLabels}
             workspaceId={workspaceId}
@@ -185,6 +182,7 @@ export default async function ProjectDetailPage({
         </div>
         <div className="no-print space-y-6">
           <ProjectTimeline
+            projectId={id}
             comments={comments || []}
             updates={updates || []}
             files={files || []}
@@ -193,6 +191,7 @@ export default async function ProjectDetailPage({
             canEditLabels={canEditLabels}
           />
           <ProjectHistory
+            projectId={id}
             updates={updates || []}
             projectLabels={projectLabels}
             workspaceId={workspaceId}

@@ -3,19 +3,33 @@
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { PhotoUploader } from "@/components/PhotoUploader";
+import { deleteLegacyProjectPhotoAction, deleteProjectFileAction } from "@/app/actions/projects";
 
 type PhotoRow = {
   id: string;
-  image_url: string;
   created_at: string;
 };
 
-export function ProjectPhotosSection() {
+type FileImageRow = {
+  id: string;
+  file_name: string;
+  created_at: string;
+};
+
+type GalleryItem = {
+  id: string;
+  created_at: string;
+  source: "legacy" | "file";
+  label: string;
+};
+
+export function ProjectPhotosSection({ projectId }: { projectId: string }) {
   const supabase = useMemo(() => createClient(), []);
   const [photos, setPhotos] = useState<PhotoRow[]>([]);
+  const [fileImages, setFileImages] = useState<FileImageRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshTick, setRefreshTick] = useState(0);
-  const [selectedPhoto, setSelectedPhoto] = useState<PhotoRow | null>(null);
+  const [galleryExpanded, setGalleryExpanded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [failedPhotoIds, setFailedPhotoIds] = useState<Set<string>>(new Set());
 
@@ -38,21 +52,38 @@ export function ProjectPhotosSection() {
 
         const { data, error: photosError } = await supabase
           .from("photos")
-          .select("id, image_url, created_at")
+          .select("id, created_at")
           .eq("user_id", user.id)
           .order("created_at", { ascending: false })
-          .limit(50);
+          .limit(200);
 
         if (photosError) {
           if (!mounted) return;
           setError(photosError.message);
           setPhotos([]);
+          setFileImages([]);
+          return;
+        }
+
+        const { data: fileData, error: fileError } = await supabase
+          .from("project_files")
+          .select("id, file_name, created_at, mime_type")
+          .eq("project_id", projectId)
+          .like("mime_type", "image/%")
+          .order("created_at", { ascending: false });
+
+        if (fileError) {
+          if (!mounted) return;
+          setError(fileError.message);
+          setPhotos([]);
+          setFileImages([]);
           return;
         }
 
         if (!mounted) return;
         setFailedPhotoIds(new Set());
         setPhotos((data || []) as PhotoRow[]);
+        setFileImages((fileData || []) as FileImageRow[]);
       } catch (e) {
         if (!mounted) return;
         const message =
@@ -68,11 +99,61 @@ export function ProjectPhotosSection() {
     return () => {
       mounted = false;
     };
-  }, [supabase, refreshTick]);
+  }, [supabase, refreshTick, projectId]);
+
+  async function handleDeletePhoto(photoId: string) {
+    const ok = confirm("Bild wirklich löschen?");
+    if (!ok) return;
+    const res = await deleteLegacyProjectPhotoAction(projectId, photoId);
+    if (res?.error) {
+      alert(res.error);
+      return;
+    }
+    setRefreshTick((t) => t + 1);
+  }
+
+  async function handleDeleteFileImage(fileId: string) {
+    const ok = confirm("Bild wirklich löschen?");
+    if (!ok) return;
+    const res = await deleteProjectFileAction(fileId);
+    if (res?.error) {
+      alert(res.error);
+      return;
+    }
+    setRefreshTick((t) => t + 1);
+  }
+
+  const allItems: GalleryItem[] = [
+    ...fileImages.map((f) => ({
+      id: f.id,
+      created_at: f.created_at,
+      source: "file" as const,
+      label: f.file_name,
+    })),
+    ...photos.map((p) => ({
+      id: p.id,
+      created_at: p.created_at,
+      source: "legacy" as const,
+      label: "Foto",
+    })),
+  ]
+    .filter((p) => !failedPhotoIds.has(`${p.source}:${p.id}`))
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   return (
     <div className="space-y-5">
       <PhotoUploader onUploaded={() => setRefreshTick((t) => t + 1)} />
+      <button
+        type="button"
+        onClick={() => setGalleryExpanded((v) => !v)}
+        className={`inline-flex items-center rounded-md px-4 py-2 text-sm font-semibold ${
+          galleryExpanded
+            ? "bg-primary-700 text-white hover:bg-primary-800"
+            : "bg-primary-600 text-white hover:bg-primary-700"
+        }`}
+      >
+        {galleryExpanded ? "Galerie zuklappen" : "Galerie aufklappen"}
+      </button>
 
       <div>
         <h3 className="mb-3 text-sm font-semibold text-gray-900">
@@ -89,67 +170,51 @@ export function ProjectPhotosSection() {
           </div>
         )}
 
-        {!loading && photos.length === 0 && !error && (
+        {!loading && galleryExpanded && allItems.length === 0 && !error && (
           <div className="text-sm text-gray-500">Noch keine Fotos vorhanden.</div>
         )}
 
-        {photos.filter((p) => !failedPhotoIds.has(p.id)).length > 0 && (
+        {galleryExpanded && allItems.length > 0 && (
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-            {photos
-              .filter((p) => !failedPhotoIds.has(p.id))
-              .map((p) => (
-              <button
-                key={p.id}
-                type="button"
+            {allItems.map((p) => (
+              <div
+                key={`${p.source}:${p.id}`}
                 className="relative overflow-hidden rounded-md border border-gray-200 bg-gray-50"
-                onClick={() => setSelectedPhoto(p)}
-                title="Foto öffnen"
               >
                 <img
-                  src={`/api/photos/${p.id}/image`}
+                  src={p.source === "file" ? `/api/files/${p.id}/image` : `/api/photos/${p.id}/image`}
                   alt="Projektfoto"
                   className="aspect-square w-full object-cover"
                   loading="lazy"
                   onError={async () => {
-                    setFailedPhotoIds((prev) => new Set(prev).add(p.id));
+                    setFailedPhotoIds((prev) => new Set(prev).add(`${p.source}:${p.id}`));
                     // Optionales Aufräumen: DB-Eintrag entfernen, wenn die Datei im Storage fehlt.
                     try {
-                      await supabase.from("photos").delete().eq("id", p.id);
+                      if (p.source === "legacy") {
+                        await supabase.from("photos").delete().eq("id", p.id);
+                      }
                       setRefreshTick((t) => t + 1);
                     } catch {
                       // no-op: Bild bleibt nur ausgeblendet
                     }
                   }}
                 />
-              </button>
+                <button
+                  type="button"
+                  className="absolute right-1 top-1 rounded bg-white/90 px-2 py-1 text-xs font-medium text-red-700 shadow hover:bg-white"
+                  onClick={() =>
+                    p.source === "legacy"
+                      ? handleDeletePhoto(p.id)
+                      : handleDeleteFileImage(p.id)
+                  }
+                >
+                  Löschen
+                </button>
+              </div>
             ))}
           </div>
         )}
       </div>
-
-      {selectedPhoto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 px-4">
-          <div className="w-full max-w-3xl overflow-hidden rounded-lg bg-white shadow-xl">
-            <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
-              <p className="truncate text-sm font-medium text-gray-900">Foto</p>
-              <button
-                type="button"
-                className="rounded-md bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200"
-                onClick={() => setSelectedPhoto(null)}
-              >
-                Schließen
-              </button>
-            </div>
-            <div className="p-4">
-              <img
-                src={`/api/photos/${selectedPhoto.id}/image`}
-                alt="Foto groß"
-                className="max-h-[70vh] w-full object-contain"
-              />
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -127,6 +127,8 @@ export interface ProjectTask {
   project_id: string;
   title: string;
   description: string | null;
+  image_file_id: string | null;
+  image_photo_id: string | null;
   responsible_id: string | null;
   priority: TaskPriority;
   due_date: string | null;

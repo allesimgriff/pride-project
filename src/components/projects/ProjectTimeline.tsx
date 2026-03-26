@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { format } from "date-fns";
 import { de, enUS } from "date-fns/locale";
 import { MessageSquare, History, Paperclip } from "lucide-react";
@@ -35,6 +36,7 @@ type TimelineItem =
   | { type: "file"; id: string; date: string; author: string; content: string; fileId: string };
 
 interface ProjectTimelineProps {
+  projectId: string;
   comments: Comment[];
   updates: Update[];
   files: File[];
@@ -83,6 +85,7 @@ function buildTimeline(
 }
 
 export function ProjectTimeline({
+  projectId,
   comments,
   updates,
   files,
@@ -98,21 +101,45 @@ export function ProjectTimeline({
       : "Matches the “Nr.” column under headings for this workspace";
   const dateLocale = lang === "de" ? de : enUS;
   const items = buildTimeline(comments, updates, files, t("comments.unknown"));
+  const timelineHref = `/projects/${projectId}/timeline`;
+  const overviewLabel = lang === "de" ? "Gesamtübersicht" : "Full overview";
 
   return (
     <div className="card p-6">
-      <h2 className="text-lg font-semibold text-gray-900">
-        <EditableProjectLabel
-          labelKey="timelineHeading"
-          fallback={t("timeline.title")}
-          workspaceId={workspaceId}
-          projectLabels={projectLabels}
-          canEdit={canEditLabels}
-          showNr
-          nrTitle={labelNrTitle}
-          textClassName="text-lg font-semibold text-gray-900"
-        />
-      </h2>
+      <div className="flex items-start justify-between gap-3">
+        <h2 className="text-lg font-semibold text-gray-900">
+          {canEditLabels ? (
+            <EditableProjectLabel
+              labelKey="timelineHeading"
+              fallback={t("timeline.title")}
+              workspaceId={workspaceId}
+              projectLabels={projectLabels}
+              canEdit={canEditLabels}
+              showNr
+              nrTitle={labelNrTitle}
+              textClassName="text-lg font-semibold text-gray-900"
+            />
+          ) : (
+            <Link href={timelineHref} className="hover:underline">
+              <EditableProjectLabel
+                labelKey="timelineHeading"
+                fallback={t("timeline.title")}
+                workspaceId={workspaceId}
+                projectLabels={projectLabels}
+                canEdit={false}
+                showNr
+                nrTitle={labelNrTitle}
+                textClassName="text-lg font-semibold text-gray-900"
+              />
+            </Link>
+          )}
+        </h2>
+        {canEditLabels ? (
+          <Link href={timelineHref} className="text-xs font-medium text-primary-700 hover:underline">
+            {overviewLabel}
+          </Link>
+        ) : null}
+      </div>
       <p className="mt-1 text-sm text-gray-500">
         <EditableProjectLabel
           labelKey="timelineSubtitle"

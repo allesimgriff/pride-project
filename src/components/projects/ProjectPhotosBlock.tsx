@@ -6,10 +6,12 @@ import { ProjectPhotosSection } from "@/components/projects/ProjectPhotosSection
 import { EditableProjectLabel } from "@/components/projects/EditableProjectLabel";
 
 export function ProjectPhotosBlock({
+  projectId,
   projectLabels,
   workspaceId,
   canEditLabels,
 }: {
+  projectId: string;
   projectLabels: ProjectLabelMap;
   workspaceId: string | null;
   canEditLabels: boolean;
@@ -53,7 +55,7 @@ export function ProjectPhotosBlock({
           textClassName="text-sm text-gray-500"
         />
       </p>
-      <ProjectPhotosSection />
+      <ProjectPhotosSection projectId={projectId} />
     </div>
   );
 }

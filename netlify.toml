@@ -1,5 +1,6 @@
 [build]
   command = "npm run build"
+  publish = ".next"
 
 # Supabase anon/publishable key wird absichtlich ins Client-Bundle eingebettet (NEXT_PUBLIC_*).
 # Ohne diesen Eintrag bricht Netlify den Build ab, wenn die Variable als „Secret“ markiert ist.

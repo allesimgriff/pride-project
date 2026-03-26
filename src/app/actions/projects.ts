@@ -3,6 +3,16 @@
 import { createClient } from "@/lib/supabase/server";
 import type { ProjectStatus } from "@/types/database";
 import { canManageProjectAsAdmin } from "@/lib/workspacePermissions";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import {
+  getSupabaseHttpsApiUrlForServer,
+  getSupabaseServiceRoleKeyForServer,
+} from "@/lib/supabase/public-env";
+
+function objectPathFromLegacyPhotoUrl(imageUrl: string) {
+  const bucketPrefix = "project-photos/";
+  return imageUrl.startsWith(bucketPrefix) ? imageUrl.slice(bucketPrefix.length) : imageUrl;
+}
 
 export async function createProjectAction(data: {
   workspace_id: string;
@@ -121,6 +131,8 @@ export async function addTaskAction(
   data: {
     title: string;
     description?: string | null;
+    image_file_id?: string | null;
+    image_photo_id?: string | null;
     responsible_id?: string | null;
     priority?: "niedrig" | "mittel" | "hoch" | "dringend";
     due_date?: string | null;
@@ -137,6 +149,8 @@ export async function addTaskAction(
     project_id: projectId,
     title: data.title.trim(),
     description: data.description?.trim() || null,
+    image_file_id: data.image_file_id || null,
+    image_photo_id: data.image_photo_id || null,
     responsible_id: data.responsible_id || null,
     priority: data.priority ?? "mittel",
     due_date: data.due_date || null,
@@ -185,6 +199,36 @@ export async function toggleTaskAction(taskId: string, completed: boolean) {
     .update({
       completed,
       completed_at: completed ? new Date().toISOString() : null,
+    })
+    .eq("id", taskId);
+  if (error) return { error: error.message };
+  return {};
+}
+
+export async function updateTaskAction(
+  taskId: string,
+  data: {
+    title: string;
+    description?: string | null;
+    image_file_id?: string | null;
+    image_photo_id?: string | null;
+    priority?: "niedrig" | "mittel" | "hoch" | "dringend";
+    due_date?: string | null;
+  }
+) {
+  const supabase = await createClient();
+  if (!data.title.trim()) return { error: "Titel erforderlich" };
+
+  const { error } = await supabase
+    .from("project_tasks")
+    .update({
+      title: data.title.trim(),
+      description: data.description?.trim() || null,
+      image_file_id: data.image_file_id || null,
+      image_photo_id: data.image_photo_id || null,
+      priority: data.priority ?? "mittel",
+      due_date: data.due_date || null,
+      updated_at: new Date().toISOString(),
     })
     .eq("id", taskId);
   if (error) return { error: error.message };
@@ -306,5 +350,118 @@ export async function setProjectImageAction(projectId: string, fileId: string | 
     .update({ project_image_id: fileId })
     .eq("id", projectId);
   if (error) return { error: error.message };
+  return {};
+}
+
+export async function deleteProjectFileAction(fileId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Nicht angemeldet." };
+
+  const { data: file, error: fileError } = await supabase
+    .from("project_files")
+    .select("id, project_id, uploaded_by, file_path, file_name")
+    .eq("id", fileId)
+    .single();
+  if (fileError || !file) return { error: "Datei nicht gefunden." };
+
+  const { data: project, error: projectError } = await supabase
+    .from("projects")
+    .select("id, workspace_id, project_image_id")
+    .eq("id", file.project_id)
+    .single();
+  if (projectError || !project) return { error: "Projekt nicht gefunden." };
+
+  const canAdmin = await canManageProjectAsAdmin(supabase, user.id, project.workspace_id);
+  const isUploader = file.uploaded_by === user.id;
+  if (!canAdmin && !isUploader) {
+    return { error: "Keine Berechtigung zum Löschen dieser Datei." };
+  }
+
+  const supabaseUrl = getSupabaseHttpsApiUrlForServer();
+  const serviceRoleKey = getSupabaseServiceRoleKeyForServer();
+  if (!supabaseUrl || !serviceRoleKey) {
+    return { error: "Server-Konfiguration fehlt (SUPABASE_SERVICE_ROLE_KEY)." };
+  }
+
+  const admin = createSupabaseClient(supabaseUrl, serviceRoleKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  const { error: storageError } = await admin.storage
+    .from("project-files")
+    .remove([file.file_path]);
+  if (storageError) return { error: `Storage-Fehler: ${storageError.message}` };
+
+  const { error: deleteError } = await admin.from("project_files").delete().eq("id", file.id);
+  if (deleteError) return { error: deleteError.message };
+
+  if (project.project_image_id === file.id) {
+    await admin.from("projects").update({ project_image_id: null }).eq("id", project.id);
+  }
+
+  await supabase.from("project_updates").insert({
+    project_id: project.id,
+    author_id: user.id,
+    change_summary: "Datei gelöscht",
+    changes: { file_id: file.id, file_name: file.file_name },
+  });
+
+  return {};
+}
+
+export async function deleteLegacyProjectPhotoAction(projectId: string, photoId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Nicht angemeldet." };
+
+  const { data: project, error: projectError } = await supabase
+    .from("projects")
+    .select("id, workspace_id")
+    .eq("id", projectId)
+    .single();
+  if (projectError || !project) return { error: "Projekt nicht gefunden." };
+
+  const { data: photo, error: photoError } = await supabase
+    .from("photos")
+    .select("id, user_id, image_url")
+    .eq("id", photoId)
+    .single();
+  if (photoError || !photo) return { error: "Foto nicht gefunden." };
+
+  const canAdmin = await canManageProjectAsAdmin(supabase, user.id, project.workspace_id);
+  const isOwner = photo.user_id === user.id;
+  if (!canAdmin && !isOwner) {
+    return { error: "Keine Berechtigung zum Löschen dieses Fotos." };
+  }
+
+  const supabaseUrl = getSupabaseHttpsApiUrlForServer();
+  const serviceRoleKey = getSupabaseServiceRoleKeyForServer();
+  if (!supabaseUrl || !serviceRoleKey) {
+    return { error: "Server-Konfiguration fehlt (SUPABASE_SERVICE_ROLE_KEY)." };
+  }
+
+  const admin = createSupabaseClient(supabaseUrl, serviceRoleKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  const objectPath = objectPathFromLegacyPhotoUrl(photo.image_url);
+  const { error: storageError } = await admin.storage.from("project-photos").remove([objectPath]);
+  if (storageError) return { error: `Storage-Fehler: ${storageError.message}` };
+
+  const { error: deleteError } = await admin.from("photos").delete().eq("id", photo.id);
+  if (deleteError) return { error: deleteError.message };
+
+  await supabase.from("project_updates").insert({
+    project_id: project.id,
+    author_id: user.id,
+    change_summary: "Foto gelöscht",
+    changes: { photo_id: photo.id },
+  });
+
   return {};
 }
